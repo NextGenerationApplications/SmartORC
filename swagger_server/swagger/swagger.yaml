@@ -1,0 +1,249 @@
+openapi: 3.0.0
+info:
+  title: OpenApi 3.0 ReST interface for Accordion Orchestrator
+  description: This is the Yaml file that goes with our server code
+  version: 1.0.0
+servers:
+- url: /orchestrator
+paths:
+  /appmodel:
+    get:
+      tags:
+      - AppModel
+      description: Return the list of the name of Yaml files that contains the representation
+        of the model of the applications submitted until now and the respective identifiers
+      operationId: appmodel_read_all
+      responses:
+        "200":
+          description: Successfully read the list of the name of App model Yaml files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200'
+                x-content-type: application/json
+      x-openapi-router-controller: swagger_server.controllers.app_model_controller
+    post:
+      tags:
+      - AppModel
+      operationId: appmodel_create
+      requestBody:
+        description: Post a Yaml file that contains the representation of the model
+          of an application and a unique identifier. If the identifier exists yet,
+          an error is returned. Use PUT to update an existed application model.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/body'
+        required: true
+      responses:
+        "200":
+          description: Successfully created AppModel Yaml file with the given unique
+            identifier
+        "409":
+          description: A Yaml file exists yet with the given AppID on the server
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: swagger_server.controllers.app_model_controller
+  /appmodel/{AppID}:
+    put:
+      tags:
+      - AppModel
+      operationId: appmodel_update
+      parameters:
+      - name: AppID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Substitute the Yaml file that contains the representation of
+          the model of the application with the given identifier with the new file
+          passed as a parameter
+        content:
+          application/octet-stream; charset=utf-8:
+            schema:
+              type: string
+              format: binary
+              x-body-name: FileBody
+        required: true
+      responses:
+        "200":
+          description: AppModel file with the given identifier updated successfully
+        "404":
+          description: AppModel file with the given identifier was not found
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: swagger_server.controllers.app_model_controller
+    delete:
+      operationId: appmodel_delete
+      parameters:
+      - name: AppID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully deleted AppModel Yaml file with the given unique
+            identifier
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /monitordata:
+    get:
+      tags:
+      - MonitorData
+      description: Return the list of the name of Yaml files that contains the availability
+        of resources of an entire federation and the respective identifiers
+      operationId: monitordata_read_all
+      responses:
+        "200":
+          description: Successfully read the list of the name of MonitorData Yaml
+            files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_1'
+                x-content-type: application/json
+      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
+    post:
+      tags:
+      - MonitorData
+      operationId: monitordata_create
+      requestBody:
+        description: Post a Yaml file that contains the representation of the availability
+          of resources of an entire federation and a unique identifier. If the identifier
+          exists yet, an error is returned. Use PUT to update an existed federation.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/body_1'
+        required: true
+      responses:
+        "201":
+          description: Successfully created MonitorData Yaml file with the given unique
+            identifier
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
+  /monitordata/{FederationID}:
+    put:
+      tags:
+      - MonitorData
+      operationId: monitordata_update
+      parameters:
+      - name: FederationID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Substitute a Yaml file that contains the representation of the
+          availability of resources of an entire federation with the given identifier
+          with the new file passed as a parameter
+        content:
+          application/octet-stream; charset=utf-8:
+            schema:
+              type: string
+              format: binary
+        required: true
+      responses:
+        "200":
+          description: MonitorData file with the given identifier updated successfully
+        "404":
+          description: MonitorData file with the given identifier was not found
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
+    delete:
+      operationId: monitordata_delete
+      parameters:
+      - name: FederationID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully deleted MonitorData Yaml file with the given unique
+            identifier
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /depplan/:
+    get:
+      operationId: depplan_create
+      parameters:
+      - name: AppID
+        in: query
+        description: Application model Yaml file identifier
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: FederationID
+        in: query
+        description: MonitorData resources availabilit Yaml file identifier
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Succesfully return a Yaml file that contains the deployment
+            plan
+          content:
+            application/octet-stream; charset=utf-8:
+              schema:
+                type: string
+                format: binary
+                x-content-type: application/octet-stream; charset=utf-8
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+components:
+  schemas:
+    inline_response_200:
+      properties:
+        filename:
+          type: string
+        AppID:
+          type: string
+      example:
+        filename: filename
+        AppID: AppID
+    body:
+      type: object
+      properties:
+        AppID:
+          type: string
+        file:
+          type: string
+          format: binary
+      x-body-name: FileBody
+    inline_response_200_1:
+      properties:
+        filename:
+          type: string
+        FederationID:
+          type: string
+      example:
+        FederationID: FederationID
+        filename: filename
+    body_1:
+      type: object
+      properties:
+        AppID:
+          type: string
+        file:
+          type: string
+          format: binary
+
