@@ -1,0 +1,182 @@
+openapi: 3.0.0
+info:
+  description: This is the Yaml file that goes with our server code
+  version: 1.0.0
+  title: OpenApi 3.0 ReST interface for Accordion Orchestrator
+
+servers: 
+  - url: /orchestrator
+# Paths supported by the server application
+paths:
+  /appmodel:
+    get:
+      tags:
+        - AppModel
+      operationId: appmodel.read_all
+      description: Return the list of the name of Yaml files that contains the representation of the model of the applications submitted until now and the respective identifiers 
+      responses:
+        '200':
+          description: Successfully read the list of the name of App model Yaml files 
+          content:
+            application/json:           
+              schema:
+                type: array
+                items:
+                  properties:
+                    filename:
+                      type: string
+                    AppID:
+                      type: string
+    post:
+      operationId: appmodel.create
+      tags:
+        - AppModel
+      requestBody:
+        description: Post a Yaml file that contains the representation of the model of an application and a unique identifier. If the identifier exists yet, an error is returned. Use PUT to update an existed application model.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              x-body-name: FileBody
+              type: object
+              properties:
+                AppID:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Successfully created AppModel Yaml file with the given unique identifier  
+        '409':
+          description: A Yaml file exists yet with the given AppID on the server 
+        default: 
+            description: Unexpected error    
+  /appmodel/{AppID}:
+    parameters:
+    - in: path
+      name: AppID
+      schema:
+        type: string  
+      required: true
+    put:
+      tags:
+        - AppModel
+      operationId: appmodel.update
+      requestBody:
+        description: Substitute the Yaml file that contains the representation of the model of the application with the given identifier with the new file passed as a parameter
+        required: true
+        content:
+            application/octet-stream; charset=utf-8:
+              schema:
+                x-body-name: FileBody
+                format: binary
+                type: string
+      responses:
+        '200':
+          description: AppModel file with the given identifier updated successfully
+        '404':
+          description: AppModel file with the given identifier was not found
+        default:
+          description: Unexpected error        
+    delete:
+      operationId: appmodel.delete
+      responses:
+        200:
+          description: Successfully deleted AppModel Yaml file with the given unique identifier 
+  /monitordata:
+    get:
+      tags:
+        - MonitorData
+      operationId: monitordata.read_all
+      description: Return the list of the name of Yaml files that contains the availability of resources of an entire federation and the respective identifiers 
+      responses:
+        '200':
+          description: Successfully read the list of the name of MonitorData Yaml files 
+          content:
+            application/json:           
+              schema:
+                type: array
+                items:
+                  properties:
+                    filename:
+                      type: string
+                    FederationID:
+                      type: string
+    post:
+      operationId: monitordata.create
+      tags:
+        - MonitorData
+      requestBody:
+        description: Post a Yaml file that contains the representation of the availability of resources of an entire federation and a unique identifier. If the identifier exists yet, an error is returned. Use PUT to update an existed federation.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                AppID:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Successfully created MonitorData Yaml file with the given unique identifier  
+        default: 
+            description: Unexpected error    
+  /monitordata/{FederationID}:
+    parameters:
+      - in: path
+        name: FederationID
+        schema:
+          type: string  
+        required: true
+    put:
+      tags:
+        - MonitorData
+      operationId: monitordata.update
+      requestBody:
+        description: Substitute a Yaml file that contains the representation of the availability of resources of an entire federation with the given identifier with the new file passed as a parameter
+        required: true
+        content:
+            application/octet-stream; charset=utf-8:
+              schema:
+                format: binary
+                type: string
+      responses:
+        '200':
+          description: MonitorData file with the given identifier updated successfully
+        '404':
+          description: MonitorData file with the given identifier was not found
+        default:
+          description: Unexpected error        
+    delete:
+      operationId: monitordata.delete
+      responses:
+        200:
+          description: Successfully deleted MonitorData Yaml file with the given unique identifier         
+  /depplan/:
+    get:
+      parameters:
+        - in: query
+          name: AppID
+          schema:
+            type: string
+          description: Application model Yaml file identifier
+          required: true
+        - in: query
+          name: FederationID
+          schema:
+            type: string
+          description: MonitorData resources availabilit Yaml file identifier
+          required: true
+      operationId: depplan.create    
+      responses:
+        200:            
+          description: Succesfully return a Yaml file that contains the deployment plan
+          content:
+            application/octet-stream; charset=utf-8:
+              schema:
+                format: binary
+                type: string 
