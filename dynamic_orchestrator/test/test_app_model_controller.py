@@ -45,12 +45,12 @@ class TestAppModelController(BaseTestCase):
 
         
         """
-        data =  dict(file = (open('ProvaMonitorModel.yml', 'rb'),'ProvaMonitorModel.yml','text/plain'))    
+        data = dict(body=(open('ProvaMonitorModel.yml', 'rb'),'ProvaMonitorModel.yml','text/plain'))   
         response = self.client.open(
             '/orchestrator/appmodel/{app_id}'.format(app_id='app_id_example'),
             method='PUT',
             data=data,
-            content_type='application/octet-stream; charset=utf-8')
+            content_type='text/plain')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

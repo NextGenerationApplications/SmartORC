@@ -177,7 +177,7 @@ paths:
           description: Successfully deleted MonitorData Yaml file with the given unique
             identifier
       x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
-  /depplan/:
+  /depplan/:      
     get:
       operationId: depplan_create
       parameters:
@@ -207,6 +207,8 @@ paths:
                 type: string
                 format: binary
                 x-content-type: application/octet-stream; charset=utf-8
+        default:
+          description: "Unexpected error"
       x-openapi-router-controller: dynamic_orchestrator.controllers.default_controller
 components:
   schemas:
@@ -239,7 +241,7 @@ components:
     body_1:
       type: object
       properties:
-        app_id:
+        federation_id:
           type: string
         file:
           type: string

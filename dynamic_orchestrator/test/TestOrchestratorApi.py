@@ -21,7 +21,7 @@ with open('ProvaMonitorModel.yml', 'rb') as f:
 	print('POST status code: ', r1.status_code)
 	print('POST text: ', r1.text)
 	
-	m2 = {'body': ('ProvaMonitorModel.yml', open('ProvaMonitorModel.yml', 'rb'),'text/plain'))}
+	m2 = {'body': ('ProvaMonitorModel.yml', open('ProvaMonitorModel.yml', 'rb'),'text/plain')}
 	r2 = requests.put("http://localhost:8080/orchestrator/appmodel/AppModelFileID1", files = m2)
 	print(r2.status_code)
 	print(r2.text)

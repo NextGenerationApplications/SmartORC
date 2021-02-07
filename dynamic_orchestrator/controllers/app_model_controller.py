@@ -5,6 +5,9 @@ from dynamic_orchestrator.models.inline_response200 import InlineResponse200  # 
 from dynamic_orchestrator import util
 from werkzeug.utils import secure_filename
 import os
+import shutil
+
+APPMODELS_PATH = './appmodels'
 
 def appmodel_create(body,file):  # noqa: E501
     """appmodel_create
@@ -18,16 +21,21 @@ def appmodel_create(body,file):  # noqa: E501
 
     :rtype: None
     """
-    directory = os.path.join('./appmodels/', body.get('app_id'))
-    os.makedirs(directory, exist_ok=True)
-    filepath = os.path.join(directory, file.filename)
-    if os.path.isfile(filepath):
-        return {'status': 'Not Created', 'message': 'A AppModel Yaml file already exists with the given name and identifier'}, 409
+    global APPMODELS_PATH
+    file_directory = os.path.join(APPMODELS_PATH, body.get('app_id'))
     try:
+        os.makedirs(file_directory)
+    except OSError:
+        return {'message': 'Not created. A AppModel Yaml file already exists with the given identifier. Use PUT to update it'}, 409 
+
+    filepath = os.path.join(file_directory, file.filename)
+    try:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(file_directory, filename)
         file.save(filepath)
     except OSError:
-        return {'status': 'Not Created', 'message': 'Failed to create AppModel Yaml file with the given name and identifier'}, 500    
-    return {'status': 'Created', 'message': 'Record uploaded successfully !'}, 200
+        return {'message': 'Failed to create AppModel Yaml file with the given name and identifier'}, 500 
+    return  {'message': 'AppModel Yaml file created successfully !'}, 200
 
 def appmodel_delete(app_id):  # noqa: E501
     """appmodel_delete
@@ -39,19 +47,39 @@ def appmodel_delete(app_id):  # noqa: E501
 
     :rtype: None
     """
-    print('appmodel_delete: ',app_id)
-    return 'do some magic!'
+    global APPMODELS_PATH
+    try:
+        if os.path.isdir(APPMODELS_PATH):
+            AppModelsDirList = os.listdir(APPMODELS_PATH)
+            if app_id in AppModelsDirList:             
+                directory =  os.path.join(APPMODELS_PATH,app_id)
+                if os.path.isdir(directory):
+                    shutil.rmtree(directory)
+            else:
+                return{'message': 'A AppModel Yaml file not exists with the given identifier'},409
+    except OSError:
+        return {'message': 'Failed to delete AppModel Yaml file with the given identifier'}, 500    
+    return {'message':'AppModel Yaml file with the given identifier deleted succesfully'}, 200
 
 def appmodel_read_all():  # noqa: E501
     """appmodel_read_all
 
     Return the list of the name of Yaml files that contains the representation of the model of the applications submitted until now and the respective identifiers # noqa: E501
 
-
     :rtype: List[InlineResponse200]
     """
-    return 'do some magic!'
-
+    global APPMODELS_PATH 
+    response = [] 
+    if os.path.isdir(APPMODELS_PATH):
+        AppModelsDirList = os.listdir(APPMODELS_PATH)
+        for app_id in AppModelsDirList:
+            directory =  os.path.join(APPMODELS_PATH,app_id)
+            if os.path.isdir(directory):
+                AppModelsFileDirList = os.listdir(directory)
+                for filename in AppModelsFileDirList:
+                    response_el=InlineResponse200(filename,app_id)
+                    response.append(response_el)                                  
+    return response, 200
 
 def appmodel_update(app_id,body):  # noqa: E501
     """appmodel_update
@@ -65,8 +93,19 @@ def appmodel_update(app_id,body):  # noqa: E501
 
     :rtype: None
     """
-    
-    #ody2 = body.from_dict(connexion.request.get_json())  # noqa: E501
-    print('appmodel_update: ',body)
-    print('appmodel_update: ',app_id)
-    return 'do some magic!'
+    global APPMODELS_PATH
+    file_directory = os.path.join(APPMODELS_PATH,app_id)
+    try:
+        if os.path.isdir(file_directory):
+            AppIDDirList = os.listdir(file_directory)
+            for filename in AppIDDirList:
+                filepath = os.path.join(file_directory,filename)
+                if os.path.isfile(filepath):
+                    os.remove(filepath)             
+        else:
+            return {'message': 'Failed to update AppModel Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409 
+        filename = secure_filename(body.filename)
+        body.save(os.path.join(file_directory, body.filename))
+    except OSError:
+        return {'message': 'Failed to update the AppModel Yaml file with the new one with the given name and identifier'}, 500 
+    return  {'message': 'AppModel Yaml file updated successfully !'}, 200
