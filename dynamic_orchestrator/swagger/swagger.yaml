@@ -23,7 +23,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/inline_response_200'
                 x-content-type: application/json
-      x-openapi-router-controller: swagger_server.controllers.app_model_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.app_model_controller
     post:
       tags:
       - AppModel
@@ -42,17 +42,17 @@ paths:
           description: Successfully created AppModel Yaml file with the given unique
             identifier
         "409":
-          description: A Yaml file exists yet with the given AppID on the server
+          description: An AppModel Yaml file exists yet with the given identifier 
         default:
           description: Unexpected error
-      x-openapi-router-controller: swagger_server.controllers.app_model_controller
-  /appmodel/{AppID}:
+      x-openapi-router-controller: dynamic_orchestrator.controllers.app_model_controller
+  /appmodel/{app_id}:
     put:
       tags:
       - AppModel
       operationId: appmodel_update
       parameters:
-      - name: AppID
+      - name: app_id
         in: path
         required: true
         style: simple
@@ -68,7 +68,6 @@ paths:
             schema:
               type: string
               format: binary
-              x-body-name: FileBody
         required: true
       responses:
         "200":
@@ -77,11 +76,11 @@ paths:
           description: AppModel file with the given identifier was not found
         default:
           description: Unexpected error
-      x-openapi-router-controller: swagger_server.controllers.app_model_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.app_model_controller
     delete:
       operationId: appmodel_delete
       parameters:
-      - name: AppID
+      - name: app_id
         in: path
         required: true
         style: simple
@@ -92,7 +91,7 @@ paths:
         "200":
           description: Successfully deleted AppModel Yaml file with the given unique
             identifier
-      x-openapi-router-controller: swagger_server.controllers.default_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.app_model_controller
   /monitordata:
     get:
       tags:
@@ -102,7 +101,7 @@ paths:
       operationId: monitordata_read_all
       responses:
         "200":
-          description: Successfully read the list of the name of MonitorData Yaml
+          description: Successfully read the list of the name of MonitorData Yaml files
             files
           content:
             application/json:
@@ -111,7 +110,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/inline_response_200_1'
                 x-content-type: application/json
-      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
     post:
       tags:
       - MonitorData
@@ -131,14 +130,14 @@ paths:
             identifier
         default:
           description: Unexpected error
-      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
-  /monitordata/{FederationID}:
+      x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
+  /monitordata/{federation_id}:
     put:
       tags:
       - MonitorData
       operationId: monitordata_update
       parameters:
-      - name: FederationID
+      - name: federation_id
         in: path
         required: true
         style: simple
@@ -162,11 +161,11 @@ paths:
           description: MonitorData file with the given identifier was not found
         default:
           description: Unexpected error
-      x-openapi-router-controller: swagger_server.controllers.monitor_data_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
     delete:
       operationId: monitordata_delete
       parameters:
-      - name: FederationID
+      - name: federation_id
         in: path
         required: true
         style: simple
@@ -177,12 +176,12 @@ paths:
         "200":
           description: Successfully deleted MonitorData Yaml file with the given unique
             identifier
-      x-openapi-router-controller: swagger_server.controllers.default_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
   /depplan/:
     get:
       operationId: depplan_create
       parameters:
-      - name: AppID
+      - name: app_id
         in: query
         description: Application model Yaml file identifier
         required: true
@@ -190,7 +189,7 @@ paths:
         explode: true
         schema:
           type: string
-      - name: FederationID
+      - name: federation_id
         in: query
         description: MonitorData resources availabilit Yaml file identifier
         required: true
@@ -208,40 +207,39 @@ paths:
                 type: string
                 format: binary
                 x-content-type: application/octet-stream; charset=utf-8
-      x-openapi-router-controller: swagger_server.controllers.default_controller
+      x-openapi-router-controller: dynamic_orchestrator.controllers.default_controller
 components:
   schemas:
     inline_response_200:
       properties:
         filename:
           type: string
-        AppID:
+        app_id:
           type: string
       example:
         filename: filename
-        AppID: AppID
+        app_id: app_id
     body:
       type: object
       properties:
-        AppID:
+        app_id:
           type: string
         file:
           type: string
           format: binary
-      x-body-name: FileBody
     inline_response_200_1:
       properties:
         filename:
           type: string
-        FederationID:
+        federation_id:
           type: string
       example:
-        FederationID: FederationID
+        federation_id: federation_id
         filename: filename
     body_1:
       type: object
       properties:
-        AppID:
+        app_id:
           type: string
         file:
           type: string

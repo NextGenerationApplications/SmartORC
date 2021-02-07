@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
-from swagger_server.test import BaseTestCase
+from dynamic_orchestrator.test import BaseTestCase
 
 
 class TestDefaultController(BaseTestCase):
@@ -17,7 +17,7 @@ class TestDefaultController(BaseTestCase):
         
         """
         response = self.client.open(
-            '/appmodel/{AppID}'.format(app_id='app_id_example'),
+            '/orchestrator/appmodel/app_id_example',
             method='DELETE')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -30,7 +30,7 @@ class TestDefaultController(BaseTestCase):
         query_string = [('app_id', 'app_id_example'),
                         ('federation_id', 'federation_id_example')]
         response = self.client.open(
-            '/depplan/',
+            '/orchestrator/depplan/',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -42,7 +42,7 @@ class TestDefaultController(BaseTestCase):
         
         """
         response = self.client.open(
-            '/monitordata/{FederationID}'.format(federation_id='federation_id_example'),
+            '/orchestrator/monitordata/{FederationID}'.format(federation_id='federation_id_example'),
             method='DELETE')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))

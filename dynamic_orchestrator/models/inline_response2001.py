@@ -5,8 +5,8 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from swagger_server.models.base_model_ import Model
-from swagger_server import util
+from dynamic_orchestrator.models.base_model_ import Model
+from dynamic_orchestrator import util
 
 
 class InlineResponse2001(Model):
@@ -29,7 +29,7 @@ class InlineResponse2001(Model):
 
         self.attribute_map = {
             'filename': 'filename',
-            'federation_id': 'FederationID'
+            'federation_id': 'federation_id'
         }
         self._filename = filename
         self._federation_id = federation_id

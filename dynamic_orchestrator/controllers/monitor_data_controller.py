@@ -1,11 +1,11 @@
 import connexion
 import six
 
-from swagger_server.models.inline_response2001 import InlineResponse2001  # noqa: E501
-from swagger_server import util
+from dynamic_orchestrator.models.inline_response2001 import InlineResponse2001  # noqa: E501
+from dynamic_orchestrator import util
 
 
-def monitordata_create(app_id, file):  # noqa: E501
+def monitordata_create(body, file):  # noqa: E501
     """monitordata_create
 
      # noqa: E501
@@ -19,6 +19,17 @@ def monitordata_create(app_id, file):  # noqa: E501
     """
     return 'do some magic!'
 
+def monitordata_delete(federation_id):  # noqa: E501
+    """monitordata_delete
+
+     # noqa: E501
+
+    :param federation_id: 
+    :type federation_id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 def monitordata_read_all():  # noqa: E501
     """monitordata_read_all
@@ -31,7 +42,7 @@ def monitordata_read_all():  # noqa: E501
     return 'do some magic!'
 
 
-def monitordata_update(body, federation_id):  # noqa: E501
+def monitordata_update(federation_id, body):  # noqa: E501
     """monitordata_update
 
      # noqa: E501
@@ -43,6 +54,6 @@ def monitordata_update(body, federation_id):  # noqa: E501
 
     :rtype: None
     """
-    if connexion.request.is_json:
-        body = Object.from_dict(connexion.request.get_json())  # noqa: E501
+    #if connexion.request.is_json:
+    #    body = Object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'

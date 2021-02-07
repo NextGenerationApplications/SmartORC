@@ -1,9 +1,9 @@
 import logging
 
 import connexion
-from flask_testing import TestCase
+from flask_testing.utils import TestCase
 
-from swagger_server.encoder import JSONEncoder
+from dynamic_orchestrator.encoder import JSONEncoder
 
 
 class BaseTestCase(TestCase):

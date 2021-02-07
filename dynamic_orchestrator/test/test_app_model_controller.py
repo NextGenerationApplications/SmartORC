@@ -5,9 +5,10 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
-from swagger_server.models.inline_response200 import InlineResponse200  # noqa: E501
-from swagger_server.test import BaseTestCase
-
+from dynamic_orchestrator.models.inline_response200 import InlineResponse200  # noqa: E501
+from dynamic_orchestrator.test import BaseTestCase
+from pathlib import Path
+from nt import getcwd
 
 class TestAppModelController(BaseTestCase):
     """AppModelController integration test stubs"""
@@ -16,16 +17,17 @@ class TestAppModelController(BaseTestCase):
         """Test case for appmodel_create
 
         
-        """
-        data = dict(app_id='app_id_example',
-                    file='file_example')
+        """    
+        data = dict(app_id = 'app_id_example', 
+                    file = (open('ProvaMonitorModel.yml', 'rb'),'ProvaMonitorModel.yml','text/plain'))
+        
         response = self.client.open(
-            '/appmodel',
+            '/orchestrator/appmodel',
             method='POST',
             data=data,
             content_type='multipart/form-data')
         self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
+                      'Response body is : ' + response.data.decode('utf-8'))
 
     def test_appmodel_read_all(self):
         """Test case for appmodel_read_all
@@ -33,7 +35,7 @@ class TestAppModelController(BaseTestCase):
         
         """
         response = self.client.open(
-            '/appmodel',
+            '/orchestrator/appmodel',
             method='GET')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -43,11 +45,11 @@ class TestAppModelController(BaseTestCase):
 
         
         """
-        body = Object()
+        data =  dict(file = (open('ProvaMonitorModel.yml', 'rb'),'ProvaMonitorModel.yml','text/plain'))    
         response = self.client.open(
-            '/appmodel/{AppID}'.format(app_id='app_id_example'),
+            '/orchestrator/appmodel/{app_id}'.format(app_id='app_id_example'),
             method='PUT',
-            data=json.dumps(body),
+            data=data,
             content_type='application/octet-stream; charset=utf-8')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))

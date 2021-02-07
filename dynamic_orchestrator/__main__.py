@@ -2,7 +2,7 @@
 
 import connexion
 
-from swagger_server import encoder
+from dynamic_orchestrator import encoder
 
 
 def main():
