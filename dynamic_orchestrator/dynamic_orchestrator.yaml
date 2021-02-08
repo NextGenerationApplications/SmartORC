@@ -72,7 +72,7 @@ paths:
       responses:
         "200":
           description: AppModel file with the given identifier updated successfully
-        "404":
+        "409":
           description: AppModel file with the given identifier was not found
         default:
           description: Unexpected error
@@ -109,7 +109,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/inline_response_200_1'
-                x-content-type: application/json
+          x-content-type: application/json
       x-openapi-router-controller: dynamic_orchestrator.controllers.monitor_data_controller
     post:
       tags:
@@ -125,7 +125,7 @@ paths:
               $ref: '#/components/schemas/body_1'
         required: true
       responses:
-        "201":
+        "200":
           description: Successfully created MonitorData Yaml file with the given unique
             identifier
         default:
@@ -157,7 +157,7 @@ paths:
       responses:
         "200":
           description: MonitorData file with the given identifier updated successfully
-        "404":
+        "409":
           description: MonitorData file with the given identifier was not found
         default:
           description: Unexpected error
@@ -199,16 +199,21 @@ paths:
           type: string
       responses:
         "200":
-          description: Succesfully return a Yaml file that contains the deployment
-            plan
+          description: Succesfully return one or more Yaml files that contains the deployment
+            plan, each referred to a single domain
           content:
-            application/octet-stream; charset=utf-8:
+            application/json:
               schema:
-                type: string
-                format: binary
-                x-content-type: application/octet-stream; charset=utf-8
+                type: object                
+                properties:
+                  file:
+                    type: string
+                    format: binary
+          x-content-type: application/json
+        "409":
+            description: The AppModel Yaml file or the MonitorData Yaml file do not exist or could not be opened 
         default:
-          description: "Unexpected error"
+          description: Unexpected error
       x-openapi-router-controller: dynamic_orchestrator.controllers.default_controller
 components:
   schemas:
@@ -246,4 +251,3 @@ components:
         file:
           type: string
           format: binary
-

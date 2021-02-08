@@ -1,11 +1,7 @@
-# coding: utf-8
 
 from __future__ import absolute_import
 
 from flask import json
-from six import BytesIO
-
-from dynamic_orchestrator.models.inline_response2001 import InlineResponse2001  # noqa: E501
 from dynamic_orchestrator.test import BaseTestCase
 
 
@@ -14,8 +10,7 @@ class TestMonitorDataController(BaseTestCase):
 
     def test_monitordata_create(self):
         """Test case for monitordata_create
-
-        
+   
         """
         data = dict(app_id='app_id_example',
                     file='D:\ContainerPython\ProvaMonitorModel.yml')

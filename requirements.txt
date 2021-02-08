@@ -1,3 +1,7 @@
 connexion == 2.6.0
 python_dateutil == 2.6.0
 setuptools >= 21.0.0
+requests_toolbelt >= 0.9.1
+Werkzeug >= 1.0.1
+PyYAML >= 5.4.1
+Flask >= 1.1.2 

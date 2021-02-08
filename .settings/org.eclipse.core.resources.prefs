@@ -4,6 +4,7 @@ encoding//dynamic_orchestrator/models/body.py=utf-8
 encoding//dynamic_orchestrator/models/body1.py=utf-8
 encoding//dynamic_orchestrator/models/inline_response200.py=utf-8
 encoding//dynamic_orchestrator/models/inline_response2001.py=utf-8
+encoding//dynamic_orchestrator/models/inline_response2002.py=utf-8
 encoding//dynamic_orchestrator/test/test_app_model_controller.py=utf-8
 encoding//dynamic_orchestrator/test/test_default_controller.py=utf-8
 encoding//dynamic_orchestrator/test/test_monitor_data_controller.py=utf-8

@@ -1,9 +1,4 @@
-import connexion
-import six
-
-from flask import current_app
 from dynamic_orchestrator.models.inline_response2001 import InlineResponse2001  
-from dynamic_orchestrator import util
 from werkzeug.utils import secure_filename
 import os
 import shutil
@@ -12,8 +7,6 @@ MONITORDATA_PATH = './monitordata'
 
 def monitordata_create(body, file): 
     """monitordata_create
-
-     # noqa: E501
 
     :param app_id: 
     :type app_id: str
@@ -26,14 +19,14 @@ def monitordata_create(body, file):
     file_directory = os.path.join(MONITORDATA_PATH, body.get('federation_id'))
     try:
         os.makedirs(file_directory)
-    except OSError:
+    except:
         return {'message': 'Not created. A MonitorData Yaml file already exists with the given identifier. Use PUT to update it'}, 409 
 
     try:
         filename = secure_filename(file.filename)
         filepath = os.path.join(file_directory, filename)
         file.save(filepath)
-    except OSError:
+    except:
         return {'message': 'Failed to create MonitorData Yaml file with the given name and identifier'}, 500 
     return  {'message': 'MonitorData Yaml file created successfully !'}, 200
 
@@ -53,11 +46,15 @@ def monitordata_delete(federation_id):  # noqa: E501
             AppModelsDirList = os.listdir(MONITORDATA_PATH)
             if federation_id in AppModelsDirList:             
                 directory =  os.path.join(MONITORDATA_PATH,federation_id)
-                if os.path.isdir(directory):
+                if os.path.isdir(directory):                    
                     shutil.rmtree(directory)
+                else:
+                    return{'message': 'A MonitorData Yaml file not exists with the given identifier'},409
             else:
                 return{'message': 'A MonitorData Yaml file not exists with the given identifier'},409
-    except OSError:
+        else:
+            return{'message': 'A MonitorData Yaml file not exists with the given identifier'},409
+    except:
         return {'message': 'MonitorData to delete MonitorData Yaml file with the given identifier'}, 500    
     return {'message':'MonitorData Yaml file with the given identifier deleted succesfully'}, 200
 
@@ -102,11 +99,13 @@ def monitordata_update(federation_id, body):  # noqa: E501
             for filename in FedIDDirList:
                 filepath = os.path.join(file_directory,filename)
                 if os.path.isfile(filepath):
-                    os.remove(filepath)             
+                    os.remove(filepath)     
+                else:
+                    return {'message': 'Failed to update MonitorData Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409  
         else:
             return {'message': 'Failed to update MonitorData Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409
         filename = secure_filename(body.filename)
         body.save(os.path.join(file_directory, filename))
-    except OSError:
+    except:
         return {'message': 'Failed to update the MonitorData Yaml file with the new one with the given name and identifier'}, 500 
     return  {'message': 'MonitorData Yaml file updated successfully !'}, 200
