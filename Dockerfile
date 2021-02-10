@@ -131,9 +131,9 @@ RUN set -ex; \
             -o \
             \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
         \) -exec rm -rf '{}' +; \
-    rm -f get-pip.py
-
-RUN mkdir -p /usr/src/app
+    rm -f get-pip.py; \
+    mkdir -p /usr/src/app
+    
 WORKDIR /usr/src/app
 
 COPY requirements.txt /usr/src/app

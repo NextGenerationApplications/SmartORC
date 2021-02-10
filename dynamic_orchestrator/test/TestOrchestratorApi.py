@@ -19,7 +19,7 @@ m3 = MultipartEncoder(
    fields={'federation_id': 'MonitorDataFileID1', 
          'file': ('ProvaMonitorModel.yml', file2,'text/plain')}
    )
-	
+    
 r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
                   headers={'Content-Type': m3.content_type})
 print(r8.status_code)
