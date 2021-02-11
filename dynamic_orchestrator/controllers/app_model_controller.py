@@ -6,6 +6,10 @@ from flask import current_app
 
 APPMODELS_PATH = 'appmodels'
 
+def appmodels_basepath():
+    global APPMODELS_PATH
+    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
+
 def appmodel_create(body,file):  
     """appmodel_create
 
@@ -16,8 +20,8 @@ def appmodel_create(body,file):
 
     :rtype: None
     """
-    global APPMODELS_PATH
-    file_directory = os.path.join(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH, body.get('app_id'))
+
+    file_directory = os.path.join(appmodels_basepath(), body.get('app_id'))
     try:
         os.makedirs(file_directory)
     except:
@@ -42,12 +46,11 @@ def appmodel_delete(app_id):
 
     :rtype: None
     """
-    global APPMODELS_PATH
     try:
-        if os.path.isdir(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH):
-            AppModelsDirList = os.listdir(APPMODELS_PATH)
+        if os.path.isdir(appmodels_basepath()):
+            AppModelsDirList = os.listdir(appmodels_basepath())
             if app_id in AppModelsDirList:             
-                directory =  os.path.join(APPMODELS_PATH,app_id)
+                directory =  os.path.join(appmodels_basepath(),app_id)
                 if os.path.isdir(directory):
                     shutil.rmtree(directory)
                 else:
@@ -67,12 +70,11 @@ def appmodel_read_all():
 
     :rtype: List[InlineResponse200]
     """
-    global APPMODELS_PATH 
     response = [] 
-    if os.path.isdir(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH):
-        AppModelsDirList = os.listdir(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH)
+    if os.path.isdir(appmodels_basepath()):
+        AppModelsDirList = os.listdir(appmodels_basepath())
         for app_id in AppModelsDirList:
-            directory =  os.path.join(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH,app_id)
+            directory =  os.path.join(appmodels_basepath(),app_id)
             if os.path.isdir(directory):
                 AppModelsFileDirList = os.listdir(directory)
                 for filename in AppModelsFileDirList:
@@ -93,7 +95,7 @@ def appmodel_update(app_id,body):
     :rtype: None
     """
     global APPMODELS_PATH
-    file_directory = os.path.join(current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH,app_id)
+    file_directory = os.path.join(appmodels_basepath(),app_id)
     try:
         if os.path.isdir(file_directory):
             AppIDDirList = os.listdir(file_directory)

@@ -1,5 +1,5 @@
-from dynamic_orchestrator.controllers.app_model_controller import APPMODELS_PATH
-from dynamic_orchestrator.controllers.monitor_data_controller import MONITORDATA_PATH
+from dynamic_orchestrator.controllers.app_model_controller import appmodels_basepath
+from dynamic_orchestrator.controllers.monitor_data_controller import monitordata_basepath
 import os
 import yaml
 import flask
@@ -20,10 +20,10 @@ def depplan_create(app_id, federation_id):
     try:
         AppModelFilePath = None
         AppModelFile = None
-        if os.path.isdir(APPMODELS_PATH):
-            AppModelsDirList = os.listdir(APPMODELS_PATH)
+        if os.path.isdir(appmodels_basepath()):
+            AppModelsDirList = os.listdir(appmodels_basepath())
             if app_id in AppModelsDirList:
-                directory =  os.path.join(APPMODELS_PATH,app_id)
+                directory =  os.path.join(appmodels_basepath(),app_id)
                 if os.path.isdir(directory):
                     AppModelsFileDirList = os.listdir(directory)
                     for filename in AppModelsFileDirList:
@@ -42,10 +42,10 @@ def depplan_create(app_id, federation_id):
     try:
         MonitorDataFilePath = None
         MonitorDataFile = None        
-        if os.path.isdir(MONITORDATA_PATH):
-            MonitorDataDirList = os.listdir(MONITORDATA_PATH)
+        if os.path.isdir(monitordata_basepath()):
+            MonitorDataDirList = os.listdir(monitordata_basepath())
             if federation_id in MonitorDataDirList:
-                directory =  os.path.join(MONITORDATA_PATH,federation_id)
+                directory =  os.path.join(monitordata_basepath(),federation_id)
                 if os.path.isdir(directory):
                     MonitorDataFileDirList = os.listdir(directory)
                     for filename in MonitorDataFileDirList:
