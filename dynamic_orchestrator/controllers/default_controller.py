@@ -4,8 +4,8 @@ import os
 import yaml
 import flask
 from requests_toolbelt import MultipartEncoder
-from dynamic_orchestrator.core.orchestrator import calculate_dep_plan
- 
+from flask import current_app
+
 def depplan_create(app_id, federation_id):  
     """depplan_create
     
@@ -15,7 +15,7 @@ def depplan_create(app_id, federation_id):
     :type federation_id: str
 
     :rtype: List[InlineResponse2002]
-    """ 
+    """     
     filename = None
     try:
         AppModelFilePath = None
@@ -62,9 +62,9 @@ def depplan_create(app_id, federation_id):
 
     AppModelContent = yaml.load(AppModelFile, Loader = yaml.FullLoader)
     MonitorDataContent = yaml.load(MonitorDataFile, Loader = yaml.FullLoader)
-    
+
     #Elaboration of the Deploy plan
-    FileResponseList = calculate_dep_plan(AppModelContent, MonitorDataContent)
+    FileResponseList = current_app.config['ORCHESTRATOR'].calculate_dep_plan(AppModelContent, MonitorDataContent)
     fields = {}
     key = 'file'
     i = 1

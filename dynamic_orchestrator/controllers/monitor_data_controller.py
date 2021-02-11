@@ -2,8 +2,9 @@ from dynamic_orchestrator.models.inline_response2001 import InlineResponse2001
 from werkzeug.utils import secure_filename
 import os
 import shutil
+from flask import current_app
 
-MONITORDATA_PATH = './monitordata'
+MONITORDATA_PATH = 'monitordata'
 
 def monitordata_create(body, file): 
     """monitordata_create
@@ -16,7 +17,7 @@ def monitordata_create(body, file):
     :rtype: None
     """
     global MONITORDATA_PATH
-    file_directory = os.path.join(MONITORDATA_PATH, body.get('federation_id'))
+    file_directory = os.path.join(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH, body.get('federation_id'))
     try:
         os.makedirs(file_directory)
     except:
@@ -42,10 +43,10 @@ def monitordata_delete(federation_id):  # noqa: E501
     """
     global MONITORDATA_PATH
     try:
-        if os.path.isdir(MONITORDATA_PATH):
-            AppModelsDirList = os.listdir(MONITORDATA_PATH)
+        if os.path.isdir(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH):
+            AppModelsDirList = os.listdir(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH)
             if federation_id in AppModelsDirList:             
-                directory =  os.path.join(MONITORDATA_PATH,federation_id)
+                directory =  os.path.join(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH,federation_id)
                 if os.path.isdir(directory):                    
                     shutil.rmtree(directory)
                 else:
@@ -68,10 +69,10 @@ def monitordata_read_all():  # noqa: E501
     """
     global MONITORDATA_PATH 
     response = [] 
-    if os.path.isdir(MONITORDATA_PATH):
-        DataMonitorDirList = os.listdir(MONITORDATA_PATH)
+    if os.path.isdir(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH):
+        DataMonitorDirList = os.listdir(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH)
         for federation_id in DataMonitorDirList:
-            directory =  os.path.join(MONITORDATA_PATH,federation_id)
+            directory =  os.path.join(current_app.config.get('UPLOAD_FOLDER') + MONITORDATA_PATH,federation_id)
             if os.path.isdir(directory):
                 DataMonitorFileDirList = os.listdir(directory)
                 for filename in DataMonitorFileDirList:
