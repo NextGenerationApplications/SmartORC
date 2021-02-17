@@ -1,4 +1,4 @@
-FROM alpine:3.13.1
+FROM alpine:3.13
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
@@ -131,8 +131,7 @@ RUN set -ex; \
             -o \
             \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
         \) -exec rm -rf '{}' +; \
-    rm -f get-pip.py; \
-    mkdir -p /usr/src/app
+    rm -f get-pip.py
     
 WORKDIR /usr/src/app
 
@@ -146,4 +145,4 @@ EXPOSE 8080
 
 ENTRYPOINT ["python3"]
 
-CMD ["-m", "dynamic_orchestrator"]
+CMD ["-m","dynamic_orchestrator"]

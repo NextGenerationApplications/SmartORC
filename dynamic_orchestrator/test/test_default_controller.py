@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from dynamic_orchestrator.test import BaseTestCase
 
-
 class TestDefaultController(BaseTestCase):
     """DefaultController integration test stubs"""
 

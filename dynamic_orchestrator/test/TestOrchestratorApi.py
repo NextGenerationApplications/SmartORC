@@ -1,10 +1,10 @@
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-file = open('ProvaAppModel.yml', 'rb')	
+file = open('AppModel.yml', 'rb')	
 m1 = MultipartEncoder(
    fields={'app_id': 'AppModelFileID1', 
-         'file': ('ProvaAppModel.yml', file ,'text/plain')}
+         'file': ('AppModel.yml', file ,'text/plain')}
    )
 	
 r1 = requests.post("http://localhost:8080/orchestrator/appmodel", data=m1,
@@ -14,24 +14,23 @@ print(r1.status_code)
 print(r1.text)
 file.close()
 
-file2 = open('ProvaMonitorModel.yml', 'rb')
+file2 = open('MonitorModel.yml', 'rb')
 m3 = MultipartEncoder(
    fields={'federation_id': 'MonitorDataFileID1', 
-         'file': ('ProvaMonitorModel.yml', file2,'text/plain')}
+         'file': ('MonitorModel.yml', file2,'text/plain')}
    )
-    
 r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
                   headers={'Content-Type': m3.content_type})
 print(r8.status_code)
 print(r8.text)
 file2.close()
 
-file3=open('ProvaMonitorModel.yml', 'rb')
-m2 = {'body': ('ProvaMonitorModel.yml', file3,'text/plain')}
-r2 = requests.put("http://localhost:8080/orchestrator/appmodel/AppModelFileID1", files = m2)
-print(r2.status_code)
-print(r2.text)
-file3.close()
+#file3=open('MonitorModel.yml', 'rb')
+#m2 = {'body': ('MonitorModel.yml', file3,'text/plain')}
+#r2 = requests.put("http://localhost:8080/orchestrator/appmodel/AppModelFileID1", files = m2)
+#print(r2.status_code)
+#print(r2.text)
+#file3.close()
 
 r3 = requests.get("http://localhost:8080/orchestrator/appmodel")
 print(r3.status_code)

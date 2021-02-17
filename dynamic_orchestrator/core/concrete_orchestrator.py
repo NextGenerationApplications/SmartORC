@@ -37,4 +37,5 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         self.AppModelContent = AppModelContent
         self.MonitorDataContent = MonitorDataContent
         
-        return  ['./test/ProvaAppModel.yml', './test/ProvaMonitorModel.yml']    
+        
+        return  ['./test/AppModel.yml', './test/MonitorModel.yml'] 
