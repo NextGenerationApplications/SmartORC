@@ -59,12 +59,23 @@ def depplan_create(app_id, federation_id):
             return {'message': 'A MonitorData Yaml file not exists with the given identifier'}, 409
     except:
         return {'message': 'A MonitorData Yaml file not exists with the given identifier  or could not be opened'}, 409
-
-    AppModelContent = yaml.load(AppModelFile, Loader = yaml.FullLoader)
-    MonitorDataContent = yaml.load(MonitorDataFile, Loader = yaml.FullLoader)
+    try:
+        MonitorDataContent = yaml.load(MonitorDataFile, Loader = yaml.FullLoader)
+    except:
+        return {'message': 'The AppModel Yaml file with the given identifier is not in a correct Yaml format. Use PUT to update it'}, 409
+    
+    try:
+        AppModelContent = yaml.load(AppModelFile, Loader = yaml.FullLoader)
+    except:
+        return {'message': 'The MonitorData Yaml file with the given identifier is not in a correct Yaml format. Use PUT to update it'}, 409
 
     #Elaboration of the Deploy plan
     FileResponseList = current_app.config['ORCHESTRATOR'].calculate_dep_plan(AppModelContent, MonitorDataContent)
+    
+    if FileResponseList is None:
+        return {'message': 'Internal error during calculus or parsing of files. Use PUT to update Yaml files'}, 409
+
+    
     fields = {}
     key = 'file'
     i = 1

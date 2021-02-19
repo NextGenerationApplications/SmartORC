@@ -3,8 +3,16 @@ from __future__ import absolute_import
 
 from flask import json
 from dynamic_orchestrator.test import BaseTestCase
+import os
 
+test_file_federation_id = 'MonitorDataFileID1'
+test_file_name = 'MonitorModel.yml'
+test_file_path = './'
 
+update_test_file_federation_id = 'MonitorDataFileID1'
+update_test_file_name = 'MonitorModel2.yml'
+update_test_file_path = './'
+ 
 class TestMonitorDataController(BaseTestCase):
     """MonitorDataController integration test stubs"""
 
@@ -12,8 +20,9 @@ class TestMonitorDataController(BaseTestCase):
         """Test case for monitordata_create
    
         """
-        data = dict(app_id='app_id_example',
-                    file='D:\ContainerPython\ProvaMonitorModel.yml')
+        data = dict(app_id = self.test_file_federation_id, 
+                    file = (open(os.path.join(self.test_file_path, self.test_file_name), 'rb'), self.test_file_name, 'text/plain'))
+
         response = self.client.open(
             '/orchestrator/monitordata',
             method='POST',
@@ -40,7 +49,7 @@ class TestMonitorDataController(BaseTestCase):
         """
         body = ''
         response = self.client.open(
-            '/orchestrator/monitordata/{FederationID}'.format(FederationID='federation_id_example'),
+            '/orchestrator/monitordata/{FederationID}'.format(FederationID=update_test_file_federation_id),
             method='PUT',
             data=json.dumps(body),
             content_type='application/octet-stream; charset=utf-8')
