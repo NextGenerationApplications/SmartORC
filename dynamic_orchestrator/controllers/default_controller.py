@@ -1,8 +1,6 @@
 from dynamic_orchestrator.controllers.app_model_controller import appmodels_basepath
 from dynamic_orchestrator.controllers.monitor_data_controller import monitordata_basepath
-import os
-import yaml
-import flask
+import os,yaml,flask
 from requests_toolbelt import MultipartEncoder
 from flask import current_app
 
@@ -70,19 +68,20 @@ def depplan_create(app_id, federation_id):
         return {'message': 'The MonitorData Yaml file with the given identifier is not in a correct Yaml format. Use PUT to update it'}, 409
 
     #Elaboration of the Deploy plan
-    FileResponseList = current_app.config['ORCHESTRATOR'].calculate_dep_plan(AppModelContent, MonitorDataContent)
+    DocumentResponseList = current_app.config['ORCHESTRATOR'].calculate_dep_plan(AppModelContent, MonitorDataContent)
     
-    if FileResponseList is None:
+    if DocumentResponseList is None:
         return {'message': 'Internal error during calculus or parsing of files. Use PUT to update Yaml files'}, 409
 
-    
-    fields = {}
-    key = 'file'
+    key = 'res'
     i = 1
-    for File in FileResponseList:
-        FileOpened = (File, open(File, 'rb'), 'text/plain')
-        fields[key+str(i)] = FileOpened
-        i=i+1
-        
+    fields = {}
+    if not DocumentResponseList:
+        return {'message': 'Unfeasible or unbound or no solution found'}, 200
+    for document in DocumentResponseList:
+        if document:
+            fields[key+str(i)] = yaml.dump(document)
+        i+=1  
+            
     m = MultipartEncoder(fields)
     return flask.Response(m.to_string(), mimetype=m.content_type),200

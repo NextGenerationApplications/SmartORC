@@ -1,28 +1,33 @@
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-file = open('AppModel.yml', 'rb')	
-m1 = MultipartEncoder(
-   fields={'app_id': 'AppModelFileID1', 
+try:
+    file = open('AppModel.yml', 'rb')	
+    m1 = MultipartEncoder(
+    fields={'app_id': 'AppModelFileID1', 
          'file': ('AppModel.yml', file ,'text/plain')}
-   )
-	
-r1 = requests.post("http://localhost:8080/orchestrator/appmodel", data=m1,
-                  headers={'Content-Type': m1.content_type})
-	
-print(r1.status_code)
-print(r1.text)
+    )
+
+    r1 = requests.post("http://localhost:8080/orchestrator/appmodel", data=m1,
+                  headers={'Content-Type': m1.content_type})	
+    print(r1.status_code)
+    print(r1.text)
+except Exception as e:
+    print('ConnectionError')
 file.close()
 
-file2 = open('MonitorModel.yml', 'rb')
-m3 = MultipartEncoder(
-   fields={'federation_id': 'MonitorDataFileID1', 
+try:
+    file2 = open('MonitorModel.yml', 'rb')
+    m3 = MultipartEncoder(
+        fields={'federation_id': 'MonitorDataFileID1', 
          'file': ('MonitorModel.yml', file2,'text/plain')}
-   )
-r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
+        )
+    r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
                   headers={'Content-Type': m3.content_type})
-print(r8.status_code)
-print(r8.text)
+    print(r8.status_code)
+    print(r8.text)
+except Exception as e:
+    print('ConnectionError')
 file2.close()
 
 #file3=open('MonitorModel.yml', 'rb')
@@ -47,8 +52,7 @@ file2.close()
 
 #r5 = requests.get("http://localhost:8080/orchestrator/appmodel")
 #print(r5.status_code)
-#print(r5.text)
-	
+#print(r5.text)	
 #r6 = requests.delete("http://localhost:8080/orchestrator/appmodel/AppModelFileID2")
 #print(r6.status_code)
 #print(r6.text)
@@ -56,7 +60,9 @@ file2.close()
 #r7 = requests.get("http://localhost:8080/orchestrator/appmodel")
 #print(r7.status_code)
 #print(r7.text)
-
-r9 = requests.get("http://localhost:8080/orchestrator/depplan?app_id=AppModelFileID1&federation_id=MonitorDataFileID1")
-print(r9.status_code)
-print(r9.text)
+try:
+    r9 = requests.get("http://localhost:8080/orchestrator/depplan?app_id=AppModelFileID1&federation_id=MonitorDataFileID1")
+    print(r9.status_code)
+    print(r9.text)
+except Exception as e:
+    print('Connection Error')    

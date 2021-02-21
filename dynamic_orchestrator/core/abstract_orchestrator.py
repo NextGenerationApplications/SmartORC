@@ -23,10 +23,12 @@ class AbstractOrchestrator(metaclass=ABCMeta):
         :param MonitorDataContent: 
         :type MonitorDataContent: 
 
-        :rtype: List[str] list of file names
+        :rtype: List[] list of yaml document in memory, produced 
+                    by the yaml library
+                return an empty List if calculated solution is not feasible
                 return a None List if there is an error during process 
         """
-        return  #['./test/ProvaAppModel.yml', './test/ProvaMonitorModel.yml'] 
+        return   
     
     AppModelContent = abstractproperty(AppModelContent_getter)
     MonitorDataContent = abstractproperty(AppModelContent_getter)

@@ -24,7 +24,7 @@
   links:
       0:
         Qlatency: -300        
-- VCPU: 3
-  SG: 0
-  links: 
+#- VCPU: 3
+#  SG: 0
+#  links: 
 ...

@@ -5,8 +5,8 @@ Created on 11 feb 2021
 '''
 
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
-from mip import *
 from numbers import Number
+from mip import * 
 
 class ConcreteOrchestrator(AbstractOrchestrator):
     '''
@@ -84,12 +84,12 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                             for edge_resource_type_req, edge_resource_quantity_req in edge_resources_type_req.items(): 
                                 if not isinstance(edge_resource_type_req,str):
                                     return False 
-                                if not isinstance (edge_resource_quantity_req, numbers.Number):
+                                if not isinstance (edge_resource_quantity_req, Number):
                                     return False                                           
                 else:
                     if (not resource_type_req in self.MonitorDataContent[0]):
                         return False
-                    if not isinstance (resource_quantity_req, numbers.Number):
+                    if not isinstance (resource_quantity_req, Number):
                         return False    
             if links_not_found:
                 return False
@@ -149,12 +149,12 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                 return False
                             if not edge_resource in edge_resources:
                                 return False
-                            if not isinstance (edge_resource_quantity, numbers.Number):
+                            if not isinstance (edge_resource_quantity, Number):
                                 return False    
                 else:
                     if not resource in resources:
                         return None
-                    if not isinstance (resource_quantity, numbers.Number):
+                    if not isinstance (resource_quantity, Number):
                         return None                                       
             if links_not_found:
                 return None
@@ -182,7 +182,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         
         # Construction of Python-MIP MILP problem
         
-        MILP = Model()
+        MILP = mip.Model()
         NumComponents = len(AppModelContent)
         NumEdgeMiniclouds = len(MonitorDataContent)
         
@@ -229,18 +229,26 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                                     if resource in (AppModelContent[j])))
 
         status = MILP.optimize()
-        
-        if status == OptimizationStatus.OPTIMAL:
-            print('optimal solution cost {} found'.format(MILP.objective_value))
-        elif status == OptimizationStatus.FEASIBLE:
-            print('sol.cost {} found, best possible: {}'.format(MILP.objective_value, MILP.objective_bound))
-        elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-            print('no feasible solution found, lower bound is: {}'.format(MILP.objective_bound))
+        result_documents = []
+        if status == OptimizationStatus.ERROR:
+            return None    
+        if status == OptimizationStatus.NO_SOLUTION_FOUND or status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE or status == OptimizationStatus.UNBOUNDED:  
+            return result_documents
         if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
             print('solution:')
+            n=0
             for v in MILP.vars:
-                if abs(v.x) > 1e-6: # only printing non-zeros
-                    print('{} : {}'.format(v.name, v.x))                                         
+                print('EdgeMinicloud: ', divmod(n,NumComponents)[0])
+                EdgeMinicloud = divmod(n,NumComponents)[0]
+                print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
+                Appcomponent = divmod(n,NumComponents)[1]
+                if Appcomponent == 0:
+                    result_documents.append([])
+                if v.x == 1:
+                    result_documents[EdgeMinicloud].append(Appcomponent)          
+                print('{} : {}'.format(v.name, v.x))
+                n+=1 
+        return result_documents                                                  
                  
         # every dep plan must respect contraints on resource availability of every link between components 
         # for every network link between EdgeMinicloud: NON LINEAR! For now, ignored
@@ -264,5 +272,5 @@ class ConcreteOrchestrator(AbstractOrchestrator):
 #                            pos+=1
 #                        n2+=1
 #                    n1+=1            
-        return  ['./test/AppModel.yml', './test/MonitorModel.yml'] 
+
     
