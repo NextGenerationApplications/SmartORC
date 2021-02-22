@@ -1,0 +1,38 @@
+# Every resource is indicated in descending order respect to the 
+#      respective resource availability in the MonitorModel file
+# No equality constraints by now
+# The application is represented with a list of components ( name 
+#      of components are not important ), each of which is constituted
+#      by a dictionary of couple { resource name, minimum quantity requested }  
+# Every link is directed, and is reported in an adjacency list 
+#      after every component, indicated with the special key 'links'
+# Every number in the dictionary 'links' represents the position 
+#      of the component with which it communicates; it is a dictionary 
+#      of resources attached to the communication link and required by
+#      the component on that link.
+# If a resource name start with Q, it is considered a QoS indicator: they will be confrontated
+#      directly with the availability of the resource separately, instead to do a summation of them 
+---
+- memory: 128
+  VCPU: 4
+  storage: 50
+  links:
+      1:
+        Qlatency: -20
+        bandwidth: 100
+      2: 
+        Qlatency: -100
+- memory: 1024
+  VCPU: 6
+  links:
+      0:
+        Qlatency: -300        
+- memory: 512
+  VCPU: 3
+  storage: 100
+  SG: 1
+  links:
+- memory: 256
+  VCPU: 5
+  links:
+...

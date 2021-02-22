@@ -24,17 +24,19 @@ def depplan_create(app_id, federation_id):
                 directory =  os.path.join(appmodels_basepath(),app_id)
                 if os.path.isdir(directory):
                     AppModelsFileDirList = os.listdir(directory)
+                    if not AppModelsFileDirList:
+                        return {'message': 'A AppModel Yaml file does not exist with the given identifier'}, 409 
                     for filename in AppModelsFileDirList:
                         AppModelFilePath = os.path.join(directory,filename)
                         AppModelFile = open(AppModelFilePath,'rb')  
                 else:
-                    return {'message': 'A AppModel Yaml file not exists with the given identifier'}, 409
+                    return {'message': 'A AppModel Yaml file does not exist with the given identifier'}, 409
             else:
-                return {'message': 'A AppModel Yaml file not exists with the given identifier'}, 409
+                return {'message': 'A AppModel Yaml file does not exist with the given identifier'}, 409
         else:
-            return {'message': 'A AppModel Yaml file not exists with the given identifier'}, 409
+            return {'message': 'A AppModel Yaml file does not exist with the given identifier'}, 409
     except:
-        return {'message': 'A AppModel Yaml file not exists with the given identifier or could not be opened'}, 409
+        return {'message': 'A AppModel Yaml file does not exist with the given identifier'}, 409
     
     filename = None
     try:
@@ -46,17 +48,19 @@ def depplan_create(app_id, federation_id):
                 directory =  os.path.join(monitordata_basepath(),federation_id)
                 if os.path.isdir(directory):
                     MonitorDataFileDirList = os.listdir(directory)
+                    if not MonitorDataFileDirList:
+                        return {'message': 'A MonitorData Yaml file does not exist with the given identifier'}, 409 
                     for filename in MonitorDataFileDirList:
                         MonitorDataFilePath = os.path.join(directory,filename)
                         MonitorDataFile = open(MonitorDataFilePath, 'rb')
                 else:            
-                    return {'message': 'A MonitorData Yaml file not exists with the given identifier'}, 409
+                    return {'message': 'A MonitorData Yaml file does not exist with the given identifier'}, 409
             else:            
-                return {'message': 'A MonitorData Yaml file not exists with the given identifier'}, 409
+                return {'message': 'A MonitorData Yaml file does not exist with the given identifier'}, 409
         else:            
-            return {'message': 'A MonitorData Yaml file not exists with the given identifier'}, 409
+            return {'message': 'A MonitorData Yaml file does not exist with the given identifier'}, 409
     except:
-        return {'message': 'A MonitorData Yaml file not exists with the given identifier  or could not be opened'}, 409
+        return {'message': 'A MonitorData Yaml file does not exist with the given identifier'}, 409
     try:
         MonitorDataContent = yaml.load(MonitorDataFile, Loader = yaml.FullLoader)
     except:
@@ -66,6 +70,9 @@ def depplan_create(app_id, federation_id):
         AppModelContent = yaml.load(AppModelFile, Loader = yaml.FullLoader)
     except:
         return {'message': 'The MonitorData Yaml file with the given identifier is not in a correct Yaml format. Use PUT to update it'}, 409
+
+    AppModelFile.close()
+    MonitorDataFile.close()
 
     #Elaboration of the Deploy plan
     DocumentResponseList = current_app.config['ORCHESTRATOR'].calculate_dep_plan(AppModelContent, MonitorDataContent)

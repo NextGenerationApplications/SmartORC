@@ -62,12 +62,15 @@ paths:
       requestBody:
         description: Substitute the Yaml file that contains the representation of
           the model of the application with the given identifier with the new file
-          passed as a parameter
+          passed as a parameter      
         content:
-          application/octet-stream; charset=utf-8:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
         required: true
       responses:
         "200":
@@ -149,10 +152,13 @@ paths:
           availability of resources of an entire federation with the given identifier
           with the new file passed as a parameter
         content:
-          application/octet-stream; charset=utf-8:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
         required: true
       responses:
         "200":

@@ -10,7 +10,7 @@ def main(argv):
     except getopt.GetoptError:
         print ('__main__.py -d <upload_file_folder> -p <port_number>')
         sys.exit(2)
-    upload_folder = './'
+    upload_folder = '.'
     port_number = 8080
     for opt, arg in opts:
         if opt == '-h':
@@ -42,7 +42,8 @@ def main(argv):
     app.app.json_encoder = encoder.JSONEncoder
     app.app.config['UPLOAD_FOLDER'] = upload_folder
     app.app.config['ORCHESTRATOR'] = ConcreteOrchestrator() 
-    app.add_api('dynamic_orchestrator.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, pythonic_params=True)
+    app.add_api('dynamic_orchestrator.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, 
+                pythonic_params=True)
     app.run(port=port_number)
 if __name__ == '__main__':
     main(sys.argv[1:])

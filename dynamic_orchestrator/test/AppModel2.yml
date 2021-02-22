@@ -14,8 +14,8 @@
 #     be confrontated directly with the availability of the resource separately, 
 #     instead of doing a summation of them 
 ---
-- memory: 128
-  VCPU: 4
+- memory: 256
+  VCPU: 100
   storage: 50
   links:
       1:
@@ -28,10 +28,10 @@
   links:
       0:
         Qlatency: -300        
-- memory: 512
-  VCPU: 3
-  storage: 100
-  SG: 1
+- memory: 16384
+  VCPU: 50
+  storage: 100000
+  SG: 2
   links:
 - memory: 256
   VCPU: 5

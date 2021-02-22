@@ -4,7 +4,7 @@ import os
 import shutil
 from flask import current_app
 
-MONITORDATA_PATH = 'monitordata'
+MONITORDATA_PATH = '/monitordata'
 
 def monitordata_basepath():
     global MONITORDATA_PATH
@@ -81,13 +81,13 @@ def monitordata_read_all():  # noqa: E501
                     response.append(response_el)                                  
     return response, 200
 
-def monitordata_update(federation_id, body):  # noqa: E501
+def monitordata_update(federation_id, file):  # noqa: E501
     """monitordata_update
 
      # noqa: E501
 
-    :param body: Substitute a Yaml file that contains the representation of the availability of resources of an entire federation with the given identifier with the new file passed as a parameter
-    :type body: dict | bytes
+    :param file: Substitute a Yaml file that contains the representation of the availability of resources of an entire federation with the given identifier with the new file passed as a parameter
+    :type file: dict | bytes
     :param federation_id: 
     :type federation_id: str
 
@@ -105,8 +105,8 @@ def monitordata_update(federation_id, body):  # noqa: E501
                     return {'message': 'Failed to update MonitorData Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409  
         else:
             return {'message': 'Failed to update MonitorData Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409
-        filename = secure_filename(body.filename)
-        body.save(os.path.join(file_directory, filename))
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(file_directory, file.filename))
     except:
         return {'message': 'Failed to update the MonitorData Yaml file with the new one with the given name and identifier'}, 500 
     return  {'message': 'MonitorData Yaml file updated successfully !'}, 200

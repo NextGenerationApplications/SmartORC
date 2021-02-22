@@ -34,27 +34,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         parsing of the AppModel file content
         :param AppModelContent 
 
-
         :rtype: True if the file has the correct syntax, false otherwise 
         """
-        # check and parse of AppModelContent file
-        #     - memory: 128
-        #       VCPU: 4
-        #       links:
-        #           2:
-        #             latency: -20
-        #             bandwidth: 100
-        #           3: 
-        #             latency: -100
-        #     - memory: 1024
-        #       VCPU: 6
-        #       links:
-        #           1:
-        #             latency: -300        
-        #     - VCPU: 3
-        #       SG: 1
-        #       links: 
-        
+              
         if not isinstance(AppModelContent, list):
             return False 
         NumberOfAppComponents = len(AppModelContent)
@@ -101,18 +83,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         parsing of the MonitorData file content
         :param MonitorDataContent 
 
-
         :rtype: True if the file has the correct syntax, false otherwise 
         """
-        #check and parse of MonitorDataContent file
-        # - memory: 1024
-        #   VCPU: 40
-        #   SG: 0
-        #   links:
-        #     - latency: -32.5
-        #       bandwidth: 100
-        #     - latency: -116.5
-        #       bandwidth: 744.6
+
         if not isinstance(MonitorDataContent, list):
             return False 
         NumberOfEdgeMiniclouds = len(MonitorDataContent)

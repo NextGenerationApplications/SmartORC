@@ -4,7 +4,7 @@ import os
 import shutil
 from flask import current_app
 
-APPMODELS_PATH = 'appmodels'
+APPMODELS_PATH = '/appmodels'
 
 def appmodels_basepath():
     global APPMODELS_PATH
@@ -54,11 +54,11 @@ def appmodel_delete(app_id):
                 if os.path.isdir(directory):
                     shutil.rmtree(directory)
                 else:
-                    return{'message': 'A AppModel Yaml file not exists with the given identifier'},409
+                    return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
             else:
-                return{'message': 'A AppModel Yaml file not exists with the given identifier'},409
+                return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
         else:
-            return{'message': 'A AppModel Yaml file not exists with the given identifier'},409
+            return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
     except:
         return {'message': 'Failed to delete AppModel Yaml file with the given identifier'}, 500    
     return {'message':'AppModel Yaml file with the given identifier deleted succesfully'}, 200
@@ -82,13 +82,13 @@ def appmodel_read_all():
                     response.append(response_el)                                  
     return response, 200
 
-def appmodel_update(app_id,body):  
+def appmodel_update(app_id,file):  
     """appmodel_update
 
      # noqa: E501
 
-    :param body: Substitute the Yaml file that contains the representation of the model of the application with the given identifier with the new file passed as a parameter
-    :type body: dict | bytes
+    :param file: Substitute the Yaml file that contains the representation of the model of the application with the given identifier with the new file passed as a parameter
+    :type file: dict | bytes
     :param app_id: 
     :type app_id: str
 
@@ -107,8 +107,8 @@ def appmodel_update(app_id,body):
                     return {'message': 'Failed to update AppModel Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409          
         else:
             return {'message': 'Failed to update AppModel Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409 
-        filename = secure_filename(body.filename)
-        body.save(os.path.join(file_directory, body.filename))
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(file_directory, file.filename))
     except:
         return {'message': 'Failed to update the AppModel Yaml file with the new one with the given name and identifier'}, 500 
     return  {'message': 'AppModel Yaml file updated successfully !'}, 200
