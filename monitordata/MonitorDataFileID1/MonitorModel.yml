@@ -1,3 +1,6 @@
+# No equality constraints by now, all the constraints are of type <=:
+#     constraints of type >= must be transformed in constaints of type
+#     <= by changing the sign of the resource quantity, such as for Qlatency
 # The availability of resources of the federation is represented with a 
 #      list of Edge Miniclouds / Cloud ( without name, which is not important), 
 #      each of which is constituted by a dictionary of key:value pair
@@ -19,19 +22,19 @@
   SG: 0
   storage: 20000
   links: 
-    - Qlatency: -32.5
+    - Qlatency: -52.5
       bandwidth: 100
-    - Qlatency: -116.5
+    - Qlatency: -16.5
       bandwidth: 744.6
 - memory: 4096
   VCPU: 60
   storage: 10000
   SG: 0
   links:
-    - Qlatency: -897
+    - Qlatency: -17
       bandwidth: 543
     - bandwidth: 10063.5
-      Qlatency: -99
+      Qlatency: -19
 - memory: 16384
   SG: 1
   storage: 100000
@@ -39,6 +42,6 @@
   links:
     - Qlatency: -19.4
       bandwidth: 109.5
-    - Qlatency: -43
+    - Qlatency: -13
       bandwidth: 589.5
 ...

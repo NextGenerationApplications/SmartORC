@@ -159,18 +159,18 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         NumComponents = len(AppModelContent)
         NumEdgeMiniclouds = len(MonitorDataContent)
         
-        # decision variables: decision_vars (jn) with j in Components, n in EdgeMinicloud 
+        # decision variables: decision_vars x(jn) with j in Components, n in EdgeMinicloud 
         decision_variables = [[MILP.add_var('x({},{})'.format(j, n), var_type=BINARY)
                             for j in range(NumComponents)] for n in range(NumEdgeMiniclouds)]
 
         # every application component MUST be deployed     
-        MILP += xsum(decision_variables[n][j] 
-                     for j in range(NumComponents) 
-                        for n in range(NumEdgeMiniclouds)) == NumComponents
+        #MILP += xsum(decision_variables[n][j] 
+        #             for j in range(NumComponents) 
+        #                for n in range(NumEdgeMiniclouds)) == NumComponents
         
-        # every application component MUST be deployed on not more than an EdgeMinicloud
+        # every application component MUST be deployed on exactly an EdgeMinicloud
         for j in range(NumComponents):
-            MILP += xsum(decision_variables[n][j]  for n in range(NumEdgeMiniclouds))  <= 1
+            MILP += xsum(decision_variables[n][j]  for n in range(NumEdgeMiniclouds)) == 1
             
         # every dep plan must respect contraints on resource availability of every EdgeMinicloud
         for resource in MonitorDataContent[0]:
@@ -183,7 +183,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                         if resource in (AppModelContent[j])) <= EdgeMinicloud[resource]
                         n+=1 
          
-        # every dep plan must respect contraints on QoS indicators of every EdgeMinicloud
+        # every dep plan must respect constraints on QoS indicators of every EdgeMinicloud
         for resource in MonitorDataContent[0]:
             if not (resource == 'links'): 
                 if (resource[0] == 'Q'):
@@ -191,16 +191,81 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     for EdgeMinicloud in MonitorDataContent:    
                         for j in range(NumComponents):
                             if resource in (AppModelContent[j]):
-                                MILP += ((decision_variables[n][j])*((AppModelContent[j])[resource])) <= EdgeMinicloud[resource]
-                                n+=1 
+                                MILP += ((decision_variables[n][j])*((AppModelContent[j])[resource]) - EdgeMinicloud[resource]) <= 0
+                                n+=1                                            
+               
+        # auxiliary decision variables: decision_vars y (ijn1n2) with i and j in Components with i!=j, n1 and n2 in EdgeMinicloud with n1!=n2 
+        auxiliary_decision_variables = [[[[MILP.add_var('y({},{},{},{})'.format(i, j, n1, n2), var_type=BINARY)
+                for i in range(NumComponents)] for j in range(NumComponents)] for n1 in range(NumEdgeMiniclouds)] for n2 in range(NumEdgeMiniclouds)]               
+                              
+        # every dep plan must respect contraints on resource availability of every link between components, 
+        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the contraint        
+        for edge_resource in ((MonitorDataContent[0])['links'])[0]:
+            if not (edge_resource[0] == 'Q'):
+                n1=0
+                for EdgeMinicloud in MonitorDataContent:
+                    n2=0 
+                    pos=0
+                    while n2 < len(MonitorDataContent):                        
+                        if not (n1 == n2):      
+                            MILP += xsum(((auxiliary_decision_variables[n2][n1][j][i])*((((AppModelContent[i])['links'])[j])[edge_resource]))
+                                     for i in range(NumComponents)
+                                          for j in range(NumComponents) 
+                                            if not (i==j) 
+                                                if ((AppModelContent[i])['links']) 
+                                                    if (j in ((AppModelContent[i])['links'])) 
+                                                        if ((AppModelContent[i])['links'])[j] 
+                                                            if (edge_resource in ((AppModelContent[i])['links'])[j])) <= ((EdgeMinicloud['links'])[pos])[edge_resource]
+                            pos+=1
+                        n2+=1
+                    n1+=1            
+  
+        # every dep plan must respect contraints on QoS indicators of every link between components, 
+        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the contraint
+        for edge_resource in ((MonitorDataContent[0])['links'])[0]:
+            if (edge_resource[0] == 'Q'):
+                n1=0
+                for EdgeMinicloud in MonitorDataContent:
+                    n2=0 
+                    pos=0
+                    while n2 < len(MonitorDataContent):                        
+                        if not (n1 == n2):  
+                            for i in range(NumComponents):
+                                for j in range(NumComponents): 
+                                    if not (i==j):   
+                                        if ((AppModelContent[i])['links']): 
+                                            if (j in ((AppModelContent[i])['links'])): 
+                                                if ((AppModelContent[i])['links'])[j]:
+                                                    if (edge_resource in ((AppModelContent[i])['links'])[j]):                                                         
+                                                            MILP += ((auxiliary_decision_variables[n2][n1][j][i])*((((AppModelContent[i])['links'])[j])[edge_resource] - ((EdgeMinicloud['links'])[pos])[edge_resource])) <= 0
+                            pos+=1                            
+                        n2+=1
+                    n1+=1  
+                    
+        #conditions to link auxiliary decision variable to main decision variables
+        for i in range(NumComponents):
+            for j in range(NumComponents): 
+                if not (i==j):
+                    for n1 in range(NumEdgeMiniclouds):
+                            for n2 in range(NumEdgeMiniclouds):   
+                                if not (n1==n2):                         
+                                    MILP +=  (decision_variables[n1][i] + decision_variables[n2][j] - auxiliary_decision_variables[n2][n1][j][i]) <= 1
+                                    MILP +=  (decision_variables[n1][i]/2 + decision_variables[n2][j]/2 - auxiliary_decision_variables[n2][n1][j][i]) >= 0
+
+  
+        
         # Maximize the availability of resources, except QoS indicators
-        MILP.objective = maximize(xsum ((MonitorDataContent[0])[resource] - ((decision_variables[n][j])*((AppModelContent[j])[resource])) 
-                                       for j in range(NumComponents)
+
+        MILP.objective = maximize(xsum ((MonitorDataContent[n])[resource] -  
+                                        xsum(((decision_variables[n][j])*((AppModelContent[j])[resource]))
+                                               for j in range(NumComponents) 
+                                                    if resource in (AppModelContent[j])) 
                                           for n in range(NumEdgeMiniclouds)
                                                for resource in MonitorDataContent[0]
                                                   if not (resource == 'links')
-                                                    if resource in (AppModelContent[j])))
-
+                                                    if not (resource[0] == 'Q')))     
+         
+        # rifare in base alle variabili giuste, le X escludendo le variabili ausiliarie Y
         status = MILP.optimize()
         result_documents = []
         if status == OptimizationStatus.ERROR:
@@ -211,39 +276,15 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             print('solution:')
             n=0
             for v in MILP.vars:
-                print('EdgeMinicloud: ', divmod(n,NumComponents)[0])
-                EdgeMinicloud = divmod(n,NumComponents)[0]
-                print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
-                Appcomponent = divmod(n,NumComponents)[1]
-                if Appcomponent == 0:
-                    result_documents.append([])
-                if v.x == 1:
-                    result_documents[EdgeMinicloud].append(Appcomponent)          
-                print('{} : {}'.format(v.name, v.x))
-                n+=1 
-        return result_documents                                                  
-                 
-        # every dep plan must respect contraints on resource availability of every link between components 
-        # for every network link between EdgeMinicloud: NON LINEAR! For now, ignored
-        
-#        for edge_resource in ((MonitorDataContent[0])['links'])[0]:
-#            if not (edge_resource[0] == 'Q'):
-#                n1=0
-#                for EdgeMinicloud in MonitorDataContent:
-#                    n2=0 
-#                    pos=0
-#                    while n2 < len(MonitorDataContent):                        
-#                        if not (n1 == n2):      
-#                            MILP += xsum(((decision_variables[n1][i])*((decision_variables[n2][j])*((((AppModelContent[i])['links'])[j])[edge_resource])))
-#                                      for i in range(NumComponents)
-#                                          for j in range(NumComponents) 
-#                                            if (not i==j) 
-#                                                if ((AppModelContent[i])['links']) 
-#                                                    if (j in ((AppModelContent[i])['links'])) 
-#                                                        if ((AppModelContent[i])['links'])[j] 
-#                                                            if (edge_resource in ((AppModelContent[i])['links'])[j])) <= ((EdgeMinicloud['links'])[pos])[edge_resource]
-#                            pos+=1
-#                        n2+=1
-#                    n1+=1            
-
-    
+                if(v.name[0] == 'x'):
+                    print('EdgeMinicloud: ', divmod(n,NumComponents)[0])
+                    EdgeMinicloud = divmod(n,NumComponents)[0]
+                    print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
+                    Appcomponent = divmod(n,NumComponents)[1]
+                    if Appcomponent == 0:
+                        result_documents.append([])
+                    if v.x == 1:
+                        result_documents[EdgeMinicloud].append(Appcomponent)          
+                    print('{} : {}'.format(v.name, v.x))
+                    n+=1 
+        return result_documents       
