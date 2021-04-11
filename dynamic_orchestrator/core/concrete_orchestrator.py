@@ -6,7 +6,7 @@ Created on 11 feb 2021
 
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
 from numbers import Number
-from mip import * 
+from mip import Model, xsum, BINARY, maximize, OptimizationStatus
 
 class ConcreteOrchestrator(AbstractOrchestrator):
     '''
@@ -155,7 +155,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         
         # Construction of Python-MIP MILP problem
         
-        MILP = mip.Model()
+        MILP = Model()
         NumComponents = len(AppModelContent)
         NumEdgeMiniclouds = len(MonitorDataContent)
         

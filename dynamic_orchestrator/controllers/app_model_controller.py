@@ -3,12 +3,42 @@ from werkzeug.utils import secure_filename
 import os
 import shutil
 from flask import current_app
+import requests
+from dynamic_orchestrator.converter.Parser import ReadFile 
+from  urllib.error import HTTPError
 
 APPMODELS_PATH = '/appmodels'
 
 def appmodels_basepath():
     global APPMODELS_PATH
     return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
+
+def appmodel_start_app(name):
+    """appmodel_start_app
+
+    :param name: 
+    :type name: str
+    
+    :rtype: None
+    """
+    
+    if name == 'plexus':
+        app_id = '60671f549a509804ff59f0a1'
+    if name == 'orbk':
+        app_id = '606d7e1e3e4dd3058eaa7989'
+    try:
+        response = requests.get('http://82.214.143.119:31120/application?id=' + app_id)
+        response.raise_for_status()
+        # access JSOn content
+        jsonResponse = response.json()
+        print("Entire JSON response")
+        print(jsonResponse)
+        ReadFile(jsonResponse)
+    except HTTPError as http_err:
+        return {'message': 'Application with the submitted name not deployed succesfully!'}, response.status
+    except Exception as err:
+        return {'message': 'Application with the submitted name not deployed succesfully!'}, response.status
+    return {'message': 'Application with the submitted name has been deployed succesfully!'}, 200
 
 def appmodel_create(body,file):  
     """appmodel_create
