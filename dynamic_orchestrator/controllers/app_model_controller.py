@@ -4,10 +4,49 @@ import os
 import shutil
 from flask import current_app
 import requests
-from dynamic_orchestrator.converter.Parser import ReadFile 
+from dynamic_orchestrator.converter.Parser import ReadFile
+from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
 from  urllib.error import HTTPError
+from kubernetes import client, config, utils
+import base64
+import json
+import yaml
 
 APPMODELS_PATH = '/appmodels'
+
+def create_kubernetes_directory (name):
+    k_directory = os.path.join(current_app.config.get('KUBERNETES_FOLDER'), name )  
+    if not os.path.isdir(k_directory):
+        os.makedirs(k_directory) 
+    return k_directory
+    
+def init_converter (name):   
+    if name == 'plexus':
+        _id = '60671f549a509804ff59f0a1'
+        token_name = 'gitlab+deploy-token-420906'
+        token_pass = 'jwCSDnkoZDeZqwf2i9-m'
+    if name == 'orbk':
+        _id = '60742434a720f657b23c37fc'
+        token_name = 'gitlab+deploy-token-420904'
+        token_pass = 'gzP9s2bkJV-yeh1a6fn3'        
+    sample_string = token_name + ":" + token_pass
+    sample_string_bytes = sample_string.encode("ascii")
+    base64_bytes = base64.b64encode(sample_string_bytes)
+    base64_string = base64_bytes.decode("ascii")
+    print(base64_string)
+    json_file = {
+        "auths": {
+            "https://registry.gitlab.com": {
+                "auth": base64_string
+            }
+        }
+    }
+    json_string = json.dumps(json_file)
+    json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
+    create_kubernetes_directory(name)
+    namespace(name)
+    secret_generation(json_base64_string, name)
+    return _id
 
 def appmodels_basepath():
     global APPMODELS_PATH
@@ -21,23 +60,52 @@ def appmodel_start_app(name):
     
     :rtype: None
     """
-    
-    if name == 'plexus':
-        app_id = '60671f549a509804ff59f0a1'
-    if name == 'orbk':
-        app_id = '606d7e1e3e4dd3058eaa7989'
+    app_id = init_converter(name)
     try:
-        response = requests.get('http://82.214.143.119:31120/application?id=' + app_id)
+        response = requests.get('http://82.214.143.119:31725/application?id=' + app_id )
         response.raise_for_status()
+    except HTTPError as http_err:
+        error = 'Application ' + name + ' not deployed succesfully due to the following Http error: ' + http_err.msg  
+        return {'message': error }, response.status_code
+    except:
+        error = 'Application ' + name + ' not deployed succesfully due to an unkown error!'
+    
+    try:
         # access JSOn content
         jsonResponse = response.json()
         print("Entire JSON response")
         print(jsonResponse)
-        ReadFile(jsonResponse)
-    except HTTPError as http_err:
-        return {'message': 'Application with the submitted name not deployed succesfully!'}, response.status
-    except Exception as err:
-        return {'message': 'Application with the submitted name not deployed succesfully!'}, response.status
+        ReadFile(jsonResponse, name)
+    except OSError as err:
+        error = 'Application ' + name + ' not deployed succesfully due to the following error: ' + err.strerror
+        return {'message': error}, 500
+    except:
+        error = 'Application ' + name + ' not deployed succesfully due to an unknown error!'
+        return {'message': error}, 500
+    try:
+        config.load_kube_config()
+        k8s_client = client.ApiClient()
+        kustomization_file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'kustomization.yaml')  
+        kustomization_file = open(kustomization_file_path, 'rb')
+  
+        kustomization_file_content = yaml.load(kustomization_file, Loader = yaml.FullLoader)
+        kustomization_file.close()
+        
+        file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'namespace.yaml') 
+        utils.create_from_yaml(k8s_client, file_path)
+        
+        if 'secret.yaml' in kustomization_file_content.get('resources'):
+            file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'secret.yaml') 
+            utils.create_from_yaml(k8s_client, file_path)
+
+        for file_name in kustomization_file_content.get('resources'):
+            if file_name != 'secret.yaml' and file_name!='namespace.yaml':
+                file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, file_name) 
+                utils.create_from_yaml(k8s_client, file_path)
+    except:
+        error = 'Application ' + name + ' not deployed succesfully due to a Kubernetes error!'
+        return {'message': error}, 500
+    
     return {'message': 'Application with the submitted name has been deployed succesfully!'}, 200
 
 def appmodel_create(body,file):  
@@ -51,8 +119,8 @@ def appmodel_create(body,file):
     :rtype: None
     """
 
-    file_directory = os.path.join(appmodels_basepath(), body.get('app_id'))
     try:
+        file_directory = os.path.join(appmodels_basepath(), body.get('app_id'))
         os.makedirs(file_directory)
     except:
         return {'message': 'Not created. A AppModel Yaml file already exists with the given identifier. Use PUT to update it'}, 409 

@@ -1,4 +1,4 @@
-from hurry.filesize import size,iec
+from hurry.filesize import size, iec
 
 
 def convert_bytes(_bytes):

@@ -11,8 +11,8 @@ class Repository:
     def get_version(self):
         return self.__version
 
-    def set_id(self, app_id):
-        self.__id = app_id
+    def set_id(self, _id):
+        self.__id = _id
 
     def get_id(self):
         return self.__id
@@ -28,3 +28,9 @@ class Repository:
 
     def get_imageName(self):
         return self.__imageName
+
+    def set_component(self, component):
+        self.__component = component
+
+    def get_component(self):
+        return  self.__component

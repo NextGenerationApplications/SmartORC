@@ -17,35 +17,35 @@ def pretty_print(req):
         req.request.body,
     ))
     
-try:
-    file = open('AppModel.yml', 'rb')	
-    m1 = MultipartEncoder(
-    fields={'app_id': 'AppModelFileID1', 
-         'file': ('AppModel.yml', file ,'text/plain')}
-    )  
- 
-    r1 = requests.post("http://localhost:8080/orchestrator/appmodel", data=m1,
-                  headers={'Content-Type': m1.content_type})
-    pretty_print(r1)
-    print(r1.status_code)
-    print(r1.text)
-except Exception as e:
-    print('ConnectionError')
-file.close()
+#try:
+#    file = open('AppModel.yml', 'rb')	
+#    m1 = MultipartEncoder(
+#    fields={'app_id': 'AppModelFileID1', 
+#         'file': ('AppModel.yml', file ,'text/plain')}
+#    )  
+# 
+#    r1 = requests.post("http://localhost:8080/orchestrator/appmodel", data=m1,
+#                  headers={'Content-Type': m1.content_type})
+#    pretty_print(r1)
+#    print(r1.status_code)
+#    print(r1.text)
+#except Exception as e:
+#    print('ConnectionError')
+#file.close()
 
-try:
-    file2 = open('MonitorModel.yml', 'rb')
-    m3 = MultipartEncoder(
-        fields={'federation_id': 'MonitorDataFileID1', 
-         'file': ('MonitorModel.yml', file2,'text/plain')}
-        )
-    r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
-                  headers={'Content-Type': m3.content_type})
-    print(r8.status_code)
-    print(r8.text)
-except Exception as e:
-    print('ConnectionError')
-file2.close()
+#try:
+#    file2 = open('MonitorModel.yml', 'rb')
+#    m3 = MultipartEncoder(
+#        fields={'federation_id': 'MonitorDataFileID1', 
+#         'file': ('MonitorModel.yml', file2,'text/plain')}
+#        )
+#    r8 = requests.post("http://localhost:8080/orchestrator/monitordata", data=m3,
+#                  headers={'Content-Type': m3.content_type})
+#    print(r8.status_code)
+#    print(r8.text)
+#except Exception as e:
+#    print('ConnectionError')
+#file2.close()
 
 #file3=open('AppModel2.yml', 'rb')
 #m2 = MultipartEncoder(
@@ -84,13 +84,13 @@ file2.close()
 #r7 = requests.get("http://localhost:8080/orchestrator/appmodel")
 #print(r7.status_code)
 #print(r7.text)
-try:
-    r9 = requests.get("http://localhost:8080/orchestrator/depplan?app_id=AppModelFileID1&federation_id=MonitorDataFileID1")
-    pretty_print(r9)
-    print(r9.status_code)
-    print(r9.text)
-except Exception as e:
-    print('Connection Error')    
+#try:
+#    r9 = requests.get("http://localhost:8080/orchestrator/depplan?app_id=AppModelFileID1&federation_id=MonitorDataFileID1")
+#    pretty_print(r9)
+#    print(r9.status_code)
+#    print(r9.text)
+#except Exception as e:
+#    print('Connection Error')    
 
 try:
     r10 = requests.post("http://localhost:8080/orchestrator/startapp?name=orbk")

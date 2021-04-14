@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gameserver
+  namespace: orbk
+  labels:
+    app: orbk
+spec:
+  ports:
+  - port: 20765
+  selector:
+    app: orbk
+    tier: backend
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gameserver-pv-claim
+  namespace: orbk
+  labels:
+    app: orbk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gameserver
+  namespace: orbk
+spec:
+  rules:
+  - host: gameserver.nip.io
+    http:
+      paths:
+      - backend:
+          serviceName: gameserver
+          servicePort: web
+        path: /
+  tls:
+  - hosts:
+    - gameserver.nip.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gameserver
+  namespace: orbk
+  labels:
+    app: orbk
+spec:
+  selector:
+    matchLabels:
+      app: orbk
+      tier: backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: orbk
+        tier: backend
+    spec:
+      hostNetwork: true
+      containers:
+      - image: registry.gitlab.com/accordion-project/wp6/uc2/orbkaccserver:latest
+        name: gameserver
+        resources:
+          requests:
+            cpu: 1
+            memory: 512Mi
+            ephemeral-storage: 20Gi
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 20765
+          name: gameserver
+        volumeMounts:
+        - name: gameserver-persistent-storage
+          mountPath: /var/lib/gameserver
+      volumes:
+      - name: gameserver-persistent-storage
+        persistentVolumeClaim:
+          claimName: gameserver-pv-claim
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        resource: EdgeNode
+      imagePullSecrets:
+      - name: orbk-registry-credentials

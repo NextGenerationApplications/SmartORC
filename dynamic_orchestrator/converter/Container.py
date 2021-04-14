@@ -120,7 +120,7 @@ class Container:
         return self.__service
 
     def set_node(self, node):
-        self.__node =node
+        self.__node = node
 
     def get_node(self):
         return self.__node
@@ -131,3 +131,14 @@ class Container:
     def get_ingress(self):
         return self.__ingress
 
+    def set_image(self, images):
+        self.__images = images
+
+    def get_image(self):
+        return self.__images
+
+    def set_internal(self, boolean):
+        self.__internal = boolean
+
+    def get_internal(self):
+        return self.__internal
