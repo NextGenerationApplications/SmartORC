@@ -6,23 +6,26 @@ from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv,"hp:d:k:")
+        #opts, args = getopt.getopt(argv,"hp:d:k:")
+        opts, args = getopt.getopt(argv,"hp:k:")
     except getopt.GetoptError:
-        print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
+        #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
+        print ('__main__.py -k <kubernetes_app_model_file_folder> -p <port_number>')
         sys.exit(2)
     upload_folder = '.'
     kubernetes_folder = './kubernetes'
     port_number = 8080
     for opt, arg in opts:
         if opt == '-h':
-            print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
+            #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
+            print ('__main__.py -k <kubernetes_app_model_file_folder> -p <port_number>')
             sys.exit()
-        elif opt in ("-d"):
-                if os.path.isdir(arg):
-                    upload_folder = arg   
-                else:
-                    print('-d parameter: Argument is not a valid directory path')
-                    sys.exit()
+        #elif opt in ("-d"):
+        #        if os.path.isdir(arg):
+        #            upload_folder = arg   
+        #        else:
+        #            print('-d parameter: Argument is not a valid directory path')
+        #            sys.exit()
         elif opt in ("-k"):
                 if os.path.isdir(arg):
                     kubernetes_folder = arg   

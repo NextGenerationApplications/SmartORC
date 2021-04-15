@@ -143,7 +143,7 @@ RUN set -ex; \
         \) -exec rm -rf '{}' +; \
     rm -f get-pip.py
 
-WORKDIR     /usr/src/app
+WORKDIR  /usr/src/app
 
 COPY requirements.txt /usr/src/app
 
