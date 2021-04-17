@@ -64,7 +64,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                     if x.get_service():
                         service_port = []
                         for port in port_yaml:
-                            content = {'port': int(port.get('containerPort'))}
+                            content = {'port': 8080, 'targetPort': int(port.get('containerPort'))}
                             service_port.append(content)
                         service = {'apiVersion': 'v1',
                                    'kind': 'Service',
@@ -76,7 +76,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                    'spec': {
                                        'ports': service_port,
                                        'selector': {'app': application, 'tier': x.get_tier()},
-                                       'clusterIP': 'None'}}
+                                       'type': 'LoadBalancer'}}
                         filelist.append(service)
                     persistent_volume = {'apiVersion': 'v1',
                                          'kind': 'PersistentVolumeClaim',
@@ -92,17 +92,6 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                   'requests':
                                                       {'storage': resource.get_disk()}}}}
                     filelist.append(persistent_volume)
-                    if x.get_ingress():
-                        ingress = {'apiVersion': 'extensions/v1beta1',
-                                   'kind': 'Ingress',
-                                   'metadata': {'name': x.get_name(), 'namespace': application},
-                                   'spec': {
-                                       'rules': [{'host': x.get_name() + '.nip.io',
-                                                  'http': {'paths': [
-                                                      {'backend': {'serviceName': x.get_name(), 'servicePort': 'web'},
-                                                       'path': '/'}]}}],
-                                       'tls': [{'hosts': [x.get_name() + '.nip.io']}]}}
-                        filelist.append(ingress)
                     if x.get_internal():
                         if (x.get_tier() is not None) and x.get_env() is not None:
                             deployment = {'apiVersion': 'apps/v1',
@@ -116,7 +105,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                               'template': {
                                                   'metadata': {
                                                       'labels': {'app': application, 'tier': x.get_tier()}},
-                                                  'spec': {'hostNetwork': True, 'containers': [
+                                                  'spec': {'containers': [
                                                       {'image': x.get_image(), 'name': x.get_name(),
                                                        'resources': {
                                                            'requests': {'cpu': resource.get_cpu(),
@@ -127,15 +116,15 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                        'ports': port_yaml,
                                                        'volumeMounts': [{'name': x.get_volumeMounts_name(),
                                                                          'mountPath': x.get_volumeMounts_path()}]}],
-                                                           'volumes': [{'name': x.get_volumes_name(),
-                                                                        'persistentVolumeClaim': {
-                                                                            'claimName': x.get_volumes_claimname()}}],
-                                                           'nodeSelector': {
-                                                               'beta.kubernetes.io/os': resource.get_os(),
-                                                               'resource': ''.join([i for i in resource.get_name() if
-                                                                                    not i.isdigit()])},
-                                                           'imagePullSecrets': [
-                                                               {'name': application + '-registry-credentials'}]}}}}
+                                                      'volumes': [{'name': x.get_volumes_name(),
+                                                                   'persistentVolumeClaim': {
+                                                                       'claimName': x.get_volumes_claimname()}}],
+                                                      'nodeSelector': {
+                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                          'resource': ''.join([i for i in resource.get_name() if
+                                                                               not i.isdigit()])},
+                                                      'imagePullSecrets': [
+                                                          {'name': application + '-registry-credentials'}]}}}}
                             filelist.append(deployment)
                             with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                       'w') as outfile:
@@ -192,7 +181,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                               'template': {
                                                   'metadata': {
                                                       'labels': {'app': application, 'tier': x.get_tier()}},
-                                                  'spec': {'hostNetwork': True, 'containers': [
+                                                  'spec': {'containers': [
                                                       {'image': x.get_image(), 'name': x.get_name(),
                                                        'resources': {
                                                            'requests': {'cpu': resource.get_cpu(),
@@ -204,12 +193,12 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                            port_yaml,
                                                        }],
 
-                                                           'nodeSelector': {
-                                                               'beta.kubernetes.io/os': resource.get_os(),
-                                                               'resource': ''.join([i for i in resource.get_name() if
-                                                                                    not i.isdigit()])},
-                                                           'imagePullSecrets': [
-                                                               {'name': application + '-registry-credentials'}]}}}}
+                                                      'nodeSelector': {
+                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                          'resource': ''.join([i for i in resource.get_name() if
+                                                                               not i.isdigit()])},
+                                                      'imagePullSecrets': [
+                                                          {'name': application + '-registry-credentials'}]}}}}
                             filelist.append(deployment)
                             with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                       'w') as outfile:
@@ -230,7 +219,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                               'template': {
                                                   'metadata': {
                                                       'labels': {'app': application, 'tier': x.get_tier()}},
-                                                  'spec': {'hostNetwork': True, 'containers': [
+                                                  'spec': {'containers': [
                                                       {'image': x.get_image(), 'name': x.get_name(),
                                                        'resources': {
                                                            'requests': {'cpu': resource.get_cpu(),
@@ -241,15 +230,15 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                            port_yaml,
                                                        'volumeMounts': [{'name': x.get_volumeMounts_name(),
                                                                          'mountPath': x.get_volumeMounts_path()}]}],
-                                                           'volumes': [{'name': x.get_volumes_name(),
-                                                                        'persistentVolumeClaim': {
-                                                                            'claimName': x.get_volumes_claimname()}}],
-                                                           'nodeSelector': {
-                                                               'beta.kubernetes.io/os': resource.get_os(),
-                                                               'resource': ''.join([i for i in resource.get_name() if
-                                                                                    not i.isdigit()])},
-                                                           'imagePullSecrets': [
-                                                               {'name': application + '-registry-credentials'}]}}}}
+                                                      'volumes': [{'name': x.get_volumes_name(),
+                                                                   'persistentVolumeClaim': {
+                                                                       'claimName': x.get_volumes_claimname()}}],
+                                                      'nodeSelector': {
+                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                          'resource': ''.join([i for i in resource.get_name() if
+                                                                               not i.isdigit()])},
+                                                      'imagePullSecrets': [
+                                                          {'name': application + '-registry-credentials'}]}}}}
                             filelist.append(deployment)
                             with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                       'w') as outfile:
@@ -271,7 +260,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                               'template': {
                                                   'metadata': {
                                                       'labels': {'app': application, 'tier': x.get_tier()}},
-                                                  'spec': {'hostNetwork': True, 'containers': [
+                                                  'spec': {'containers': [
                                                       {'image': x.get_image(), 'name': x.get_name(),
                                                        'resources': {
                                                            'requests': {'cpu': resource.get_cpu(),
@@ -282,13 +271,13 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                            port_yaml,
                                                        'volumeMounts': [{'name': x.get_volumeMounts_name(),
                                                                          'mountPath': x.get_volumeMounts_path()}]}],
-                                                           'volumes': [{'name': x.get_volumes_name(),
-                                                                        'persistentVolumeClaim': {
-                                                                            'claimName': x.get_volumes_claimname()}}],
-                                                           'nodeSelector': {
-                                                               'beta.kubernetes.io/os': resource.get_os(),
-                                                               'resource': ''.join(
-                                                                   [i for i in resource.get_name() if not i.isdigit()])}}}}}
+                                                      'volumes': [{'name': x.get_volumes_name(),
+                                                                   'persistentVolumeClaim': {
+                                                                       'claimName': x.get_volumes_claimname()}}],
+                                                      'nodeSelector': {
+                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                          'resource': ''.join(
+                                                              [i for i in resource.get_name() if not i.isdigit()])}}}}}
                             filelist.append(deployment)
                             with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                       'w') as outfile:
@@ -309,7 +298,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                               'template': {
                                                   'metadata': {
                                                       'labels': {'app': application, 'tier': x.get_tier()}},
-                                                  'spec': {'hostNetwork': True, 'containers': [
+                                                  'spec': {'containers': [
                                                       {'image': x.get_image(), 'name': x.get_name(),
                                                        'resources': {
                                                            'requests': {'cpu': resource.get_cpu(),
@@ -321,14 +310,14 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                            port_yaml,
                                                        'volumeMounts': [{'name': x.get_volumeMounts_name(),
                                                                          'mountPath': x.get_volumeMounts_path()}]}],
-                                                           'volumes': [{'name': x.get_volumes_name(),
-                                                                        'persistentVolumeClaim': {
-                                                                            'claimName': x.get_volumes_claimname()}}],
-                                                           'nodeSelector': {
-                                                               'beta.kubernetes.io/os': resource.get_os(),
-                                                               'resource': ''.join(
-                                                                   [i for i in resource.get_name() if
-                                                                    not i.isdigit()])}}}}}
+                                                      'volumes': [{'name': x.get_volumes_name(),
+                                                                   'persistentVolumeClaim': {
+                                                                       'claimName': x.get_volumes_claimname()}}],
+                                                      'nodeSelector': {
+                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                          'resource': ''.join(
+                                                              [i for i in resource.get_name() if
+                                                               not i.isdigit()])}}}}}
                             filelist.append(deployment)
                             with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                       'w') as outfile:
@@ -337,6 +326,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                     outfile,
                                     default_flow_style=False
                                 )
+
 
 def secret_generation(json, application):
     kubernetes = {'apiVersion': 'v1',

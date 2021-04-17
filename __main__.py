@@ -14,6 +14,7 @@ def main(argv):
         sys.exit(2)
     upload_folder = '.'
     kubernetes_folder = './kubernetes'
+    kubernetes_config_file_name = 'kubeconfig'
     port_number = 8080
     for opt, arg in opts:
         if opt == '-h':
@@ -26,12 +27,15 @@ def main(argv):
         #        else:
         #            print('-d parameter: Argument is not a valid directory path')
         #            sys.exit()
+        elif opt in ("-f"):
+            if isinstance(arg, str):
+                kubernetes_config_file_name = arg             
         elif opt in ("-k"):
-                if os.path.isdir(arg):
-                    kubernetes_folder = arg   
-                else:
-                    print('-k parameter: Argument is not a valid directory path')
-                    sys.exit()
+            if isinstance(arg, str):
+                kubernetes_folder = arg   
+            else:
+                print('-k parameter: Argument is not a valid directory path')
+                sys.exit()
         elif opt in ("-p"):
             try:
                 input_port = int(arg)
@@ -52,6 +56,7 @@ def main(argv):
     app.app.config['UPLOAD_FOLDER'] = upload_folder
     app.app.config['ORCHESTRATOR'] = ConcreteOrchestrator() 
     app.app.config['KUBERNETES_FOLDER'] = kubernetes_folder 
+    app.app.config['KUBERNETES_CONFIG_FILE'] = kubernetes_config_file_name
     app.add_api('dynamic_orchestrator.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, 
                 pythonic_params=True)
     app.run(port=port_number)

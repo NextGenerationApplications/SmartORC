@@ -21,6 +21,8 @@ def create_kubernetes_directory (name):
     return k_directory
     
 def init_converter (name):   
+    if name == 'ovr':
+        _id = '60794acca720f657b23c37fd'
     if name == 'plexus':
         _id = '60671f549a509804ff59f0a1'
         token_name = 'gitlab+deploy-token-420906'
@@ -83,7 +85,9 @@ def appmodel_start_app(name):
         error = 'Application ' + name + ' not deployed succesfully due to an unknown error!'
         return {'message': error}, 500
     try:
-        config.load_kube_config()
+        kube_config_file = './config/kubeconfig'
+        config.load_kube_config(kube_config_file)
+        #config.load_kube_config()
         k8s_client = client.ApiClient()
         kustomization_file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'kustomization.yaml')  
         kustomization_file = open(kustomization_file_path, 'rb')
@@ -92,16 +96,16 @@ def appmodel_start_app(name):
         kustomization_file.close()
         
         file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'namespace.yaml') 
-        utils.create_from_yaml(k8s_client, file_path)
-        
+        result = utils.create_from_yaml(k8s_client, file_path)
         if 'secret.yaml' in kustomization_file_content.get('resources'):
             file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'secret.yaml') 
-            utils.create_from_yaml(k8s_client, file_path)
+            result = utils.create_from_yaml(k8s_client, file_path)
 
         for file_name in kustomization_file_content.get('resources'):
             if file_name != 'secret.yaml' and file_name!='namespace.yaml':
                 file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, file_name) 
-                utils.create_from_yaml(k8s_client, file_path)
+                result = utils.create_from_yaml(k8s_client, file_path)
+
     except:
         error = 'Application ' + name + ' not deployed succesfully due to a Kubernetes error!'
         return {'message': error}, 500

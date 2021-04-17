@@ -145,11 +145,11 @@ RUN set -ex; \
 
 WORKDIR  /usr/src/app
 
-COPY requirements.txt /usr/src/app
+COPY ./config/requirements.txt /usr/src/app/config/
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r ./config/requirements.txt
     
-COPY . /usr/src/app
+COPY . /usr/src/app/
      
 EXPOSE 8080
 

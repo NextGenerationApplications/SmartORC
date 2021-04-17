@@ -72,10 +72,9 @@ def ReadFile(json, namespace):
             container.set_name(name)
             application = properties.get('application')
             container.set_application(application)
-            service = properties.get('service')
+            service = properties.get('external_ip')
+            print(service)
             container.set_service(service)
-            ingress = properties.get('ingress')
-            container.set_ingress(ingress)
             port = properties.get('port')
             if ', ' in port:
                 ports = port.split(', ')

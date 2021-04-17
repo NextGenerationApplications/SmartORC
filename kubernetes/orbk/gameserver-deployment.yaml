@@ -7,11 +7,12 @@ metadata:
     app: orbk
 spec:
   ports:
-  - port: 20765
+  - port: 8080
+    targetPort: 20765
   selector:
     app: orbk
     tier: backend
-  clusterIP: None
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -26,24 +27,6 @@ spec:
   resources:
     requests:
       storage: 20Gi
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: gameserver
-  namespace: orbk
-spec:
-  rules:
-  - host: gameserver.nip.io
-    http:
-      paths:
-      - backend:
-          serviceName: gameserver
-          servicePort: web
-        path: /
-  tls:
-  - hosts:
-    - gameserver.nip.io
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -65,7 +48,6 @@ spec:
         app: orbk
         tier: backend
     spec:
-      hostNetwork: true
       containers:
       - image: registry.gitlab.com/accordion-project/wp6/uc2/orbkaccserver:latest
         name: gameserver
