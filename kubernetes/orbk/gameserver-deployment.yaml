@@ -7,7 +7,7 @@ metadata:
     app: orbk
 spec:
   ports:
-  - port: 8080
+  - port: 7000
     targetPort: 20765
   selector:
     app: orbk

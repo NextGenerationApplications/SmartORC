@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: remoteservice-pv-claim
+  namespace: plexus
+  labels:
+    app: plexus
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remoteservice
+  namespace: plexus
+  labels:
+    app: plexus
+spec:
+  selector:
+    matchLabels:
+      app: plexus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: plexus
+    spec:
+      containers:
+      - image: registry.gitlab.com/accordion-project/wp6/uc_3/rs:latest
+        name: remoteservice
+        resources:
+          requests:
+            cpu: 1
+            memory: 512Mi
+            ephemeral-storage: 20Gi
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5432
+          name: remoteservice1
+        - containerPort: 8000
+          name: remoteservice2
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        resource: VM
+      imagePullSecrets:
+      - name: plexus-registry-credentials

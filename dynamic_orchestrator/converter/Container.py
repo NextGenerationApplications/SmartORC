@@ -142,3 +142,9 @@ class Container:
 
     def get_internal(self):
         return self.__internal
+    
+    def set_unit(self, unit):
+        self.__unit = unit
+
+    def get_unit(self):
+        return self.__unit

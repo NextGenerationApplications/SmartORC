@@ -21,8 +21,8 @@ def create_kubernetes_directory (name):
     return k_directory
     
 def init_converter (name):   
-    if name == 'ovr':
-        _id = '60794acca720f657b23c37fd'
+    #if name == 'ovr':
+    #    _id = '60794acca720f657b23c37fd'
     if name == 'plexus':
         _id = '60671f549a509804ff59f0a1'
         token_name = 'gitlab+deploy-token-420906'
@@ -30,7 +30,9 @@ def init_converter (name):
     if name == 'orbk':
         _id = '60742434a720f657b23c37fc'
         token_name = 'gitlab+deploy-token-420904'
-        token_pass = 'gzP9s2bkJV-yeh1a6fn3'        
+        token_pass = 'gzP9s2bkJV-yeh1a6fn3'
+    else :
+        return None
     sample_string = token_name + ":" + token_pass
     sample_string_bytes = sample_string.encode("ascii")
     base64_bytes = base64.b64encode(sample_string_bytes)
@@ -63,6 +65,10 @@ def appmodel_start_app(name):
     :rtype: None
     """
     app_id = init_converter(name)
+    if app_id is None:
+        error = 'Application ' + name + ' not deployed succesfully: application not exists in registry!'   
+        return {'message': error }, 500
+
     try:
         response = requests.get('http://82.214.143.119:31725/application?id=' + app_id )
         response.raise_for_status()

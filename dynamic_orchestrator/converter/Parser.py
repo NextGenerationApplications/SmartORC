@@ -65,7 +65,7 @@ def ReadFile(json, namespace):
                             _object.set_name(name)
                             imagelist.append(_object)
             nodelist.append(cloud)
-        if 'container' in _type:
+        if 'component' in type:
             container = Container.Container()
             container.set_type(_type)
             name = properties.get('name')
@@ -73,8 +73,9 @@ def ReadFile(json, namespace):
             application = properties.get('application')
             container.set_application(application)
             service = properties.get('external_ip')
-            print(service)
             container.set_service(service)
+            unit = properties.get('deployment_unit')
+            container.set_unit(unit)
             port = properties.get('port')
             if ', ' in port:
                 ports = port.split(', ')

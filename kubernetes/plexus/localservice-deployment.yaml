@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localservice-pv-claim
+  namespace: plexus
+  labels:
+    app: plexus
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 32Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localservice
+  namespace: plexus
+  labels:
+    app: plexus
+spec:
+  selector:
+    matchLabels:
+      app: plexus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: plexus
+    spec:
+      containers:
+      - image: registry.gitlab.com/accordion-project/wp6/uc_3/ls:latest
+        name: localservice
+        resources:
+          requests:
+            cpu: 4
+            memory: 4Gi
+            ephemeral-storage: 32Gi
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7979
+          name: localservice
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        resource: EdgeNode
+      imagePullSecrets:
+      - name: plexus-registry-credentials
