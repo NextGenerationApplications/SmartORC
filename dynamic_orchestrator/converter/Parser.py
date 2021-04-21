@@ -65,7 +65,7 @@ def ReadFile(json, namespace):
                             _object.set_name(name)
                             imagelist.append(_object)
             nodelist.append(cloud)
-        if 'component' in type:
+        if 'component' in _type:
             container = Container.Container()
             container.set_type(_type)
             name = properties.get('name')

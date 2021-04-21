@@ -93,7 +93,7 @@ def pretty_print(req):
 #    print('Connection Error')    
 
 try:
-    r10 = requests.post("http://localhost:8080/orchestrator/startapp?name=plexus")
+    r10 = requests.post("http://localhost:8080/orchestrator/startapp?name=orbk")
     pretty_print(r10)
     print(r10.status_code)
     print(r10.text)

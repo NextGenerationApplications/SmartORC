@@ -27,11 +27,11 @@ def init_converter (name):
         _id = '60671f549a509804ff59f0a1'
         token_name = 'gitlab+deploy-token-420906'
         token_pass = 'jwCSDnkoZDeZqwf2i9-m'
-    if name == 'orbk':
+    elif name == 'orbk':
         _id = '60742434a720f657b23c37fc'
         token_name = 'gitlab+deploy-token-420904'
         token_pass = 'gzP9s2bkJV-yeh1a6fn3'
-    else :
+    else:
         return None
     sample_string = token_name + ":" + token_pass
     sample_string_bytes = sample_string.encode("ascii")
@@ -82,7 +82,7 @@ def appmodel_start_app(name):
         # access JSOn content
         jsonResponse = response.json()
         print("Entire JSON response")
-        print(jsonResponse)
+        print(json.dumps(jsonResponse, indent=4, sort_keys=True))
         ReadFile(jsonResponse, name)
     except OSError as err:
         error = 'Application ' + name + ' not deployed succesfully due to the following error: ' + err.strerror
