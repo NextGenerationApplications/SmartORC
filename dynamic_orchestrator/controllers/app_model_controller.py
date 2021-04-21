@@ -70,7 +70,7 @@ def appmodel_start_app(name):
         return {'message': error }, 500
 
     try:
-        response = requests.get('http://82.214.143.119:31725/application?id=' + app_id )
+        response = requests.get('http://' + current_app.config.get('APPLICATION_BUCKET_IP') + '/application?id=' + app_id )
         response.raise_for_status()
     except HTTPError as http_err:
         error = 'Application ' + name + ' not deployed succesfully due to the following Http error: ' + http_err.msg  
@@ -91,9 +91,10 @@ def appmodel_start_app(name):
         error = 'Application ' + name + ' not deployed succesfully due to an unknown error!'
         return {'message': error}, 500
     try:
-        kube_config_file = './config/kubeconfig'
+        
+        
+        kube_config_file = os.path.join( './config', current_app.config.get('KUBERNETES_CONFIG_FILE'))
         config.load_kube_config(kube_config_file)
-        #config.load_kube_config()
         k8s_client = client.ApiClient()
         kustomization_file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'kustomization.yaml')  
         kustomization_file = open(kustomization_file_path, 'rb')
