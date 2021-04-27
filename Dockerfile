@@ -147,7 +147,15 @@ WORKDIR  /usr/src/app
 
 COPY ./config/requirements.txt /usr/src/app/config/
 
-RUN pip3 install --no-cache-dir -r ./config/requirements.txt
+RUN pip3 install --no-cache-dir -r ./config/requirements.txt; \
+    apt-get update; \
+    apt install -y curl; \
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl; \
+    chmod +x ./kubectl; \
+    mv ./kubectl /usr/local/bin
+    
+ENV KUBECONFIG=/usr/src/app/config/kubeconfig
+
     
 COPY . /usr/src/app/
      

@@ -38,8 +38,11 @@ class ComputeNode:
         return self.__cpu
 
     def set_mem_size(self, mem_size):
-        mem_size = convert_bytes(mem_size)
-        self.__mem_size = size(mem_size, system=iec)
+        if mem_size is not None:
+            mem_size = convert_bytes(mem_size)
+            self.__mem_size = size(mem_size, system=iec)
+        if mem_size is None:
+            self.__mem_size = mem_size
 
     def get_mem_size(self):
         return self.__mem_size

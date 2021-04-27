@@ -52,6 +52,12 @@ def tosca_to_k8s(nodelist, imagelist, application):
                 host = x.get_node()
                 port_yaml = []
                 for resource in resource_list:
+                    if resource.get_cpu() and resource.get_mem() and resource.get_disk():
+                        resource_yaml = {
+                            'requests': {'cpu': resource.get_cpu(),
+                                         'memory': resource.get_mem(),
+                                         'ephemeral-storage': resource.get_disk()}}
+
                     if host == resource.get_name():
                         filelist = []
                         ports = x.get_port()
@@ -84,20 +90,21 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                            'selector': {'app': application, 'tier': x.get_tier()},
                                            'type': 'LoadBalancer'}}
                             filelist.append(service)
-                        persistent_volume = {'apiVersion': 'v1',
-                                             'kind': 'PersistentVolumeClaim',
-                                             'metadata': {
-                                                 'name': x.get_volumes_claimname(),
-                                                 'namespace': application,
-                                                 'labels': {
-                                                     'app': application}},
-                                             'spec':
-                                                 {'accessModes':
-                                                      ['ReadWriteOnce'],
-                                                  'resources': {
-                                                      'requests':
-                                                          {'storage': resource.get_disk()}}}}
-                        filelist.append(persistent_volume)
+                        if resource.get_disk():
+                            persistent_volume = {'apiVersion': 'v1',
+                                                 'kind': 'PersistentVolumeClaim',
+                                                 'metadata': {
+                                                     'name': x.get_volumes_claimname(),
+                                                     'namespace': application,
+                                                     'labels': {
+                                                         'app': application}},
+                                                 'spec':
+                                                     {'accessModes':
+                                                          ['ReadWriteOnce'],
+                                                      'resources': {
+                                                          'requests':
+                                                              {'storage': resource.get_disk()}}}}
+                            filelist.append(persistent_volume)
                         if x.get_internal():
                             if (x.get_tier() is not None) and x.get_env() is not None:
                                 deployment = {'apiVersion': 'apps/v1',
@@ -113,10 +120,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, 'tier': x.get_tier()}},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'env': x.get_env(),
                                                            'ports': port_yaml,
@@ -153,10 +157,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, }},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'ports':
                                                                port_yaml}],
@@ -189,10 +190,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, 'tier': x.get_tier()}},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'env': x.get_env(),
                                                            'ports':
@@ -227,10 +225,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, 'tier': x.get_tier()}},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'ports':
                                                                port_yaml,
@@ -268,10 +263,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, 'tier': x.get_tier()}},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'ports':
                                                                port_yaml,
@@ -283,7 +275,8 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'nodeSelector': {
                                                               'beta.kubernetes.io/os': resource.get_os(),
                                                               'resource': ''.join(
-                                                                  [i for i in resource.get_name() if not i.isdigit()])}}}}}
+                                                                  [i for i in resource.get_name() if
+                                                                   not i.isdigit()])}}}}}
                                 filelist.append(deployment)
                                 with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
                                           'w') as outfile:
@@ -306,10 +299,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                           'labels': {'app': application, 'tier': x.get_tier()}},
                                                       'spec': {'containers': [
                                                           {'image': x.get_image(), 'name': x.get_name(),
-                                                           'resources': {
-                                                               'requests': {'cpu': resource.get_cpu(),
-                                                                            'memory': resource.get_mem(),
-                                                                            'ephemeral-storage': resource.get_disk()}},
+                                                           'resources': resource_yaml,
                                                            'imagePullPolicy': 'Always',
                                                            'env': x.get_env(),
                                                            'ports':
@@ -332,6 +322,88 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                         outfile,
                                         default_flow_style=False
                                     )
+            else:
+                host = x.get_node()
+                port_yaml = []
+                for resource in resource_list:
+                    if resource.get_cpu() and resource.get_mem() and resource.get_disk():
+                        resource_yaml = {
+                            'requests': {'cpu': resource.get_cpu(),
+                                         'memory': resource.get_mem(),
+                                         'ephemeral-storage': resource.get_disk()}}
+
+                    if host == resource.get_name():
+                        filelist = []
+                        if resource.get_disk():
+                            persistent_volume = {'apiVersion': 'v1',
+                                                 'kind': 'PersistentVolumeClaim',
+                                                 'metadata': {
+                                                     'name': x.get_volumes_claimname(),
+                                                     'namespace': application,
+                                                     'labels': {
+                                                         'app': application},
+                                                     'annotations':
+                                                         {'cdi.kubevirt.io/storage.import.endpoint': x.get_image()}},
+                                                 'spec':
+                                                     {'accessModes':
+                                                          ['ReadWriteOnce'],
+                                                      'resources': {
+                                                          'requests':
+                                                              {'storage': resource.get_disk()}}}}
+                            filelist.append(persistent_volume)
+                        if not x.get_internal():
+                            deployment = {'apiVersion': 'kubevirt.io/v1',
+                                          'kind': 'VirtualMachine',
+                                          'metadata': {'name': x.get_name(), 'namespace': application,
+                                                       'generation': 1,
+                                                       'labels': {'kubevirt.io/os': 'linux'}},
+                                          'spec': {
+                                              'running': True,
+                                              'template': {
+                                                  'metadata': {
+                                                               'labels': {'kubevirt.io/domain': x.get_flavor()}},
+                                                  'spec': {'domain': {'cpu': {'cores': int(resource.get_cpu())},
+                                                                      'devices': {
+                                                                          'disks': [{'disk': {'bus': 'virtio'},
+                                                                                     'name': 'disk0'},
+                                                                                    {'cdrom': {'bus': 'sata',
+                                                                                               'readonly': True},
+                                                                                     'name': 'cloudinitdisk'}]},
+                                                                      'machine': {'type': 'q35'}, 'resources': {
+                                                          'requests': {'memory': resource.get_mem()}}},
+                                                           'volumes': [
+                                                               {'name': 'disk0', 'persistentVolumeClaim': {
+                                                                   'claimName': x.get_volumes_claimname()}}, {
+                                                                   'cloudInitNoCloud': {
+                                                                       'userData': {'hostname': x.get_name(),
+                                                                                    'ssh_pwauth': True,
+                                                                                    'disable_root': False,
+                                                                                    'ssh_authorized_key': [
+                                                                                        'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
+                                                                   }, 'name': 'cloudinitdisk'}]}}}}
+
+                            filelist.append(deployment)
+                            with open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml',
+                                      'w') as outfile:
+                                yaml.dump_all(
+                                    filelist,
+                                    outfile,
+                                    default_flow_style=False
+                                )
+                            a_file = open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml', "r")
+                            list_of_lines = a_file.readlines()
+                            line=0
+                            location = 0
+                            while line < len(list_of_lines):
+                                if "userData:" in list_of_lines[line]:
+                                    location = line
+                                    print(line)
+                                line = line + 1
+                            list_of_lines[location] = "         userData: | \n"
+
+                            a_file = open('kubernetes/' + application + '/' + x.get_name() + '-deployment' + '.yaml', "w")
+                            a_file.writelines(list_of_lines)
+                            a_file.close()
 
 
 def secret_generation(json, application):

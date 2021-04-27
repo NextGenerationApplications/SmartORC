@@ -31,6 +31,10 @@ def init_converter (name):
         _id = '60742434a720f657b23c37fc'
         token_name = 'gitlab+deploy-token-420904'
         token_pass = 'gzP9s2bkJV-yeh1a6fn3'
+    elif name == 'ovr':
+        _id = '60794acca720f657b23c37fd'
+        token_name = 'gitlab+deploy-token-430087'
+        token_pass = 'NDxnnzt9WvuR7zyAHchX'
     else:
         return None
     sample_string = token_name + ":" + token_pass
@@ -82,7 +86,10 @@ def appmodel_start_app(name):
         # access JSOn content
         jsonResponse = response.json()
         print("Entire JSON response")
-        print(json.dumps(jsonResponse, indent=4, sort_keys=True))
+        print(json.dumps(jsonResponse, indent=2, sort_keys=True))
+        #with open('kubernetes/' + name + '/jsonResponse.json', 'w') as outfile:
+        #    yaml.dump(jsonResponse, outfile, default_flow_style=False)
+        
         ReadFile(jsonResponse, name)
     except OSError as err:
         error = 'Application ' + name + ' not deployed succesfully due to the following error: ' + err.strerror
@@ -90,31 +97,30 @@ def appmodel_start_app(name):
     except:
         error = 'Application ' + name + ' not deployed succesfully due to an unknown error!'
         return {'message': error}, 500
-    try:
-        
-        
+    try:     
         kube_config_file = os.path.join( './config', current_app.config.get('KUBERNETES_CONFIG_FILE'))
         config.load_kube_config(kube_config_file)
         k8s_client = client.ApiClient()
         kustomization_file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'kustomization.yaml')  
         kustomization_file = open(kustomization_file_path, 'rb')
   
-        kustomization_file_content = yaml.load(kustomization_file, Loader = yaml.FullLoader)
+        kustomization_file_content = yaml.safe_load(kustomization_file)
         kustomization_file.close()
         
         file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'namespace.yaml') 
-        result = utils.create_from_yaml(k8s_client, file_path)
+        result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
         if 'secret.yaml' in kustomization_file_content.get('resources'):
             file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'secret.yaml') 
-            result = utils.create_from_yaml(k8s_client, file_path)
+            result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
 
         for file_name in kustomization_file_content.get('resources'):
             if file_name != 'secret.yaml' and file_name!='namespace.yaml':
                 file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, file_name) 
-                result = utils.create_from_yaml(k8s_client, file_path)
+                result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
 
-    except:
-        error = 'Application ' + name + ' not deployed succesfully due to a Kubernetes error!'
+    except utils.FailToCreateError as KubeErr:
+        error = 'Application ' + name + ' not deployed succesfully due to a Kubernetes error! '
+        print(KubeErr)
         return {'message': error}, 500
     
     return {'message': 'Application with the submitted name has been deployed succesfully!'}, 200

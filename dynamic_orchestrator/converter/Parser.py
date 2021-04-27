@@ -75,13 +75,17 @@ def ReadFile(json, namespace):
             service = properties.get('external_ip')
             container.set_service(service)
             unit = properties.get('deployment_unit')
+            if unit == "vm":
+                flavor = properties.get("flavor")
+                container.set_flavor(flavor)
             container.set_unit(unit)
             port = properties.get('port')
-            if ', ' in port:
-                ports = port.split(', ')
-                container.set_port(ports)
-            else:
-                container.set_port(port)
+            if port:
+                if ', ' in port:
+                    ports = port.split(', ')
+                    container.set_port(ports)
+                else:
+                    container.set_port(port)
             if properties.get('tier'):
                 tier = properties.get('tier')
                 container.set_tier(tier)
@@ -131,22 +135,28 @@ def ReadFile(json, namespace):
             edgenode = ComputeNode.ComputeNode()
             edgenode.set_name(x)
             edgenode.set_type(_type)
-            gpu_model = properties.get('gpu_model')
-            model = gpu_model.get('model')
-            edgenode.set_gpu_model(model)
-            dedicated = gpu_model.get('dedicated')
-            edgenode.set_gpu_dedicated(dedicated)
+            if properties:
+                gpu_model = properties.get('gpu_model')
+                model = gpu_model.get('model')
+                edgenode.set_gpu_model(model)
+                dedicated = gpu_model.get('dedicated')
+                edgenode.set_gpu_dedicated(dedicated)
             capabilities = node.get('capabilities')
-            host = capabilities.get('host')
-            host_properties = host.get('properties')
-            num_cpus = host_properties.get('num_cpus')
-            edgenode.set_num_cpu(num_cpus)
-            mem_size = host_properties.get('mem_size')
-            edgenode.set_mem_size(mem_size)
-            if host_properties.get('disk_size') is not None:
-                disk_size = host_properties.get('disk_size')
-                edgenode.set_disk_size(disk_size)
+            if capabilities.get('host'):
+                host = capabilities.get('host')
+                host_properties = host.get('properties')
+                num_cpus = host_properties.get('num_cpus')
+                edgenode.set_num_cpu(num_cpus)
+                mem_size = host_properties.get('mem_size')
+                edgenode.set_mem_size(mem_size)
+                if host_properties.get('disk_size') is not None:
+                    disk_size = host_properties.get('disk_size')
+                    edgenode.set_disk_size(disk_size)
+                else:
+                    edgenode.set_disk_size("200 MB")
             else:
+                edgenode.set_num_cpu(None)
+                edgenode.set_mem_size(None)
                 edgenode.set_disk_size("200 MB")
             os = capabilities.get('os')
             os_properties = os.get('properties')
@@ -158,14 +168,19 @@ def ReadFile(json, namespace):
             vm.set_name(x)
             vm.set_type(_type)
             capabilities = node.get('capabilities')
-            host = capabilities.get('host')
-            host_properties = host.get('properties')
-            num_cpus = host_properties.get('num_cpus')
-            vm.set_num_cpu(num_cpus)
-            mem_size = host_properties.get('mem_size')
-            vm.set_mem_size(mem_size)
-            disk_size = host_properties.get('disk_size')
-            vm.set_disk_size(disk_size)
+            if capabilities.get('host'):
+                host = capabilities.get('host')
+                host_properties = host.get('properties')
+                num_cpus = host_properties.get('num_cpus')
+                vm.set_num_cpu(num_cpus)
+                mem_size = host_properties.get('mem_size')
+                vm.set_mem_size(mem_size)
+                disk_size = host_properties.get('disk_size')
+                vm.set_disk_size(disk_size)
+            else:
+                vm.set_num_cpu(None)
+                vm.set_mem_size(None)
+                vm.set_disk_size("200 MB")
             os = capabilities.get('os')
             os_properties = os.get('properties')
             os_type = os_properties.get('type')
