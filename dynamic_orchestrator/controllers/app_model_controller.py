@@ -5,12 +5,13 @@ import shutil
 from flask import current_app
 import requests
 from dynamic_orchestrator.converter.Parser import ReadFile
-from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
+from dynamic_orchestrator.converter.Converter import namespace,secret_generation, tosca_to_k8s  
 from  urllib.error import HTTPError
 from kubernetes import client, config, utils
 import base64
 import json
 import yaml
+from dynamic_orchestrator.converter.MatchingModel import generate
 
 APPMODELS_PATH = '/appmodels'
 
@@ -19,24 +20,34 @@ def create_kubernetes_directory (name):
     if not os.path.isdir(k_directory):
         os.makedirs(k_directory) 
     return k_directory
+
+def appmodels_basepath():
+    global APPMODELS_PATH
+    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
+
+def appmodel_start_app(name):
+    """appmodel_start_app
+
+    :param name: 
+    :type name: str
     
-def init_converter (name):   
-    #if name == 'ovr':
-    #    _id = '60794acca720f657b23c37fd'
+    :rtype: None
+    """
+    
+    app_id = None
     if name == 'plexus':
-        _id = '60671f549a509804ff59f0a1'
+        app_id = '60671f549a509804ff59f0a1'
         token_name = 'gitlab+deploy-token-420906'
         token_pass = 'jwCSDnkoZDeZqwf2i9-m'
     elif name == 'orbk':
-        _id = '60742434a720f657b23c37fc'
+        app_id = '60742434a720f657b23c37fc'
         token_name = 'gitlab+deploy-token-420904'
         token_pass = 'gzP9s2bkJV-yeh1a6fn3'
     elif name == 'ovr':
-        _id = '60794acca720f657b23c37fd'
+        app_id = '60794acca720f657b23c37fd'
         token_name = 'gitlab+deploy-token-430087'
         token_pass = 'NDxnnzt9WvuR7zyAHchX'
-    else:
-        return None
+
     sample_string = token_name + ":" + token_pass
     sample_string_bytes = sample_string.encode("ascii")
     base64_bytes = base64.b64encode(sample_string_bytes)
@@ -51,24 +62,7 @@ def init_converter (name):
     }
     json_string = json.dumps(json_file)
     json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
-    create_kubernetes_directory(name)
-    namespace(name)
-    secret_generation(json_base64_string, name)
-    return _id
-
-def appmodels_basepath():
-    global APPMODELS_PATH
-    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
-
-def appmodel_start_app(name):
-    """appmodel_start_app
-
-    :param name: 
-    :type name: str
-    
-    :rtype: None
-    """
-    app_id = init_converter(name)
+        
     if app_id is None:
         error = 'Application ' + name + ' not deployed succesfully: application not exists in registry!'   
         return {'message': error }, 500
@@ -90,7 +84,11 @@ def appmodel_start_app(name):
         #with open('kubernetes/' + name + '/jsonResponse.json', 'w') as outfile:
         #    yaml.dump(jsonResponse, outfile, default_flow_style=False)
         
-        ReadFile(jsonResponse, name)
+        namespace("accordion-" + name)
+        secret_generation(json_base64_string, namespace)
+        nodelist, imagelist = ReadFile(jsonResponse, namespace, name)
+        generate(nodelist, namespace, name)
+        tosca_to_k8s(nodelist, imagelist, namespace, name)    
     except OSError as err:
         error = 'Application ' + name + ' not deployed succesfully due to the following error: ' + err.strerror
         return {'message': error}, 500

@@ -1,16 +1,17 @@
 import os
-from dynamic_orchestrator.converter import ComputeNode,Converter,CloudFramework,Container,Repository,Image
+from dynamic_orchestrator.converter import ComputeNode,Converter,CloudFramework,Container,Repository,Image,MatchingModel
 import yaml
 
 home = str(os.getcwd())
 
 
-def ReadFile(json, namespace):
+def ReadFile(json, namespace, path_name):
     nodelist = []
     resource = ""
     secret = ""
     imagelist = []
     backend = ""
+    application = ""
     requirements = json.get('requirements')
     definitions = requirements[0].get('toscaDescription')
     topology = definitions.get('topology_template')
@@ -65,12 +66,11 @@ def ReadFile(json, namespace):
                             _object.set_name(name)
                             imagelist.append(_object)
             nodelist.append(cloud)
-        if 'component' in _type:
+        if 'Component' in _type:
             container = Container.Container()
             container.set_type(_type)
             name = properties.get('name')
             container.set_name(name)
-            application = properties.get('application')
             container.set_application(application)
             service = properties.get('external_ip')
             container.set_service(service)
@@ -86,16 +86,10 @@ def ReadFile(json, namespace):
                     container.set_port(ports)
                 else:
                     container.set_port(port)
-            if properties.get('tier'):
-                tier = properties.get('tier')
-                container.set_tier(tier)
-                container.set_volumeMounts_name(name + '-persistent-storage')
-                if tier == 'frontend':
-                    container.set_volumeMounts_path('/var/www/html')
-                if tier == 'backend':
-                    container.set_volumeMounts_path('/var/lib/' + name)
             else:
-                container.set_tier(None)
+                container.set_port(None)
+            container.set_volumeMounts_name(name + '-persistent-storage')
+            container.set_volumeMounts_path('/var/lib/' + name)
             if properties.get('env'):
                 print(properties.get('env'))
                 container.set_env(properties.get('env'))
@@ -112,6 +106,11 @@ def ReadFile(json, namespace):
                         container.set_env(env)
                     else:
                         container.set_env(None)
+            container.set_dependency(None)
+            if properties.get('dependency'):
+                dependency = properties.get('dependency')
+                container.set_dependency(dependency)
+
             container.set_volumes_name(name + '-persistent-storage')
             container.set_volumes_claimname(name + '-pv-claim')
             requirements = node.get('requirements')[0]
@@ -141,6 +140,9 @@ def ReadFile(json, namespace):
                 edgenode.set_gpu_model(model)
                 dedicated = gpu_model.get('dedicated')
                 edgenode.set_gpu_dedicated(dedicated)
+            if not properties:
+                edgenode.set_gpu_model(None)
+                edgenode.set_gpu_dedicated(None)
             capabilities = node.get('capabilities')
             if capabilities.get('host'):
                 host = capabilities.get('host')
@@ -163,7 +165,7 @@ def ReadFile(json, namespace):
             os_type = os_properties.get('type')
             edgenode.set_os(os_type)
             nodelist.append(edgenode)
-        if 'VM' in _type:
+        if 'PublicCloud' in _type:
             vm = ComputeNode.ComputeNode()
             vm.set_name(x)
             vm.set_type(_type)
@@ -186,4 +188,7 @@ def ReadFile(json, namespace):
             os_type = os_properties.get('type')
             vm.set_os(os_type)
             nodelist.append(vm)
-    Converter.tosca_to_k8s(nodelist, imagelist, namespace)
+    return nodelist, imagelist
+
+
+

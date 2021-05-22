@@ -154,3 +154,9 @@ class Container:
 
     def get_flavor(self):
         return self.__flavor
+
+    def set_dependency(self,dependency):
+        self.__dependency = dependency
+
+    def get_dependency(self):
+        return  self.__dependency

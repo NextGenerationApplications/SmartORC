@@ -1,0 +1,1 @@
+{"orbk": [{"component": "gameserver", "unit": "container", "port": "20765", "host": {"host_type": "EdgeNode", "hardware_requirements": {"hardware_requirements": {"cpu": 1, "ram": "512Mi", "disk": "20Gi", "gpu": {"model": "NVIDIA GeForce RTX 20-series", "dedicated": true}}}}}]}
