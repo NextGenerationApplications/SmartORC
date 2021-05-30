@@ -83,17 +83,21 @@ def appmodel_start_app(name):
         print(json.dumps(jsonResponse, indent=2, sort_keys=True))
         #with open('kubernetes/' + name + '/jsonResponse.json', 'w') as outfile:
         #    yaml.dump(jsonResponse, outfile, default_flow_style=False)
-        
-        namespace("accordion-" + name)
-        secret_generation(json_base64_string, namespace)
+        namespace = "accordion-" + name
+        namespace_yaml = namespace("accordion-" + name)
+        secret_yaml = secret_generation(json_base64_string, namespace)
         nodelist, imagelist = ReadFile(jsonResponse, namespace, name)
-        generate(nodelist, namespace, name)
-        tosca_to_k8s(nodelist, imagelist, namespace, name)    
+        deployment_files, persistent_files, service_files, kustomization_file = tosca_to_k8s(nodelist, imagelist, namespace)
+        print(namespace_yaml)
+        print(secret_yaml)
+        print(deployment_files)
+        matchmaking_model = generate(nodelist, namespace, name)
+        print(matchmaking_model)
     except OSError as err:
-        error = 'Application ' + name + ' not deployed succesfully due to the following error: ' + err.strerror
+        error = 'Application ' + name + ' not deployed successfully due to the following error: ' + err.strerror
         return {'message': error}, 500
     except:
-        error = 'Application ' + name + ' not deployed succesfully due to an unknown error!'
+        error = 'Application ' + name + ' not deployed successfully due to an unknown error!'
         return {'message': error}, 500
     try:     
         kube_config_file = os.path.join( './config', current_app.config.get('KUBERNETES_CONFIG_FILE'))

@@ -1,7 +1,7 @@
 '''
 Created on 11 feb 2021
 
-@author: Ferrucci
+@author: Luca Ferrucci
 '''
 
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
@@ -199,7 +199,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                 for i in range(NumComponents)] for j in range(NumComponents)] for n1 in range(NumEdgeMiniclouds)] for n2 in range(NumEdgeMiniclouds)]               
                               
         # every dep plan must respect contraints on resource availability of every link between components, 
-        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the contraint        
+        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the constraint        
         for edge_resource in ((MonitorDataContent[0])['links'])[0]:
             if not (edge_resource[0] == 'Q'):
                 n1=0
@@ -221,7 +221,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     n1+=1            
   
         # every dep plan must respect contraints on QoS indicators of every link between components, 
-        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the contraint
+        # for every network link between EdgeMinicloud, using auxiliary variables to linearize the constraint
         for edge_resource in ((MonitorDataContent[0])['links'])[0]:
             if (edge_resource[0] == 'Q'):
                 n1=0
@@ -265,7 +265,6 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                                   if not (resource == 'links')
                                                     if not (resource[0] == 'Q')))     
          
-        # rifare in base alle variabili giuste, le X escludendo le variabili ausiliarie Y
         status = MILP.optimize()
         result_documents = []
         if status == OptimizationStatus.ERROR:
