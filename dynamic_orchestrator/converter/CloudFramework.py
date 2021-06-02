@@ -17,7 +17,6 @@ class CloudFramework:
     def get_application(self):
         return self._app
 
-
     def set_literals(self, literals):
         self.__literals = literals
 
@@ -50,3 +49,9 @@ class CloudFramework:
 
     def get_images(self):
         return self.__images
+
+    def set_actions(self, action):
+        self.__action = action
+
+    def get_actions(self):
+        return self.__action

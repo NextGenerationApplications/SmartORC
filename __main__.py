@@ -57,7 +57,7 @@ def main(argv):
     app.app.config['KUBERNETES_FOLDER'] = kubernetes_folder 
     app.app.config['KUBERNETES_CONFIG_FILE'] = kubernetes_config_file_name
     app.app.config['APPLICATION_BUCKET_IP'] = application_bucket_ip_and_port
-    app.add_api('dynamic_orchestrator.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, 
+    app.add_api('LM_orchestrator.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, 
                 pythonic_params=True)
     app.run(port=port_number)
 if __name__ == '__main__':

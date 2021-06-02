@@ -1,0 +1,53 @@
+openapi: 3.0.0
+info:
+  title: OpenApi 3.0 ReST interface for Accordion LM-Orchestrator interactions
+  description: This is the Yaml file that goes with our server code
+  version: 1.0.0
+servers:
+- url: /orchestrator
+paths:
+  /request:
+    post:
+      tags:
+      - LM-Orchestrator
+      description: Receive a request from the Lifecycle Manager ACCORDION component
+      operationId: orchestrator_LM_request
+      requestBody:
+        description: The parameters of the request received from the LM
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/request_body'
+        x-content-type: application/json
+        required: true
+      responses:
+        "200":
+          description: The request has been successfully executed
+        "500":
+          description: The request has not been succesfully executed. 
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/inline_response_500'
+                x-content-type: application/json  
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: dynamic_orchestrator.controllers.orchestrator_LM_controller
+components:
+  schemas:
+    request_body:
+      properties:
+        app_instance_id:
+          type: string
+        operation:
+          type: string
+        app_model:
+          type: object
+        application_parameters:
+          type: object
+    inline_response_500:
+      properties:
+        reason:
+          type: string

@@ -77,6 +77,11 @@ class ComputeNode:
     def get_os(self):
         return self.__os
 
+    def set_architecture(self, arch):
+        self.__arch = arch
+
+    def get_architecture(self):
+        return self.__arch
 
 class Resource:
     def set_disk(self, disk_size):

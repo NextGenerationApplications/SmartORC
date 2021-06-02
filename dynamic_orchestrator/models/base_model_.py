@@ -3,7 +3,7 @@ import pprint
 import six
 import typing
 
-from dynamic_orchestrator import util
+from swagger_server import util
 
 T = typing.TypeVar('T')
 

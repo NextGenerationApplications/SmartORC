@@ -7,9 +7,11 @@ home = str(os.getcwd())
 
 def ReadFile(json, namespace, path_name):
     nodelist = []
+    actionlist = []
     resource = ""
     secret = ""
     imagelist = []
+
     backend = ""
     application = ""
     requirements = json.get('requirements')
@@ -36,35 +38,44 @@ def ReadFile(json, namespace, path_name):
             cloud.set_type(_type)
             if 'actions' in properties:
                 actions = properties.get('actions')
-                if 'connect' in actions:
-                    connect = actions.get('connect')
-                    connect_properties = connect.get('properties')
-                    backend = connect_properties.get('backend')
-                    secret = backend + '-pass'
-                    cloud.set_secret_name(backend + '-pass')
-                    secret_namespace = connect_properties.get('application')
-                    cloud.set_application(secret_namespace)
-                    literals = connect_properties.get('literals')
-                    cloud.set_literals(literals)
-                    order = connect_properties.get('order')
-                    cloud.set_order(order)
-                if 'connect' not in actions:
-                    cloud.set_secret_name(None)
-                    cloud.set_literals(None)
-                    cloud.set_order(None)
                 if 'deploy' in actions:
+                    component_names = []
                     deploy = actions.get('deploy')
                     deploy_properties = deploy.get('properties')
                     application = deploy_properties.get('application')
-                    cloud.set_application(application)
+                    order = deploy_properties.get("order")
                     images = deploy_properties.get('images')
+                    print(application)
+                    cloud.set_application(application)
+                    for image in images:
+                        object = Image.Image()
+                        for name, dict_ in image.items():
+                            object.set_internal(dict_.get('internal'))
+                            object.set_path(dict_.get('name'))
+                            component_names.append(name.lower())
+                            object.set_name(name)
+                            imagelist.append(object)
+                    actionlist.append({'action': 'deploy', 'order': order, 'components': component_names})
+
+                if 'createSession' in actions:
+                    component_names = []
+                    createSession = actions.get('createSession')
+                    deploy_properties = createSession.get('properties')
+                    application = deploy_properties.get('application')
+                    order = deploy_properties.get("order")
+                    images = deploy_properties.get('images')
+                    cloud.set_application(application)
                     for image in images:
                         _object = Image.Image()
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
                             _object.set_path(dict_.get('name'))
+                            component_names.append(name)
                             _object.set_name(name)
                             imagelist.append(_object)
+                    actionlist.append({'action': 'createSession', 'order': order, 'components': component_names})
+
+                cloud.set_actions(actionlist)
             nodelist.append(cloud)
         if 'Component' in _type:
             container = Container.Container()
@@ -163,6 +174,8 @@ def ReadFile(json, namespace, path_name):
             os = capabilities.get('os')
             os_properties = os.get('properties')
             os_type = os_properties.get('type')
+            architecture = os_properties.get('architecture')
+            edgenode.set_architecture(architecture)
             edgenode.set_os(os_type)
             nodelist.append(edgenode)
         if 'PublicCloud' in _type:
@@ -189,6 +202,3 @@ def ReadFile(json, namespace, path_name):
             vm.set_os(os_type)
             nodelist.append(vm)
     return nodelist, imagelist
-
-
-

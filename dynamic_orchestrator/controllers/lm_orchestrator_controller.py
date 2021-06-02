@@ -1,17 +1,21 @@
-from dynamic_orchestrator.models.inline_response200 import InlineResponse200  # noqa: E501
-from werkzeug.utils import secure_filename
-import os
-import shutil
-from flask import current_app
-import requests
+import connexion
+import six
 from dynamic_orchestrator.converter.Parser import ReadFile
+from dynamic_orchestrator.converter.MatchingModel import generate
 from dynamic_orchestrator.converter.Converter import namespace,secret_generation, tosca_to_k8s  
+from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
+from dynamic_orchestrator.models.request_body import RequestBody  # noqa: E501
+from dynamic_orchestrator import util
 from  urllib.error import HTTPError
 from kubernetes import client, config, utils
 import base64
 import json
 import yaml
-from dynamic_orchestrator.converter.MatchingModel import generate
+from werkzeug.utils import secure_filename
+import os
+import shutil
+from flask import current_app
+import requests
 
 APPMODELS_PATH = '/appmodels'
 
@@ -25,16 +29,20 @@ def appmodels_basepath():
     global APPMODELS_PATH
     return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
 
-def appmodel_request(request_body):
-    """appmodel_start_app
+def orchestrator_lm_request(body):  # noqa: E501
+    """orchestrator_lm_request
 
-    :param name: 
-    :type name: str
-    
+    Receive a request from the Lifecycle Manager ACCORDION component # noqa: E501
+
+    :param body: The parameters of the request received from the LM
+    :type body: dict | bytes
+
     :rtype: None
     """
-    
-    app_id = None
+    if connexion.request.is_json:
+        body = RequestBody.from_dict(connexion.request.get_json())  # noqa: E501
+        
+        app_id = None
     if name == 'plexus':
         app_id = '60671f549a509804ff59f0a1'
         token_name = 'gitlab+deploy-token-420906'
@@ -125,106 +133,3 @@ def appmodel_request(request_body):
         return {'message': error}, 500
     
     return {'message': 'Application with the submitted name has been deployed succesfully!'}, 200
-
-def appmodel_create(body,file):  
-    """appmodel_create
-
-    :param app_id: 
-    :type app_id: str
-    :param file: 
-    :type file: str
-
-    :rtype: None
-    """
-
-    try:
-        file_directory = os.path.join(appmodels_basepath(), body.get('app_id'))
-        os.makedirs(file_directory)
-    except:
-        return {'message': 'Not created. A AppModel Yaml file already exists with the given identifier. Use PUT to update it'}, 409 
-
-    filepath = os.path.join(file_directory, file.filename)
-    try:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(file_directory, filename)
-        file.save(filepath)
-    except:
-        return {'message': 'Failed to create AppModel Yaml file with the given name and identifier'}, 500 
-    return  {'message': 'AppModel Yaml file created successfully !'}, 200
-
-def appmodel_delete(app_id):  
-    """appmodel_delete
-
-     # noqa: E501
-
-    :param app_id: 
-    :type app_id: str
-
-    :rtype: None
-    """
-    try:
-        if os.path.isdir(appmodels_basepath()):
-            AppModelsDirList = os.listdir(appmodels_basepath())
-            if app_id in AppModelsDirList:             
-                directory =  os.path.join(appmodels_basepath(),app_id)
-                if os.path.isdir(directory):
-                    shutil.rmtree(directory)
-                else:
-                    return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
-            else:
-                return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
-        else:
-            return{'message': 'A AppModel Yaml file does not exist with the given identifier'},409
-    except:
-        return {'message': 'Failed to delete AppModel Yaml file with the given identifier'}, 500    
-    return {'message':'AppModel Yaml file with the given identifier deleted succesfully'}, 200
-
-def appmodel_read_all():  
-    """appmodel_read_all
-
-    Return the list of the name of Yaml files that contains the representation of the model of the applications submitted until now and the respective identifiers # noqa: E501
-
-    :rtype: List[InlineResponse200]
-    """
-    response = [] 
-    if os.path.isdir(appmodels_basepath()):
-        AppModelsDirList = os.listdir(appmodels_basepath())
-        for app_id in AppModelsDirList:
-            directory =  os.path.join(appmodels_basepath(),app_id)
-            if os.path.isdir(directory):
-                AppModelsFileDirList = os.listdir(directory)
-                for filename in AppModelsFileDirList:
-                    response_el=InlineResponse200(filename,app_id)
-                    response.append(response_el)                                  
-    return response, 200
-
-def appmodel_update(app_id,file):  
-    """appmodel_update
-
-     # noqa: E501
-
-    :param file: Substitute the Yaml file that contains the representation of the model of the application with the given identifier with the new file passed as a parameter
-    :type file: dict | bytes
-    :param app_id: 
-    :type app_id: str
-
-    :rtype: None
-    """
-    global APPMODELS_PATH
-    file_directory = os.path.join(appmodels_basepath(),app_id)
-    try:
-        if os.path.isdir(file_directory):
-            AppIDDirList = os.listdir(file_directory)
-            for filename in AppIDDirList:
-                filepath = os.path.join(file_directory,filename)
-                if os.path.isfile(filepath):                    
-                    os.remove(filepath)     
-                else:
-                    return {'message': 'Failed to update AppModel Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409          
-        else:
-            return {'message': 'Failed to update AppModel Yaml file with the given identifier: an Yaml file with the given identifier does not exist. Use POST to create it'}, 409 
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(file_directory, file.filename))
-    except:
-        return {'message': 'Failed to update the AppModel Yaml file with the new one with the given name and identifier'}, 500 
-    return  {'message': 'AppModel Yaml file updated successfully !'}, 200
