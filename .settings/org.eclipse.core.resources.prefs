@@ -1,3 +1,5 @@
 eclipse.preferences.version=1
+encoding//dynamic_orchestrator/models/__init__.py=utf-8
+encoding//dynamic_orchestrator/models/inline_response500.py=utf-8
 encoding//dynamic_orchestrator/models/request_body.py=utf-8
 encoding//dynamic_orchestrator/test/test_lm_orchestrator_controller.py=utf-8

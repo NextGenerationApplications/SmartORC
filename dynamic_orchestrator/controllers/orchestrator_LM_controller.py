@@ -17,7 +17,7 @@ import shutil
 from flask import current_app
 import requests
 
-APPMODELS_PATH = '/appmodels'
+# APPMODELS_PATH = '/appmodels'
 
 def create_kubernetes_directory (name):
     k_directory = os.path.join(current_app.config.get('KUBERNETES_FOLDER'), name )  
@@ -25,11 +25,11 @@ def create_kubernetes_directory (name):
         os.makedirs(k_directory) 
     return k_directory
 
-def appmodels_basepath():
-    global APPMODELS_PATH
-    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
+#def appmodels_basepath():
+#    global APPMODELS_PATH
+#    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
 
-def orchestrator_lm_request(body):  # noqa: E501
+def orchestrator_LM_request(body):  # noqa: E501
     """orchestrator_lm_request
 
     Receive a request from the Lifecycle Manager ACCORDION component # noqa: E501

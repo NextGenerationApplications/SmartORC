@@ -1,5 +1,3 @@
-from dynamic_orchestrator.controllers.app_model_controller import appmodels_basepath
-from dynamic_orchestrator.controllers.monitor_data_controller import monitordata_basepath
 import os,yaml,flask
 from requests_toolbelt import MultipartEncoder
 from flask import current_app
