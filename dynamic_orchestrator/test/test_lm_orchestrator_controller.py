@@ -34,18 +34,13 @@ class TestLMOrchestratorController(BaseTestCase):
         
         """      
         # set the parameters of the request_body to deploy a gameserver for Orbk use case 
-        
-        body = RequestBody()
-        body.operation("deploy")
-        body.app_instance_id("accordion-orbk-0_0_1-gameserver-1234")
-        json_file = open("D:\Roba Luca\LiClipse Workspace\intermidietmodel-UC2.json")
+        json_file = open('intermidietmodel-UC2.json')
         app_model = json.load(json_file)
-        body.app_model(app_model)
-        application_parameters = []
-        body.application_parameters(application_parameters)
+        application_parameters = None
+        body = RequestBody('accordion-orbk-0_0_1-gameserver-1234','deploy',app_model,application_parameters)
            
         response = self.client.open(
-            '/request',
+            '/orchestrator/request',
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
