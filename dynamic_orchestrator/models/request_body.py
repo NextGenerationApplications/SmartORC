@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from dynamic_orchestrator.models.base_model_ import Model
+from dynamic_orchestrator.models.request_body_app_component_names import RequestBodyAppComponentNames  # noqa: F401,E501
 from dynamic_orchestrator import util
 
 
@@ -14,11 +15,11 @@ class RequestBody(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, app_instance_id: str=None, operation: str=None, app_model: object=None, application_parameters: object=None):  # noqa: E501
+    def __init__(self, app_component_names: List[RequestBodyAppComponentNames]=None, operation: str=None, app_model: object=None, application_parameters: object=None):  # noqa: E501
         """RequestBody - a model defined in Swagger
 
-        :param app_instance_id: The app_instance_id of this RequestBody.  # noqa: E501
-        :type app_instance_id: str
+        :param app_component_names: The app_component_names of this RequestBody.  # noqa: E501
+        :type app_component_names: List[RequestBodyAppComponentNames]
         :param operation: The operation of this RequestBody.  # noqa: E501
         :type operation: str
         :param app_model: The app_model of this RequestBody.  # noqa: E501
@@ -27,19 +28,19 @@ class RequestBody(Model):
         :type application_parameters: object
         """
         self.swagger_types = {
-            'app_instance_id': str,
+            'app_component_names': List[RequestBodyAppComponentNames],
             'operation': str,
             'app_model': object,
             'application_parameters': object
         }
 
         self.attribute_map = {
-            'app_instance_id': 'app_instance_id',
+            'app_component_names': 'app_component_names',
             'operation': 'operation',
             'app_model': 'app_model',
             'application_parameters': 'application_parameters'
         }
-        self._app_instance_id = app_instance_id
+        self._app_component_names = app_component_names
         self._operation = operation
         self._app_model = app_model
         self._application_parameters = application_parameters
@@ -56,25 +57,25 @@ class RequestBody(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def app_instance_id(self) -> str:
-        """Gets the app_instance_id of this RequestBody.
+    def app_component_names(self) -> List[RequestBodyAppComponentNames]:
+        """Gets the app_component_names of this RequestBody.
 
 
-        :return: The app_instance_id of this RequestBody.
-        :rtype: str
+        :return: The app_component_names of this RequestBody.
+        :rtype: List[RequestBodyAppComponentNames]
         """
-        return self._app_instance_id
+        return self._app_component_names
 
-    @app_instance_id.setter
-    def app_instance_id(self, app_instance_id: str):
-        """Sets the app_instance_id of this RequestBody.
+    @app_component_names.setter
+    def app_component_names(self, app_component_names: List[RequestBodyAppComponentNames]):
+        """Sets the app_component_names of this RequestBody.
 
 
-        :param app_instance_id: The app_instance_id of this RequestBody.
-        :type app_instance_id: str
+        :param app_component_names: The app_component_names of this RequestBody.
+        :type app_component_names: List[RequestBodyAppComponentNames]
         """
 
-        self._app_instance_id = app_instance_id
+        self._app_component_names = app_component_names
 
     @property
     def operation(self) -> str:

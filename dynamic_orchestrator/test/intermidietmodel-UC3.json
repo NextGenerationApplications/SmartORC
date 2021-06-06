@@ -11,14 +11,16 @@
             "version": "latest",
             "id": "b777f84",
             "size": "438.52MB",
-            "imageName": "RemoteService"
+            "imageName": "accordion-project/wp6/uc_3/rs",
+            "component": "RemoteService"
         },
         {
             "repository": "registry.gitlab.com/accordion-project/wp6/uc_3/probe_request_publisher",
             "version": "latest",
             "id": "34c0b29",
             "size": "307.28MB",
-            "imageName": "LocalService"
+            "imageName": "accordion-project/wp6/uc_3/probe_request_publisher",
+            "component": "LocalService"
         }
     ],
     "requirements": [
@@ -171,31 +173,27 @@
                                     "application": "plexus",
                                     "images": [
                                        {
-                                          "RemoteService": {
-                                             "name": "rs",
-                                             "internal": true
-                                          }
-                                       },
-                                       {
                                           "LocalService": {
                                              "name": "ls",
                                              "internal": true
                                           }
-                                       },
-                                       {
-                                          "Grafana": {
-                                             "name": "grafana/grafana:latest",
-                                             "internal": false
-                                          }
-                                       },
-                                       {
-                                          "PostGres": {
-                                             "name": "postgres:latest",
-                                             "internal": false
-                                          }
                                        }
                                     ],
                                     "order": 1
+                                 }
+                              },
+                              "requestAnblick": {
+                                 "properties": {
+                                    "application": "plexus",
+                                    "images": [
+                                       {
+                                          "RemoteService": {
+                                             "name": "rs",
+                                             "internal": true
+                                          }
+                                       }
+                                    ],
+                                    "order": 2
                                  }
                               }
                            }
@@ -226,54 +224,7 @@
                            }
                         }
                      },
-                     "EdgeNode1": {
-                        "type": "tosca.nodes.Compute.EdgeNode",
-                        "properties": {
-                           "wifi_antenna": true,
-                           "gpu_model": {
-                              "dedicated": false
-                           }
-                        },
-                        "capabilities": {
-                           "host": {
-                              "properties": {
-                                 "num_cpus": 1,
-                                 "mem_size": "55 MB"
-                              }
-                           },
-                           "os": {
-                              "properties": {
-                                 "architecture": "ARM Cortex-A72",
-                                 "type": "linux",
-                                 "distribution": "Raspberry Pi OS"
-                              }
-                           }
-                        }
-                     },
-                     "EdgeNode2": {
-                        "type": "tosca.nodes.Compute.EdgeNode",
-                        "properties": {
-                           "wifi_antenna": true,
-                           "gpu_model": {
-                              "dedicated": false
-                           }
-                        },
-                        "capabilities": {
-                           "host": {
-                              "properties": {
-                                 "num_cpus": 1,
-                                 "mem_size": "55 MB"
-                              }
-                           },
-                           "os": {
-                              "properties": {
-                                 "architecture": "ARM Cortex-A72",
-                                 "type": "linux",
-                                 "distribution": "Raspberry Pi OS"
-                              }
-                           }
-                        }
-                     },
+
                      "PublicCloud": {
                         "type": "tosca.nodes.Compute.PublicCloud",
                         "capabilities": {
@@ -323,68 +274,12 @@
                               "get_input": "ip"
                            },
                            "deployment_unit": "container",
-                           "port": 7979
+                           "port": "7979"
                         },
                         "requirements": [
                            {
                               "host": {
                                  "node": "EdgeNode",
-                                 "relationship": "hostedOn"
-                              }
-                           }
-                        ]
-                     },
-                     "Grafana.component": {
-                        "type": "Component",
-                        "properties": {
-                           "name": "grafana",
-                           "application": "plexus",
-                           "external_ip": true,
-                           "ip": {
-                              "get_input": "ip"
-                           },
-                           "deployment_unit": "container",
-                           "port": 3000
-                        },
-                        "requirements": [
-                           {
-                              "host": {
-                                 "node": "EdgeNode1",
-                                 "relationship": "hostedOn"
-                              }
-                           }
-                        ]
-                     },
-                     "PostGres.component": {
-                        "type": "Component",
-                        "properties": {
-                           "name": "postgres",
-                           "application": "plexus",
-                           "external_ip": true,
-                           "env": [
-                              {
-                                 "name": "POSTGRES_DB",
-                                 "value": "db0"
-                              },
-                              {
-                                 "name": "POSTGRES_USER",
-                                 "value": "mendix"
-                              },
-                              {
-                                 "name": "POSTGRES_PASSWORD",
-                                 "value": "mendix"
-                              }
-                           ],
-                           "ip": {
-                              "get_input": "ip"
-                           },
-                           "deployment_unit": "container",
-                           "port": 8080
-                        },
-                        "requirements": [
-                           {
-                              "host": {
-                                 "node": "EdgeNode2",
                                  "relationship": "hostedOn"
                               }
                            }

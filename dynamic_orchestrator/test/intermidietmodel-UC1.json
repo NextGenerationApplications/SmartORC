@@ -11,7 +11,7 @@
             "id": "4a49bed",
             "size": "335.16MB",
             "imageName": "accordion-project/wp6/uc_1/signaling-server",
-            "component": "signaling-server"
+            "component": "SignalingServer"
         }
     ],
     "requirements": [
@@ -188,7 +188,7 @@
                                      "application": "ovr",
                                      "images": [
                                         {
-                                           "SingalingServer": {
+                                           "SignalingServer": {
                                               "name": "signaling-server",
                                               "internal": true
                                            }
@@ -196,7 +196,7 @@
                                         {
                                            "LocalService": {
                                               "name": "local-service",
-                                              "internal": true
+                                              "internal": false
                                            }
                                         }
                                      ],
@@ -210,7 +210,7 @@
                                         {
                                            "RelayServer": {
                                               "name": "remote-service",
-                                              "internal": true
+                                              "internal": false
                                            }
                                         }
                                      ],
@@ -283,13 +283,13 @@
                       "SignalingServer.component": {
                          "type": "Component",
                          "properties": {
-                            "name": "singalingserver",
+                            "name": "signalingserver",
                             "application": "ovr",
                             "external_ip": false,
                             "ip": {
                                "get_input": "ip"
                             },
-                            "port": 9090,
+                            "port": "9090",
                             "deployment_unit": "container"
                          },
                          "requirements": [

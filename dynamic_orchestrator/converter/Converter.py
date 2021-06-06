@@ -1,7 +1,7 @@
 import oyaml as yaml
 from dynamic_orchestrator.converter import ComputeNode
 
-def tosca_to_k8s(nodelist, imagelist, application, path_name):
+def tosca_to_k8s(nodelist, imagelist, application):
     images = []
     deployment = {}
     edge_os = ''

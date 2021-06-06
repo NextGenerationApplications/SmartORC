@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: OpenApi 3.0 ReST interface for Accordion LM-Orchestrator interactions
-  description: This is the Yaml file that goes with our server code
+  description: Interface between the ACCORDION Lifecycle Manager and Orchestrator components
   version: 1.0.0
 servers:
 - url: /orchestrator
@@ -23,6 +23,15 @@ paths:
       responses:
         "200":
           description: The request has been successfully executed
+        "400":
+          description: The request has not been formatted correctly  
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/inline_response_500'
+                x-content-type: application/json  
         "500":
           description: The request has not been succesfully executed. 
           content:
@@ -39,8 +48,12 @@ components:
   schemas:
     request_body:
       properties:
-        app_instance_id:
-          type: string
+        app_component_names:
+          type: array
+          items:
+            properties:
+               component_name:
+                 type: string
         operation:
           type: string
         app_model:

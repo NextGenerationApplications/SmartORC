@@ -56,14 +56,49 @@ def ReadFile(json, namespace, path_name):
                             object.set_name(name)
                             imagelist.append(object)
                     actionlist.append({'action': 'deploy', 'order': order, 'components': component_names})
-
-                if 'createSession' in actions:
+                if 'requestSession' in actions:
                     component_names = []
-                    createSession = actions.get('createSession')
-                    deploy_properties = createSession.get('properties')
-                    application = deploy_properties.get('application')
-                    order = deploy_properties.get("order")
-                    images = deploy_properties.get('images')
+                    createSession = actions.get('requestSession')
+                    createSession_properties = createSession.get('properties')
+                    application = createSession_properties.get('application')
+                    order = createSession_properties.get("order")
+                    images = createSession_properties.get('images')
+                    cloud.set_application(application)
+                    for image in images:
+                        print(image)
+                        object = Image.Image()
+                        for name, dict_ in image.items():
+                            object.set_internal(dict_.get('internal'))
+                            object.set_path(dict_.get('name'))
+                            component_names.append(name.lower())
+                            object.set_name(name)
+                            imagelist.append(object)
+                    actionlist.append({'action': 'requestSession', 'order': order, 'components': component_names})
+                if 'terminate' in actions:
+                    component_names = []
+                    terminate = actions.get('terminate')
+                    terminate_properties = terminate.get('properties')
+                    application = terminate_properties.get('application')
+                    images = terminate_properties.get('images')
+                    order = terminate_properties.get("order")
+                    cloud.set_application(application)
+                    for image in images:
+                        print(image)
+                        object = Image.Image()
+                        for name, dict_ in image.items():
+                            object.set_internal(dict_.get('internal'))
+                            object.set_path(dict_.get('name'))
+                            component_names.append(name.lower())
+                            object.set_name(name)
+                            imagelist.append(object)
+                    actionlist.append({'action': 'terminate', 'order': order, 'components': component_names})
+                if 'requestAnblick' in actions:
+                    component_names = []
+                    anblick = actions.get('requestAnblick')
+                    anblick_properties = anblick.get('properties')
+                    application = anblick_properties.get('application')
+                    images = anblick_properties.get('images')
+                    order = anblick_properties.get("order")
                     cloud.set_application(application)
                     for image in images:
                         _object = Image.Image()

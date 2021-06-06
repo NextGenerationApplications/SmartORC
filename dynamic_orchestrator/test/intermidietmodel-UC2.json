@@ -9,7 +9,8 @@
             "repository": "registry.gitlab.com/accordion-project/wp6/uc2/orbkaccserver",
             "version": "latest",
             "id": "343ba97",
-            "name": "GameServer",
+            "imageName": "accordion-project/wp6/uc2/orbkaccserver",
+            "component": "GameServer",
             "size": "146.94MB"
         }
     ],
@@ -179,40 +180,9 @@
                                     "order": 1
                                  }
                               },
-                              "update": {
+                              "terminate": {
                                  "properties": {
                                     "application": "orbk",
-                                    "from": {
-                                       "images": [
-                                          {
-                                             "GameServer": {
-                                                "name": "orbkaccserver",
-                                                "internal": true
-                                             }
-                                          }
-                                       ]
-                                    },
-                                    "to": {
-                                       "images": [
-                                          {
-                                             "GameServer": {
-                                                "name": "orbkaccserver",
-                                                "internal": true
-                                             }
-                                          }
-                                       ]
-                                    },
-                                    "order": 2
-                                 }
-                              },
-                              "spawn": {
-                                 "properties": {
-                                    "application": "orbk",
-                                    "condition": {
-                                       "user": {
-                                          "greater": 100
-                                       }
-                                    },
                                     "images": [
                                        {
                                           "GameServer": {
@@ -221,7 +191,7 @@
                                           }
                                        }
                                     ],
-                                    "order": 3
+                                    "order": 2
                                  }
                               }
                            }
@@ -261,7 +231,7 @@
                            "ip": {
                               "get_input": "ip"
                            },
-                           "port": 20765
+                           "port": "20765"
                         },
                         "requirements": [
                            {
