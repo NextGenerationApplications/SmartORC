@@ -13,7 +13,7 @@ def convert_bytes(bytes):
     return output
 
 
-def generate(nodelist, application, path_name):
+def generate(nodelist, application):
     json_template = {}
     resourcelist = []
 

@@ -4,34 +4,25 @@ Created on 8th february 2021
 @author: Ferrucci
 '''
     
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 class AbstractOrchestrator(metaclass=ABCMeta):
 
-    def AppModelContent_getter(self):
-        return 
-
-    def MonitorDataContent_getter(self):
-        return 
-
     @abstractmethod
-    def calculate_dep_plan(self, AppModelContent, MonitorDataContent):
+    def calculate_dep_plan(self, components, RID_response, matchmaking_model):
         """calculate_dep_plan
-           parsing of the AppModel and MonitorData must be done in this method
-        :param AppModelContent: 
-        :type AppModelContent: 
-        :param MonitorDataContent: 
-        :type MonitorDataContent: 
-
-        :rtype: List[] list of yaml document in memory, produced 
-                    by the yaml library
-                return an empty List if calculated solution is not feasible
+           matchmaking of components and ACCORDION federation resources will be done in this method
+        :param components: 
+        :type : array of dictionaries
+        :param : RID_response
+        :type : 
+        :param : matchmaking_model
+        :type : 
+        :rtype: List[str] list of file names
                 return a None List if there is an error during process 
         """
         return   
-    
-    AppModelContent = abstractproperty(AppModelContent_getter)
-    MonitorDataContent = abstractproperty(AppModelContent_getter)
+
 
 
         

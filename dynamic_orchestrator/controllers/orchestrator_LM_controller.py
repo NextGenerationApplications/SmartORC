@@ -7,28 +7,20 @@ from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # 
 from dynamic_orchestrator.models.request_body import RequestBody  # noqa: E501
 from dynamic_orchestrator import util
 from  urllib.error import HTTPError
-from kubernetes import client, config, utils
 import base64
 import json
-import yaml
-from werkzeug.utils import secure_filename
-import os
-import shutil
 from flask import current_app
 import requests
-from pickle import TRUE
+from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
-# APPMODELS_PATH = '/appmodels'
-
-def choose_application (app_instance_id):   
-    name = app_instance_id.split('-')[1]
-    if name == 'plexus':
+def choose_application (name):   
+    if name == 'accordion-plexus':
         token_name = 'gitlab+deploy-token-420906'
         token_pass = 'jwCSDnkoZDeZqwf2i9-m'
-    if name == 'orbk':
+    if name == 'accordion-orbk':
         token_name = 'gitlab+deploy-token-420904'
         token_pass = 'gzP9s2bkJV-yeh1a6fn3'
-    if name == 'ovr':
+    if name == 'accordion-ovr':
         token_name = 'gitlab+deploy-token-430087'
         token_pass = 'NDxnnzt9WvuR7zyAHchX'
     return token_name, token_pass
@@ -41,8 +33,8 @@ def supported_operation (operation):
     return None
     
 
-def secret (app_instance_id):  
-    token_name, token_pass = choose_application(app_instance_id)
+def secret (name):  
+    token_name, token_pass = choose_application(name)
     sample_string = token_name + ":" + token_pass
     sample_string_bytes = sample_string.encode("ascii")
     base64_bytes = base64.b64encode(sample_string_bytes)
@@ -58,16 +50,6 @@ def secret (app_instance_id):
     json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
     return json_base64_string
 
-def create_kubernetes_directory (name):
-    k_directory = os.path.join(current_app.config.get('KUBERNETES_FOLDER'), name )  
-    if not os.path.isdir(k_directory):
-        os.makedirs(k_directory) 
-    return k_directory
-
-#def appmodels_basepath():
-#    global APPMODELS_PATH
-#    return current_app.config.get('UPLOAD_FOLDER') + APPMODELS_PATH
-
 def deploy(body):
     try:
         components = body.app_component_names
@@ -79,21 +61,35 @@ def deploy(body):
             error = 'Deploy operation not executed succesfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400
         
-        app_name = ''
-        name = ''
+        RID_response = requests.get('http://localhost:5000/miniclouds', timeout=5)
+        RID_response.raise_for_status()
+        RID_response = RID_response.json()
+        print(RID_response)
+        app_component_name = components[0].component_name
+        app_component_name_parts = app_component_name.split('-')
+        app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
+        app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
+        app_instance = app_name + '-' + app_component_name_parts[5]
         
-        namespace_yaml = namespace(app_name)
-        secret_yaml = secret_generation(secret (body.app_instance_id), app_name)
-        nodelist, imagelist = ReadFile(body.app_model, app_name, name)
-        deployment_files, persistent_files, service_files, kustomization_file = tosca_to_k8s(nodelist, imagelist, app_name)
+        nodelist, imagelist = ReadFile(body.app_model)
+        matchmaking_model = generate(nodelist, app_instance)
+        solver = ConcreteOrchestrator()
+        
+        solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+
+        namespace_yaml = namespace(app_instance)
+        secret_yaml = secret_generation(secret(app_name), app_instance)        
+        deployment_files, persistent_files, service_files, kustomization_file = tosca_to_k8s(nodelist, imagelist, app_instance)
       
-        print(namespace_yaml)
-        print(secret_yaml)
-        print(deployment_files)
-        matchmaking_model = generate(nodelist, app_name, name)
-        print(matchmaking_model)
+        #print(namespace_yaml)
+        #print(secret_yaml)
+        #print(deployment_files)
+        #print(matchmaking_model)
     except OSError as err:
-        error = 'Deploy operation not executed successfully due to the following error: ' + err.strerror
+        if not err:
+            error = 'Deploy operation not executed successfully due to the following error: ' + err.strerror
+        else:
+            error = 'Deploy operation not executed successfully due to an unknown error! '
         return {'reason': error}, 500
     except:
         error = 'Deploy operation not executed successfully due to an unknown error!'

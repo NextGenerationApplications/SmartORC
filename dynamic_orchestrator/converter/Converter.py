@@ -73,7 +73,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             service = {'service-' + x.get_name(): {'apiVersion': 'v1',
                                                                    'kind': 'Service',
                                                                    'metadata': {
-                                                                       'name': x.get_name(),
+                                                                       'name': 'service-'+x.get_name(),
                                                                        'namespace': application,
                                                                        'labels': {
                                                                            'app': application}},
@@ -83,7 +83,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                                        'type': 'LoadBalancer'}}}
                             service_files.append(service)
                         if resource.get_disk():
-                            persistent_volume = {'persistent-volume-' + x.get_name(): {'apiVersion': 'v1',
+                            persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
                                                                                        'kind': 'PersistentVolumeClaim',
                                                                                        'metadata': {
                                                                                            'name': x.get_volumes_claimname(),
@@ -102,7 +102,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             if x.get_env() is not None:
                                 deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
                                                                              'kind': 'Deployment',
-                                                                             'metadata': {'name': x.get_name(),
+                                                                             'metadata': {'name': application+"-"+x.get_name(),
                                                                                           'namespace': application,
                                                                                           'labels': {
                                                                                               'app': application}},
@@ -143,7 +143,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             if x.get_env() is None:
                                 deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
                                                                              'kind': 'Deployment',
-                                                                             'metadata': {'name': x.get_name(),
+                                                                             'metadata': {'name': application+"-"+x.get_name(),
                                                                                           'namespace': application,
                                                                                           'labels': {
                                                                                               'app': application}},
@@ -184,7 +184,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             if not x.get_env():
                                 deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
                                                                              'kind': 'Deployment',
-                                                                             'metadata': {'name': x.get_name(),
+                                                                             'metadata': {'name': application+"-"+x.get_name(),
                                                                                           'namespace': application,
                                                                                           'labels': {
                                                                                               'app': application}},
@@ -221,7 +221,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             else:
                                 deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
                                                                              'kind': 'Deployment',
-                                                                             'metadata': {'name': x.get_name(),
+                                                                             'metadata': {'name': application+"-"+x.get_name(),
                                                                                           'namespace': application,
                                                                                           'labels': {
                                                                                               'app': application}},
@@ -267,7 +267,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
 
                     if host == resource.get_name():
                         if resource.get_disk():
-                            persistent_volume = {'persistent-volume-' + x.get_name(): {'apiVersion': 'v1',
+                            persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
                                                                                        'kind': 'PersistentVolumeClaim',
                                                                                        'metadata': {
                                                                                            'name': x.get_volumes_claimname(),
@@ -299,7 +299,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                 service = {'service-' + x.get_name(): {'apiVersion': 'v1',
                                                                        'kind': 'Service',
                                                                        'metadata': {
-                                                                           'name': x.get_name(),
+                                                                           'name': 'service-'+x.get_name(),
                                                                            'namespace': application,
                                                                            'labels': {
                                                                                'app': application}},
@@ -312,7 +312,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                         if not x.get_internal():
                             deployment = {'deployment-' + x.get_name(): {'apiVersion': 'kubevirt.io/v1',
                                                                          'kind': 'VirtualMachine',
-                                                                         'metadata': {'name': x.get_name(),
+                                                                         'metadata': {'name': application+"-"+x.get_name(),
                                                                                       'namespace': application,
                                                                                       'generation': 1,
                                                                                       'labels': {
@@ -359,7 +359,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
 
 
 def secret_generation(json, application):
-    secret = {'secret-' + application: {'apiVersion': 'v1',
+    secret = {application: {'apiVersion': 'v1',
                                         'kind': 'Secret',
                                         'metadata': {
                                             'name': application + '-registry-credentials',
@@ -372,6 +372,6 @@ def secret_generation(json, application):
 
 def namespace(application):
     namespace = {
-        'namespace-' + application: {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': application}}}
+        application: {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': application}}}
 
     return namespace

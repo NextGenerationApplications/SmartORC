@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 from flask import json
-from six import BytesIO
 
 from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody  # noqa: E501
@@ -35,7 +34,7 @@ class TestLMOrchestratorController(BaseTestCase):
         json_file = open('intermidietmodel-UC1.json')
         app_model = json.load(json_file)
         application_parameters = None
-        body = RequestBody([{'component_name':'accordion-ovr-0_0_1-1234-signalingserver'}],'deploy',app_model,application_parameters)
+        body = RequestBody([{'component_name':'accordion-ovr-0-0-1-1234-signalingserver'}],'deploy',app_model,application_parameters)
            
         response = self.client.open(
             '/orchestrator/request',
@@ -64,7 +63,7 @@ class TestLMOrchestratorController(BaseTestCase):
         json_file = open('intermidietmodel-UC2.json')
         app_model = json.load(json_file)
         application_parameters = None
-        body = RequestBody([{'component_name':'accordion-orbk-0_0_1-1234-gameserver'}],'deploy',app_model,application_parameters)
+        body = RequestBody([{'component_name':'accordion-orbk-0-0-1-1234-gameserver'}],'deploy',app_model,application_parameters)
            
         response = self.client.open(
             '/orchestrator/request',
@@ -82,7 +81,7 @@ class TestLMOrchestratorController(BaseTestCase):
         json_file = open('intermidietmodel-UC3.json')
         app_model = json.load(json_file)
         application_parameters = None
-        body = RequestBody([{'component_name':'accordion-plexus-0_0_1-1234-ls'}],'deploy',app_model,application_parameters)
+        body = RequestBody([{'component_name':'accordion-plexus-0-0-1-1234-ls'}],'deploy',app_model,application_parameters)
            
         response = self.client.open(
             '/orchestrator/request',

@@ -5,7 +5,7 @@ import yaml
 home = str(os.getcwd())
 
 
-def ReadFile(json, namespace, path_name):
+def ReadFile(json):
     nodelist = []
     actionlist = []
     resource = ""
@@ -19,7 +19,6 @@ def ReadFile(json, namespace, path_name):
     topology = definitions.get('topology_template')
     node_template = topology.get('node_templates')
     registry = json.get('registry')
-    print(registry)
     repolist = []
     for repository in registry:
         repo = Repository.Repository()
@@ -45,16 +44,15 @@ def ReadFile(json, namespace, path_name):
                     application = deploy_properties.get('application')
                     order = deploy_properties.get("order")
                     images = deploy_properties.get('images')
-                    print(application)
                     cloud.set_application(application)
                     for image in images:
-                        object = Image.Image()
+                        _object = Image.Image()
                         for name, dict_ in image.items():
-                            object.set_internal(dict_.get('internal'))
-                            object.set_path(dict_.get('name'))
+                            _object.set_internal(dict_.get('internal'))
+                            _object.set_path(dict_.get('name'))
                             component_names.append(name.lower())
-                            object.set_name(name)
-                            imagelist.append(object)
+                            _object.set_name(name)
+                            imagelist.append(_object)
                     actionlist.append({'action': 'deploy', 'order': order, 'components': component_names})
                 if 'requestSession' in actions:
                     component_names = []
@@ -66,13 +64,13 @@ def ReadFile(json, namespace, path_name):
                     cloud.set_application(application)
                     for image in images:
                         print(image)
-                        object = Image.Image()
+                        _object = Image.Image()
                         for name, dict_ in image.items():
-                            object.set_internal(dict_.get('internal'))
-                            object.set_path(dict_.get('name'))
+                            _object.set_internal(dict_.get('internal'))
+                            _object.set_path(dict_.get('name'))
                             component_names.append(name.lower())
-                            object.set_name(name)
-                            imagelist.append(object)
+                            _object.set_name(name)
+                            imagelist.append(_object)
                     actionlist.append({'action': 'requestSession', 'order': order, 'components': component_names})
                 if 'terminate' in actions:
                     component_names = []
@@ -84,13 +82,13 @@ def ReadFile(json, namespace, path_name):
                     cloud.set_application(application)
                     for image in images:
                         print(image)
-                        object = Image.Image()
+                        _object = Image.Image()
                         for name, dict_ in image.items():
-                            object.set_internal(dict_.get('internal'))
-                            object.set_path(dict_.get('name'))
+                            _object.set_internal(dict_.get('internal'))
+                            _object.set_path(dict_.get('name'))
                             component_names.append(name.lower())
-                            object.set_name(name)
-                            imagelist.append(object)
+                            _object.set_name(name)
+                            imagelist.append(_object)
                     actionlist.append({'action': 'terminate', 'order': order, 'components': component_names})
                 if 'requestAnblick' in actions:
                     component_names = []
