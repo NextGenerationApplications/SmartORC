@@ -9,7 +9,6 @@ def tosca_to_k8s(nodelist, imagelist, application):
     edge_cpu = ''
     edge_mem = ''
     vm_os = ''
-    kustomization_file =[]
     service_files = []
     persistent_files = []
     deployment_files = []
@@ -18,19 +17,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
     resources = []
     value = 7000
     y = 0
-    flag = False
     for x in nodelist:
-        if 'Cloud_Framework' in x.get_type():
-            resources.append('namespace.yaml')
-            for image in imagelist:
-                if image.get_internal():
-                    flag = True
-                deployment_file = image.get_name().lower() + '-deployment' + '.yaml'
-                resources.append(deployment_file)
-            if flag:
-                resources.append('secret.yaml')
-            kustomization = {'kustomization': {'resources': resources}}
-            kustomization_file.append(kustomization)
         if ('EdgeNode' in x.get_type()) or ('PublicCloud' in x.get_type()):
             resource = ComputeNode.Resource()
             resource.set_os(x.get_os())
@@ -355,7 +342,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                                                              },
                                                                                              'name': 'cloudinitdisk'}]}}}}}
                             deployment_files.append(deployment)
-    return deployment_files, persistent_files, service_files, kustomization_file
+    return deployment_files, persistent_files, service_files
 
 
 def secret_generation(json, application):

@@ -54,12 +54,15 @@ def deploy(body):
     try:
         components = body.app_component_names
         if(components == None):
-            error = 'Deploy operation not executed succesfully due to the following error: no application components to be deployed' 
+            error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
             return {'reason': error}, 400
         
         if(len(components) == 0):
-            error = 'Deploy operation not executed succesfully due to the following error: no application components to be deployed'
+            error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400
+        
+        Debug_response = requests.get('http://localhost:5000/debug', timeout=5)
+        Debug_response.raise_for_status()
         
         RID_response = requests.get('http://localhost:5000/miniclouds', timeout=5)
         RID_response.raise_for_status()
@@ -71,15 +74,15 @@ def deploy(body):
         app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
         app_instance = app_name + '-' + app_component_name_parts[5]
         
-        nodelist, imagelist = ReadFile(body.app_model)
+        nodelist, imagelist, app_version = ReadFile(body.app_model)
         matchmaking_model = generate(nodelist, app_instance)
         solver = ConcreteOrchestrator()
         
-        solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
 
         namespace_yaml = namespace(app_instance)
         secret_yaml = secret_generation(secret(app_name), app_instance)        
-        deployment_files, persistent_files, service_files, kustomization_file = tosca_to_k8s(nodelist, imagelist, app_instance)
+        deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance)
       
         #print(namespace_yaml)
         #print(secret_yaml)

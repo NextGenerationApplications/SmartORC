@@ -19,6 +19,9 @@ def ReadFile(json):
     topology = definitions.get('topology_template')
     node_template = topology.get('node_templates')
     registry = json.get('registry')
+    application_details = json.get('details')
+    application_version = application_details.get('version')
+    print(registry)
     repolist = []
     for repository in registry:
         repo = Repository.Repository()
@@ -234,4 +237,4 @@ def ReadFile(json):
             os_type = os_properties.get('type')
             vm.set_os(os_type)
             nodelist.append(vm)
-    return nodelist, imagelist
+    return nodelist, imagelist, application_version.replace(".", "-")
