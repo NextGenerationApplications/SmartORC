@@ -1,5 +1,4 @@
 import connexion
-import six
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
 from dynamic_orchestrator.converter.Converter import namespace,secret_generation, tosca_to_k8s  
@@ -9,7 +8,6 @@ from dynamic_orchestrator import util
 from  urllib.error import HTTPError
 import base64
 import json
-from flask import current_app
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
@@ -59,15 +57,15 @@ def deploy(body):
         
         if(len(components) == 0):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
-            return {'reason': error}, 400
+            return {'reason': error}, 400     
         
-        Debug_response = requests.get('http://localhost:5000/debug', timeout=5)
+        Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
         Debug_response.raise_for_status()
         
-        RID_response = requests.get('http://localhost:5000/miniclouds', timeout=5)
+        RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
         RID_response.raise_for_status()
         RID_response = RID_response.json()
-        print(RID_response)
+       
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
         app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
@@ -76,8 +74,8 @@ def deploy(body):
         
         nodelist, imagelist, app_version = ReadFile(body.app_model)
         matchmaking_model = generate(nodelist, app_instance)
-        solver = ConcreteOrchestrator()
         
+        solver = ConcreteOrchestrator() 
         dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
 
         namespace_yaml = namespace(app_instance)

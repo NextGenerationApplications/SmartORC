@@ -10,20 +10,16 @@ def main(argv):
         opts = getopt.getopt(argv,"hp:k:")
     except getopt.GetoptError:
         #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
-        print ('__main__.py -f <kubernetes_config_filename> -k <kubernetes_app_model_file_folder> -p <orchestrator_port_number>')
+        print ('__main__.py -p <orchestrator_port_number>')
         sys.exit(2)
-    kubernetes_folder = './kubernetes'
-    kubernetes_config_file_name = 'kubeconfig'
+    #kubernetes_folder = './kubernetes'
+    #kubernetes_config_file_name = 'kubeconfig'
     port_number = 8080
     for opt, arg in opts:
         if opt == '-h':
             #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
             print ('__main__.py -f  <kubernetes_config_filename> -k <kubernetes_app_model_file_folder> -p <orchestrator_port_number>')
             sys.exit()
-        elif opt == "-f":
-            kubernetes_config_file_name = arg                 
-        elif opt == "-k":
-            kubernetes_folder = arg   
         elif opt == "-p":
             try:
                 input_port = int(arg)
@@ -37,8 +33,8 @@ def main(argv):
     app = connexion.App(__name__, specification_dir='./dynamic_orchestrator', options = options)
     app.app.json_encoder = encoder.JSONEncoder
     #app.app.config['ORCHESTRATOR'] = ConcreteOrchestrator() 
-    app.app.config['KUBERNETES_FOLDER'] = kubernetes_folder 
-    app.app.config['KUBERNETES_CONFIG_FILE'] = kubernetes_config_file_name
+    #app.app.config['KUBERNETES_FOLDER'] = kubernetes_folder 
+    #app.app.config['KUBERNETES_CONFIG_FILE'] = kubernetes_config_file_name
     app.add_api('Orchestrator_LM.yaml', arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, 
                 pythonic_params=True)
     app.run(port=port_number)
