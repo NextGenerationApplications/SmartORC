@@ -14,6 +14,6 @@ class BaseTestCase(TestCase):
         app = connexion.App(__name__, specification_dir='./',options = options)
         app.app.json_encoder = JSONEncoder
         app.app.config['UPLOAD_FOLDER'] = './'
-        app.app.config['ORCHESTRATOR'] = ConcreteOrchestrator() 
+        #app.app.config['ORCHESTRATOR'] = ConcreteOrchestrator() 
         app.add_api('../Orchestrator_LM.yaml',arguments={'title': 'OpenApi 3.0 ReST interface for Accordion Orchestrator'}, pythonic_params=True)
         return app.app

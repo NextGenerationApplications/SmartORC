@@ -8,6 +8,7 @@ from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
 from numbers import Number
 from mip import Model, xsum, BINARY, maximize, OptimizationStatus
 import json
+import math
 
 class ConcreteOrchestrator(AbstractOrchestrator):
     '''
@@ -19,19 +20,17 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         Constructor
         '''               
         
-    def component_requirements_translation(self,requirements):
+    def component_requirements_translation(self, requirements):
         component_translation = {}
         for requirement_name, requirement_value in requirements.items():
             if requirement_name == 'os':
                 if requirement_value == 'linux':
-                    component_translation['QEos'] = 1
-                     
+                    component_translation['QEos'] = 1             
             if requirement_name == 'arch':
                 if requirement_value == 'x86_64': 
                     component_translation['QEarch'] = 1
                 elif 'ARM' in requirement_value:                  
-                    component_translation['QEarch'] = 2
-                    
+                    component_translation['QEarch'] = 2                
             if requirement_name == 'hardware_requirements':
                 for hw_requirement_name, hw_requirement_value in requirements['hardware_requirements'].items(): 
                     if hw_requirement_name == 'cpu':
@@ -43,18 +42,16 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     if hw_requirement_name == 'gpu':
                         for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
                             if gpu_requirement_name == 'model':
+                                if 'INTEL' in gpu_requirement_value:
+                                    component_translation['QEhardware_requirements_gpu_model'] = 3
                                 if 'NVIDIA' in gpu_requirement_value:
                                     component_translation['QEhardware_requirements_gpu_model'] = 1
                                 elif 'AMD' in gpu_requirement_value:
                                     component_translation['QEhardware_requirements_gpu_model'] = 2
-
                             if gpu_requirement_name == 'dedicated':
                                 if gpu_requirement_value == 'True':
-                                    component_translation['QEhardware_requirements_gpu_dedicated'] = 1
-                                                                  
-        #f = open("C:\\Users\\Sara\\git\\dynamic-orchestrator\\appmodels\\AppModelFileID1\\AppModel.yml", "r")       
-        #app_model = yaml.load(f)
-        #component_translation['links'] = None    
+                                    component_translation['Qhardware_requirements_gpu_dedicated'] = 1
+                                                                    
         return component_translation
 
     def node_resources_translation(self, node): 
@@ -72,6 +69,13 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         else:
             node_res_translation['QEos'] = 0
         
+        node_res_translation['cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
+        node_res_translation['ram'] = node['available_memory(bytes)']
+        
+        node_res_translation['disk'] = node ['disk_free_space(bytes)']
+   
+        if 'Intel' in node['device.GPU.GPU_name']:
+            node_res_translation['QEhardware_requirements_gpu_model'] = 3
         if 'AMD' in node['device.GPU.GPU_name']:
             node_res_translation['QEhardware_requirements_gpu_model'] = 2
         elif 'Nvidia' in node['device.GPU.GPU_name']:
@@ -80,11 +84,11 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             node_res_translation['QEhardware_requirements_gpu_model'] = 0
            
         if 'Integrated' in node['device.GPU.GPU_type']:
-            node_res_translation[''] = 1
+            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
         else:
-            node_res_translation[''] = 0
+            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 0
             
-        
+        return node_res_translation
         
     def generate_app_components_request_model(self, components, matchmaking_model):      
         app_components_request_model = []    
