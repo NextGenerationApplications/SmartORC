@@ -70,9 +70,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             node_res_translation['QEos'] = 0
         
         node_res_translation['cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
-        node_res_translation['ram'] = node['available_memory(bytes)']
+        node_res_translation['ram'] = int(node['available_memory(bytes)'])
         
-        node_res_translation['disk'] = node ['disk_free_space(bytes)']
+        node_res_translation['disk'] = int(node ['disk_free_space(bytes)'])
    
         if 'Intel' in node['device.GPU.GPU_name']:
             node_res_translation['QEhardware_requirements_gpu_model'] = 3
@@ -140,7 +140,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         #             for j in range(NumComponents) 
         #                for n in range(NumNodes)) == NumComponents
         
-        # every application component MUST be deployed on exactly an Nodes
+        # every application component MUST be deployed on exactly a Node
         for j in range(NumComponents):
             MILP += xsum(decision_variables[n][j]  for n in range(NumNodes)) == 1
             
@@ -149,25 +149,28 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             if not (resource == 'links'): 
                 if not (resource[0] == 'Q'):
                     n=0
-                    for Node in Fed_res_availability:     
+                    for Node in Fed_res_availability:    
+                        (App_Components_req[j])[resource] = 0 
                         MILP += xsum(((decision_variables[n][j])*((App_Components_req[j])[resource])) 
                                      for j in range(NumComponents) 
                                         if resource in (App_Components_req[j])) <= Node[resource]
                         n+=1 
          
-        # every dep plan must respect constraints on QoS indicators of every Nodes 
+        # every dep plan must respect constraints on QoS indicators of every Nodes
         #(case of a resource with first letter Q not followed by the letter E 
         for resource in Fed_res_availability[0]:
             if not (resource == 'links'): 
-                if (resource[0] == 'Q' and (not resource[1]== 'E')):
+                if (resource[0] == 'Q' and (not resource[1] == 'E')):
                     n=0
                     for Node in Fed_res_availability:    
                         for j in range(NumComponents):
                             if resource in (App_Components_req[j]):
-                                MILP += ((decision_variables[n][j])*((App_Components_req[j])[resource] - Node[resource])) <= 0
-                                n+=1                                            
+                                res_diff = (App_Components_req[j])[resource] - Node[resource]
+                                if not (res_diff == 0):
+                                    MILP += ((decision_variables[n][j])*res_diff) <= 0                                
+                                    n+=1                                            
         
-        # every dep plan must respect constraints on QoS indicators of every Nodes
+        # every dep plan must respect constraints on QoS indicators of every Node
         #(case of a resource with first letter Q, followed by the letter E 
         # In this case the value of the decision variable must be an exact value: if it is not present
         # in the requirements of the components, it means that it's not important 
@@ -179,8 +182,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     for Node in Fed_res_availability:    
                         for j in range(NumComponents):
                             if resource in (App_Components_req[j]):
-                                MILP += ((decision_variables[n][j])*((App_Components_req[j])[resource] - Node[resource])) == 0
-                                n+=1  
+                                if not ((App_Components_req[j])[resource] == Node[resource]):
+                                    MILP += (decision_variables[n][j]) == 0                                
+                                    n+=1  
                
         # auxiliary decision variables: decision_vars y (ijn1n2) with i and j in Components with i!=j, n1 and n2 in Nodes with n1!=n2 
         #auxiliary_decision_variables = [[[[MILP.add_var('y({},{},{},{})'.format(i, j, n1, n2), var_type=BINARY)
