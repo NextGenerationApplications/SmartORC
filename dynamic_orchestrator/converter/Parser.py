@@ -183,13 +183,23 @@ def ReadFile(json):
             edgenode.set_type(_type)
             if properties:
                 gpu_model = properties.get('gpu_model')
-                model = gpu_model.get('model')
-                edgenode.set_gpu_model(model)
-                dedicated = gpu_model.get('dedicated')
-                edgenode.set_gpu_dedicated(dedicated)
+                if gpu_model:
+                    model = gpu_model.get('model')
+                    edgenode.set_gpu_model(model)
+                    dedicated = gpu_model.get('dedicated')
+                    edgenode.set_gpu_dedicated(dedicated)
+                wifi_antenna = properties.get('wifi_antenna')
+                if wifi_antenna:
+                    edgenode.set_wifi_antenna(wifi_antenna)
+                if not wifi_antenna:
+                    edgenode.set_wifi_antenna("None")
+                if not gpu_model:
+                    edgenode.set_gpu_model("None")
+                    edgenode.set_gpu_dedicated("None")
             if not properties:
-                edgenode.set_gpu_model(None)
-                edgenode.set_gpu_dedicated(None)
+                edgenode.set_gpu_model("None")
+                edgenode.set_gpu_dedicated("None")
+                edgenode.set_wifi_antenna("None")
             capabilities = node.get('capabilities')
             if capabilities.get('host'):
                 host = capabilities.get('host')
@@ -236,5 +246,7 @@ def ReadFile(json):
             os_properties = os.get('properties')
             os_type = os_properties.get('type')
             vm.set_os(os_type)
+            architecture = os_properties.get('architecture')
+            vm.set_architecture(architecture)
             nodelist.append(vm)
     return nodelist, imagelist, application_version.replace(".", "-")

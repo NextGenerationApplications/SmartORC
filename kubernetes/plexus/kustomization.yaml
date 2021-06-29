@@ -1,7 +1,0 @@
-resources:
-- namespace.yaml
-- remoteservice-deployment.yaml
-- localservice-deployment.yaml
-- grafana-deployment.yaml
-- postgres-deployment.yaml
-- secret.yaml

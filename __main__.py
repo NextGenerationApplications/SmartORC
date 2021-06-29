@@ -2,12 +2,12 @@
 
 import connexion,sys,getopt
 from dynamic_orchestrator import encoder
-from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
+#from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
 def main(argv):
     try:
         #opts, args = getopt.getopt(argv,"hp:d:k:")
-        opts = getopt.getopt(argv,"hp:k:")
+        opts = getopt.getopt(argv,"hp:")
     except getopt.GetoptError:
         #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
         print ('__main__.py -p <orchestrator_port_number>')
@@ -18,7 +18,8 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
-            print ('__main__.py -f  <kubernetes_config_filename> -k <kubernetes_app_model_file_folder> -p <orchestrator_port_number>')
+            #print ('__main__.py -f  <kubernetes_config_filename> -k <kubernetes_app_model_file_folder> -p <orchestrator_port_number>')
+            print ('__main__.py -p <orchestrator_port_number>')
             sys.exit()
         elif opt == "-p":
             try:

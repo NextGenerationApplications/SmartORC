@@ -83,6 +83,13 @@ class ComputeNode:
     def get_architecture(self):
         return self.__arch
 
+    def set_wifi_antenna(self, wifi):
+        self.__wifi_antenna = wifi
+
+    def get_wifi_antenna(self):
+        return self.__wifi_antenna
+
+
 class Resource:
     def set_disk(self, disk_size):
         self.__disk_size = disk_size
@@ -114,6 +121,22 @@ class Resource:
     def get_name(self):
         return self.__name
 
+    def set_gpu_model(self, model):
+        self.__model = model
 
+    def get_gpu_model(self):
+        return self.__model
+
+    def set_gpu_dedicated(self, dedicated):
+        self.__dedicated = dedicated
+
+    def get_gpu_dedicated(self):
+        return self.__dedicated
+
+    def set_wifi_antenna(self, wifi):
+        self.__wifi_antenna = wifi
+
+    def get_wifi_antenna(self):
+        return self.__wifi_antenna
 
 

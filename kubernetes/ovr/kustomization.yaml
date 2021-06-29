@@ -1,6 +1,0 @@
-resources:
-- namespace.yaml
-- relayserver-deployment.yaml
-- signalingserver-deployment.yaml
-- localservice-deployment.yaml
-- secret.yaml

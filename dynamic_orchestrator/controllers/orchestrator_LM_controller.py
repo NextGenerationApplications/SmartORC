@@ -12,13 +12,13 @@ import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
 def choose_application (name):   
-    if name == 'accordion-plexus':
+    if name == 'accordion-plexus-0-0-1':
         token_name = 'gitlab+deploy-token-420906'
         token_pass = 'jwCSDnkoZDeZqwf2i9-m'
-    if name == 'accordion-orbk':
+    if name == 'accordion-orbk-0-0-1':
         token_name = 'gitlab+deploy-token-420904'
         token_pass = 'gzP9s2bkJV-yeh1a6fn3'
-    if name == 'accordion-ovr':
+    if name == 'accordion-ovr-0-0-1':
         token_name = 'gitlab+deploy-token-430087'
         token_pass = 'NDxnnzt9WvuR7zyAHchX'
     return token_name, token_pass
@@ -77,10 +77,10 @@ def deploy(body):
         
         solver = ConcreteOrchestrator() 
         dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
-
+        minicloud = '1'
         namespace_yaml = namespace(app_instance)
         secret_yaml = secret_generation(secret(app_name), app_instance)        
-        deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance)
+        deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance, minicloud)
       
         #print(namespace_yaml)
         #print(secret_yaml)
@@ -98,6 +98,8 @@ def deploy(body):
     return 200
 
 def undeploy(body):
+    error = 'Deploy operation not implemented yet!'
+    return {'reason': error}, 500
     return 200
 
 def orchestrator_LM_request(body):  # noqa: E501

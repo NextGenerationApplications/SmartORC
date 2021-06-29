@@ -1,7 +1,7 @@
 import oyaml as yaml
 from dynamic_orchestrator.converter import ComputeNode
 
-def tosca_to_k8s(nodelist, imagelist, application):
+def tosca_to_k8s(nodelist, imagelist, application, minicloud):
     images = []
     deployment = {}
     edge_os = ''
@@ -25,6 +25,14 @@ def tosca_to_k8s(nodelist, imagelist, application):
             resource.set_mem(x.get_mem_size())
             resource.set_disk(x.get_disk_size())
             resource.set_name(x.get_name())
+            if 'EdgeNode' in x.get_type():
+                resource.set_gpu_model(x.get_gpu_model())
+                resource.set_gpu_dedicated(x.get_gpu_dedicated())
+                resource.set_wifi_antenna(x.get_wifi_antenna())
+            else:
+                resource.set_gpu_model("None")
+                resource.set_gpu_dedicated("None")
+                resource.set_wifi_antenna("None")
             resource_list.append(resource)
         if 'Component' in x.get_type():
             if x.get_unit() == 'container':
@@ -60,7 +68,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             service = {'service-' + x.get_name(): {'apiVersion': 'v1',
                                                                    'kind': 'Service',
                                                                    'metadata': {
-                                                                       'name': 'service-'+x.get_name(),
+                                                                       'name': 'service-' + x.get_name(),
                                                                        'namespace': application,
                                                                        'labels': {
                                                                            'app': application}},
@@ -71,177 +79,189 @@ def tosca_to_k8s(nodelist, imagelist, application):
                             service_files.append(service)
                         if resource.get_disk():
                             persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
-                                                                                       'kind': 'PersistentVolumeClaim',
-                                                                                       'metadata': {
-                                                                                           'name': x.get_volumes_claimname(),
-                                                                                           'namespace': application,
-                                                                                           'labels': {
-                                                                                               'app': application}},
-                                                                                       'spec':
-                                                                                           {'accessModes':
-                                                                                                ['ReadWriteOnce'],
-                                                                                            'resources': {
-                                                                                                'requests':
-                                                                                                    {
-                                                                                                        'storage': resource.get_disk()}}}}}
+                                                                             'kind': 'PersistentVolumeClaim',
+                                                                             'metadata': {
+                                                                                 'name': x.get_volumes_claimname(),
+                                                                                 'namespace': application,
+                                                                                 'labels': {
+                                                                                     'app': application}},
+                                                                             'spec':
+                                                                                 {'accessModes':
+                                                                                      ['ReadWriteOnce'],
+                                                                                  'resources': {
+                                                                                      'requests':
+                                                                                          {
+                                                                                              'storage': resource.get_disk()}}}}}
                             persistent_files.append(persistent_volume)
                         if x.get_internal():
                             if x.get_env() is not None:
-                                deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
-                                                                             'kind': 'Deployment',
-                                                                             'metadata': {'name': application+"-"+x.get_name(),
-                                                                                          'namespace': application,
-                                                                                          'labels': {
-                                                                                              'app': application}},
-                                                                             'spec': {
-                                                                                 'selector': {
-                                                                                     'matchLabels': {
+                                deployment = {application + "-" + x.get_name()+"-"+minicloud: {'apiVersion': 'apps/v1',
+                                                                                 'kind': 'Deployment',
+                                                                                 'metadata': {
+                                                                                     'name': application + "-" + x.get_name()+"-"+minicloud,
+                                                                                     'namespace': application,
+                                                                                     'labels': {
                                                                                          'app': application}},
-                                                                                 'strategy': {'type': 'Recreate'},
-                                                                                 'template': {
-                                                                                     'metadata': {
-                                                                                         'labels': {
+                                                                                 'spec': {
+                                                                                     'selector': {
+                                                                                         'matchLabels': {
                                                                                              'app': application}},
-                                                                                     'spec': {'containers': [
-                                                                                         {'image': x.get_image(),
-                                                                                          'name': x.get_name(),
-                                                                                          'resources': resource_yaml,
-                                                                                          'imagePullPolicy': 'Always',
-                                                                                          'env': x.get_env(),
-                                                                                          'ports': port_yaml,
-                                                                                          'volumeMounts': [{
-                                                                                              'name': x.get_volumeMounts_name(),
-                                                                                              'mountPath': x.get_volumeMounts_path()}]}],
-                                                                                         'volumes': [{
-                                                                                             'name': x.get_volumes_name(),
-                                                                                             'persistentVolumeClaim': {
-                                                                                                 'claimName': x.get_volumes_claimname()}}],
-                                                                                         'nodeSelector': {
-                                                                                             'beta.kubernetes.io/os': resource.get_os(),
-                                                                                             'resource': ''.join(
-                                                                                                 [i for i in
-                                                                                                  resource.get_name() if
-                                                                                                  not i.isdigit()])},
-                                                                                         'imagePullSecrets': [
-                                                                                             {
-                                                                                                 'name': application + '-registry-credentials'}]}}}}}
+                                                                                     'strategy': {'type': 'Recreate'},
+                                                                                     'template': {
+                                                                                         'metadata': {
+                                                                                             'labels': {
+                                                                                                 'app': application}},
+                                                                                         'spec': {'containers': [
+                                                                                             {'image': x.get_image(),
+                                                                                              'name': x.get_name(),
+                                                                                              'resources': resource_yaml,
+                                                                                              'imagePullPolicy': 'Always',
+                                                                                              'env': x.get_env(),
+                                                                                              'ports': port_yaml,
+                                                                                              'volumeMounts': [{
+                                                                                                  'name': x.get_volumeMounts_name(),
+                                                                                                  'mountPath': x.get_volumeMounts_path()}]}],
+                                                                                             'volumes': [{
+                                                                                                 'name': x.get_volumes_name(),
+                                                                                                 'persistentVolumeClaim': {
+                                                                                                     'claimName': x.get_volumes_claimname()}}],
+                                                                                             'nodeSelector': {
+                                                                                                 'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                 'resource': ''.join(
+                                                                                                     [i for i in
+                                                                                                      resource.get_name()
+                                                                                                      if
+                                                                                                      not i.isdigit()])},
+                                                                                             'imagePullSecrets': [
+                                                                                                 {
+                                                                                                     'name': application + '-registry-credentials'}]}}}}}
+                                deployment = extra_labels(deployment, resource.get_gpu_model(), resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                                 deployment_files.append(deployment)
 
                             if x.get_env() is None:
-                                deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
-                                                                             'kind': 'Deployment',
-                                                                             'metadata': {'name': application+"-"+x.get_name(),
-                                                                                          'namespace': application,
-                                                                                          'labels': {
-                                                                                              'app': application}},
-                                                                             'spec': {
-                                                                                 'selector': {
-                                                                                     'matchLabels': {
+                                deployment = {application + "-" + x.get_name()+"-"+minicloud: {'apiVersion': 'apps/v1',
+                                                                                 'kind': 'Deployment',
+                                                                                 'metadata': {
+                                                                                     'name': application + "-" + x.get_name()+"-"+minicloud,
+                                                                                     'namespace': application,
+                                                                                     'labels': {
                                                                                          'app': application}},
-                                                                                 'strategy': {'type': 'Recreate'},
-                                                                                 'template': {
-                                                                                     'metadata': {
-                                                                                         'labels': {
+                                                                                 'spec': {
+                                                                                     'selector': {
+                                                                                         'matchLabels': {
                                                                                              'app': application}},
-                                                                                     'spec': {'containers': [
-                                                                                         {'image': x.get_image(),
-                                                                                          'name': x.get_name(),
-                                                                                          'resources': resource_yaml,
-                                                                                          'imagePullPolicy': 'Always',
-                                                                                          'ports':
-                                                                                              port_yaml,
-                                                                                          'volumeMounts': [{
-                                                                                              'name': x.get_volumeMounts_name(),
-                                                                                              'mountPath': x.get_volumeMounts_path()}]}],
-                                                                                         'volumes': [{
-                                                                                             'name': x.get_volumes_name(),
-                                                                                             'persistentVolumeClaim': {
-                                                                                                 'claimName': x.get_volumes_claimname()}}],
-                                                                                         'nodeSelector': {
-                                                                                             'beta.kubernetes.io/os': resource.get_os(),
-                                                                                             'resource': ''.join(
-                                                                                                 [i for i in
-                                                                                                  resource.get_name() if
-                                                                                                  not i.isdigit()])},
-                                                                                         'imagePullSecrets': [
-                                                                                             {
-                                                                                                 'name': application + '-registry-credentials'}]}}}}}
+                                                                                     'strategy': {'type': 'Recreate'},
+                                                                                     'template': {
+                                                                                         'metadata': {
+                                                                                             'labels': {
+                                                                                                 'app': application}},
+                                                                                         'spec': {'containers': [
+                                                                                             {'image': x.get_image(),
+                                                                                              'name': x.get_name(),
+                                                                                              'resources': resource_yaml,
+                                                                                              'imagePullPolicy': 'Always',
+                                                                                              'ports':
+                                                                                                  port_yaml,
+                                                                                              'volumeMounts': [{
+                                                                                                  'name': x.get_volumeMounts_name(),
+                                                                                                  'mountPath': x.get_volumeMounts_path()}]}],
+                                                                                             'volumes': [{
+                                                                                                 'name': x.get_volumes_name(),
+                                                                                                 'persistentVolumeClaim': {
+                                                                                                     'claimName': x.get_volumes_claimname()}}],
+                                                                                             'nodeSelector': {
+                                                                                                 'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                 'resource': ''.join(
+                                                                                                     [i for i in
+                                                                                                      resource.get_name()
+                                                                                                      if
+                                                                                                      not i.isdigit()])},
+                                                                                             'imagePullSecrets': [
+                                                                                                 {
+                                                                                                     'name': application + '-registry-credentials'}]}}}}}
+                                deployment = extra_labels(deployment, resource.get_gpu_model(), resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                                 deployment_files.append(deployment)
                         if not x.get_internal():
                             if not x.get_env():
-                                deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
-                                                                             'kind': 'Deployment',
-                                                                             'metadata': {'name': application+"-"+x.get_name(),
-                                                                                          'namespace': application,
-                                                                                          'labels': {
-                                                                                              'app': application}},
-                                                                             'spec': {
-                                                                                 'selector': {
-                                                                                     'matchLabels': {
-                                                                                         'app': application, }},
-                                                                                 'strategy': {'type': 'Recreate'},
-                                                                                 'template': {
-                                                                                     'metadata': {
-                                                                                         'labels': {
+                                deployment = {application + "-" + x.get_name()+"-"+minicloud: {'apiVersion': 'apps/v1',
+                                                                                 'kind': 'Deployment',
+                                                                                 'metadata': {
+                                                                                     'name': application + "-" + x.get_name()+"-"+minicloud,
+                                                                                     'namespace': application,
+                                                                                     'labels': {
+                                                                                         'app': application}},
+                                                                                 'spec': {
+                                                                                     'selector': {
+                                                                                         'matchLabels': {
                                                                                              'app': application, }},
-                                                                                     'spec': {'containers': [
-                                                                                         {'image': x.get_image(),
-                                                                                          'name': x.get_name(),
-                                                                                          'resources': resource_yaml,
-                                                                                          'imagePullPolicy': 'Always',
-                                                                                          'ports':
-                                                                                              port_yaml,
-                                                                                          'volumeMounts': [{
-                                                                                              'name': x.get_volumeMounts_name(),
-                                                                                              'mountPath': x.get_volumeMounts_path()}]}],
-                                                                                         'volumes': [{
-                                                                                             'name': x.get_volumes_name(),
-                                                                                             'persistentVolumeClaim': {
-                                                                                                 'claimName': x.get_volumes_claimname()}}],
-                                                                                         'nodeSelector': {
-                                                                                             'beta.kubernetes.io/os': resource.get_os(),
-                                                                                             'resource': ''.join(
-                                                                                                 [i for i in
-                                                                                                  resource.get_name() if
-                                                                                                  not i.isdigit()])}}}}}}
+                                                                                     'strategy': {'type': 'Recreate'},
+                                                                                     'template': {
+                                                                                         'metadata': {
+                                                                                             'labels': {
+                                                                                                 'app': application, }},
+                                                                                         'spec': {'containers': [
+                                                                                             {'image': x.get_image(),
+                                                                                              'name': x.get_name(),
+                                                                                              'resources': resource_yaml,
+                                                                                              'imagePullPolicy': 'Always',
+                                                                                              'ports':
+                                                                                                  port_yaml,
+                                                                                              'volumeMounts': [{
+                                                                                                  'name': x.get_volumeMounts_name(),
+                                                                                                  'mountPath': x.get_volumeMounts_path()}]}],
+                                                                                             'volumes': [{
+                                                                                                 'name': x.get_volumes_name(),
+                                                                                                 'persistentVolumeClaim': {
+                                                                                                     'claimName': x.get_volumes_claimname()}}],
+                                                                                             'nodeSelector': {
+                                                                                                 'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                 'resource': ''.join(
+                                                                                                     [i for i in
+                                                                                                      resource.get_name()
+                                                                                                      if
+                                                                                                      not i.isdigit()])}}}}}}
+                                deployment = extra_labels(deployment, resource.get_gpu_model(), resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                                 deployment_files.append(deployment)
                             else:
-                                deployment = {'deployment-' + x.get_name(): {'apiVersion': 'apps/v1',
-                                                                             'kind': 'Deployment',
-                                                                             'metadata': {'name': application+"-"+x.get_name(),
-                                                                                          'namespace': application,
-                                                                                          'labels': {
-                                                                                              'app': application}},
-                                                                             'spec': {
-                                                                                 'selector': {
-                                                                                     'matchLabels': {
-                                                                                         'app': application, }},
-                                                                                 'strategy': {'type': 'Recreate'},
-                                                                                 'template': {
-                                                                                     'metadata': {
-                                                                                         'labels': {
+                                deployment = {application + "-" + x.get_name()+"-"+minicloud: {'apiVersion': 'apps/v1',
+                                                                                 'kind': 'Deployment',
+                                                                                 'metadata': {
+                                                                                     'name': application + "-" + x.get_name()+"-"+minicloud,
+                                                                                     'namespace': application,
+                                                                                     'labels': {
+                                                                                         'app': application}},
+                                                                                 'spec': {
+                                                                                     'selector': {
+                                                                                         'matchLabels': {
                                                                                              'app': application, }},
-                                                                                     'spec': {'containers': [
-                                                                                         {'image': x.get_image(),
-                                                                                          'name': x.get_name(),
-                                                                                          'resources': resource_yaml,
-                                                                                          'imagePullPolicy': 'Always',
-                                                                                          'env': x.get_env(),
-                                                                                          'ports':
-                                                                                              port_yaml,
-                                                                                          'volumeMounts': [{
-                                                                                              'name': x.get_volumeMounts_name(),
-                                                                                              'mountPath': x.get_volumeMounts_path()}]}],
-                                                                                         'volumes': [{
-                                                                                             'name': x.get_volumes_name(),
-                                                                                             'persistentVolumeClaim': {
-                                                                                                 'claimName': x.get_volumes_claimname()}}],
-                                                                                         'nodeSelector': {
-                                                                                             'beta.kubernetes.io/os': resource.get_os(),
-                                                                                             'resource': ''.join(
-                                                                                                 [i for i in
-                                                                                                  resource.get_name() if
-                                                                                                  not i.isdigit()])}}}}}}
+                                                                                     'strategy': {'type': 'Recreate'},
+                                                                                     'template': {
+                                                                                         'metadata': {
+                                                                                             'labels': {
+                                                                                                 'app': application, }},
+                                                                                         'spec': {'containers': [
+                                                                                             {'image': x.get_image(),
+                                                                                              'name': x.get_name(),
+                                                                                              'resources': resource_yaml,
+                                                                                              'imagePullPolicy': 'Always',
+                                                                                              'env': x.get_env(),
+                                                                                              'ports':
+                                                                                                  port_yaml,
+                                                                                              'volumeMounts': [{
+                                                                                                  'name': x.get_volumeMounts_name(),
+                                                                                                  'mountPath': x.get_volumeMounts_path()}]}],
+                                                                                             'volumes': [{
+                                                                                                 'name': x.get_volumes_name(),
+                                                                                                 'persistentVolumeClaim': {
+                                                                                                     'claimName': x.get_volumes_claimname()}}],
+                                                                                             'nodeSelector': {
+                                                                                                 'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                 'resource': ''.join(
+                                                                                                     [i for i in
+                                                                                                      resource.get_name()
+                                                                                                      if
+                                                                                                      not i.isdigit()])}}}}}}
+                                deployment = extra_labels(deployment, resource.get_gpu_model(), resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                                 deployment_files.append(deployment)
             else:
                 host = x.get_node()
@@ -255,22 +275,22 @@ def tosca_to_k8s(nodelist, imagelist, application):
                     if host == resource.get_name():
                         if resource.get_disk():
                             persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
-                                                                                       'kind': 'PersistentVolumeClaim',
-                                                                                       'metadata': {
-                                                                                           'name': x.get_volumes_claimname(),
-                                                                                           'namespace': application,
-                                                                                           'labels': {
-                                                                                               'app': application},
-                                                                                           'annotations':
-                                                                                               {
-                                                                                                   'cdi.kubevirt.io/storage.import.endpoint': x.get_image()}},
-                                                                                       'spec':
-                                                                                           {'accessModes':
-                                                                                                ['ReadWriteOnce'],
-                                                                                            'resources': {
-                                                                                                'requests':
-                                                                                                    {
-                                                                                                        'storage': resource.get_disk()}}}}}
+                                                                             'kind': 'PersistentVolumeClaim',
+                                                                             'metadata': {
+                                                                                 'name': x.get_volumes_claimname(),
+                                                                                 'namespace': application,
+                                                                                 'labels': {
+                                                                                     'app': application},
+                                                                                 'annotations':
+                                                                                     {
+                                                                                         'cdi.kubevirt.io/storage.import.endpoint': x.get_image()}},
+                                                                             'spec':
+                                                                                 {'accessModes':
+                                                                                      ['ReadWriteOnce'],
+                                                                                  'resources': {
+                                                                                      'requests':
+                                                                                          {
+                                                                                              'storage': resource.get_disk()}}}}}
                             persistent_files.append(persistent_volume)
                         if x.get_service():
                             if x.get_service():
@@ -286,7 +306,7 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                 service = {'service-' + x.get_name(): {'apiVersion': 'v1',
                                                                        'kind': 'Service',
                                                                        'metadata': {
-                                                                           'name': 'service-'+x.get_name(),
+                                                                           'name': 'service-' + x.get_name(),
                                                                            'namespace': application,
                                                                            'labels': {
                                                                                'app': application}},
@@ -297,63 +317,73 @@ def tosca_to_k8s(nodelist, imagelist, application):
                                                                            'type': 'LoadBalancer'}}}
                                 service_files.append(service)
                         if not x.get_internal():
-                            deployment = {'deployment-' + x.get_name(): {'apiVersion': 'kubevirt.io/v1',
-                                                                         'kind': 'VirtualMachine',
-                                                                         'metadata': {'name': application+"-"+x.get_name(),
-                                                                                      'namespace': application,
-                                                                                      'generation': 1,
-                                                                                      'labels': {
-                                                                                          'kubevirt.io/os': 'linux'}},
-                                                                         'spec': {
-                                                                             'running': True,
-                                                                             'template': {
-                                                                                 'metadata': {
-                                                                                     'labels': {
-                                                                                         'kubevirt.io/domain': x.get_flavor()}},
-                                                                                 'spec': {'domain': {'cpu': {
-                                                                                     'cores': int(resource.get_cpu())},
-                                                                                     'devices': {
-                                                                                         'disks': [{
-                                                                                             'disk': {
-                                                                                                 'bus': 'virtio'},
-                                                                                             'name': 'disk0'},
+                            deployment = {application + "-" + x.get_name()+"-"+minicloud: {'apiVersion': 'kubevirt.io/v1',
+                                                                             'kind': 'VirtualMachine',
+                                                                             'metadata': {
+                                                                                 'name': application + "-" + x.get_name()+"-"+minicloud,
+                                                                                 'namespace': application,
+                                                                                 'generation': 1,
+                                                                                 'labels': {
+                                                                                     'kubevirt.io/os': 'linux'}},
+                                                                             'spec': {
+                                                                                 'running': True,
+                                                                                 'template': {
+                                                                                     'metadata': {
+                                                                                         'labels': {
+                                                                                             'kubevirt.io/domain': x.get_flavor()}},
+                                                                                     'spec': {'nodeSelector': {
+                                                                                         'beta.kubernetes.io/os': resource.get_os(),
+                                                                                         'resource': ''.join(
+                                                                                             [i for i in
+                                                                                              resource.get_name()
+                                                                                              if
+                                                                                              not i.isdigit()])},
+                                                                                         'domain': {'cpu': {
+                                                                                             'cores': int(
+                                                                                                 resource.get_cpu())},
+                                                                                             'devices': {
+                                                                                                 'disks': [{
+                                                                                                     'disk': {
+                                                                                                         'bus': 'virtio'},
+                                                                                                     'name': 'disk0'},
+                                                                                                     {
+                                                                                                         'cdrom': {
+                                                                                                             'bus': 'sata',
+                                                                                                             'readonly': True},
+                                                                                                         'name': 'cloudinitdisk'}]},
+                                                                                             'machine': {
+                                                                                                 'type': 'q35'},
+                                                                                             'resources': {
+                                                                                                 'requests': {
+                                                                                                     'memory': resource.get_mem()}}},
+                                                                                         'volumes': [
+                                                                                             {'name': 'disk0',
+                                                                                              'persistentVolumeClaim': {
+                                                                                                  'claimName': x.get_volumes_claimname()}},
                                                                                              {
-                                                                                                 'cdrom': {
-                                                                                                     'bus': 'sata',
-                                                                                                     'readonly': True},
-                                                                                                 'name': 'cloudinitdisk'}]},
-                                                                                     'machine': {
-                                                                                         'type': 'q35'},
-                                                                                     'resources': {
-                                                                                         'requests': {
-                                                                                             'memory': resource.get_mem()}}},
-                                                                                     'volumes': [
-                                                                                         {'name': 'disk0',
-                                                                                          'persistentVolumeClaim': {
-                                                                                              'claimName': x.get_volumes_claimname()}},
-                                                                                         {
-                                                                                             'cloudInitNoCloud': {
-                                                                                                 'userData': {
-                                                                                                     'hostname': x.get_name(),
-                                                                                                     'ssh_pwauth': True,
-                                                                                                     'disable_root': False,
-                                                                                                     'ssh_authorized_key': [
-                                                                                                         'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
-                                                                                             },
-                                                                                             'name': 'cloudinitdisk'}]}}}}}
+                                                                                                 'cloudInitNoCloud': {
+                                                                                                     'userData': {
+                                                                                                         'hostname': x.get_name(),
+                                                                                                         'ssh_pwauth': True,
+                                                                                                         'disable_root': False,
+                                                                                                         'ssh_authorized_key': [
+                                                                                                             'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
+                                                                                                 },
+                                                                                                 'name': 'cloudinitdisk'}]}}}}}
+                            deployment = extra_labels(deployment, resource.get_gpu_model(), resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                             deployment_files.append(deployment)
     return deployment_files, persistent_files, service_files
 
 
 def secret_generation(json, application):
     secret = {application: {'apiVersion': 'v1',
-                                        'kind': 'Secret',
-                                        'metadata': {
-                                            'name': application + '-registry-credentials',
-                                            'namespace': application},
-                                        'type': 'kubernetes.io/dockerconfigjson',
-                                        'data': {
-                                            '.dockerconfigjson': json}}}
+                            'kind': 'Secret',
+                            'metadata': {
+                                'name': application + '-registry-credentials',
+                                'namespace': application},
+                            'type': 'kubernetes.io/dockerconfigjson',
+                            'data': {
+                                '.dockerconfigjson': json}}}
     return secret
 
 
@@ -362,3 +392,27 @@ def namespace(application):
         application: {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': application}}}
 
     return namespace
+
+
+def extra_labels(deployment_file, gpu_model, gpu_dedicated, wifi_antennas):
+    if gpu_model != "None" and gpu_dedicated != "None":
+        key = deployment_file.keys()
+        for k in key:
+            file = deployment_file[k]
+            spec = file['spec']
+            template = spec['template']
+            template_spec = template['spec']
+            nodeselector = template_spec['nodeSelector']
+            nodeselector['GPU.model'] = gpu_model
+            nodeselector['GPU.dedicated'] = gpu_dedicated
+    if wifi_antennas != "None":
+        key = deployment_file.keys()
+        for k in key:
+            file = deployment_file[k]
+            spec = file['spec']
+            template = spec['template']
+            template_spec = template['spec']
+            nodeselector = template_spec['nodeSelector']
+            nodeselector['Wifi.External.Antenna'] = wifi_antennas
+    print(deployment_file)
+    return deployment_file
