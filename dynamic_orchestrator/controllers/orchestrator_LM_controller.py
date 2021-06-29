@@ -59,12 +59,12 @@ def deploy(body):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400     
         
-        Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
-        Debug_response.raise_for_status()
+        #Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
+        #Debug_response.raise_for_status()
         
-        RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
-        RID_response.raise_for_status()
-        RID_response = RID_response.json()
+        #RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
+        #RID_response.raise_for_status()
+        #RID_response = RID_response.json()
        
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
@@ -75,8 +75,8 @@ def deploy(body):
         nodelist, imagelist, app_version = ReadFile(body.app_model)
         matchmaking_model = generate(nodelist, app_instance)
         
-        solver = ConcreteOrchestrator() 
-        dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        #solver = ConcreteOrchestrator() 
+        #dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
         minicloud = '1'
         namespace_yaml = namespace(app_instance)
         secret_yaml = secret_generation(secret(app_name), app_instance)        
