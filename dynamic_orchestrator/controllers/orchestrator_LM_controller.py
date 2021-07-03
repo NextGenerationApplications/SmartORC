@@ -10,6 +10,7 @@ import base64
 import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
+import logging
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
@@ -59,12 +60,12 @@ def deploy(body):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400     
         
-        #Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
-        #Debug_response.raise_for_status()
+        Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
+        Debug_response.raise_for_status()
         
-        #RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
-        #RID_response.raise_for_status()
-        #RID_response = RID_response.json()
+        RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
+        RID_response.raise_for_status()
+        RID_response = RID_response.json()
        
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
@@ -75,19 +76,25 @@ def deploy(body):
         nodelist, imagelist, app_version = ReadFile(body.app_model)
         matchmaking_model = generate(nodelist, app_instance)
         
-        #solver = ConcreteOrchestrator() 
-        #dep_plan = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
-        minicloud = '1'
+        solver = ConcreteOrchestrator() 
+        dep_plan, status = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        if not dep_plan:
+            error = 'Deploy operation not executed successfully: no solution or unfeasible solution found!'
+            return {'reason': error}, 500 
+                 
         namespace_yaml = namespace(app_instance)
-        secret_yaml = secret_generation(secret(app_name), app_instance)        
-        deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance, minicloud)
+        secret_yaml = secret_generation(secret(app_name), app_instance)
+        
+        for EdgeMinicloud in dep_plan:
+            print(EdgeMinicloud)       
+            deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance, EdgeMinicloud)
       
         #print(namespace_yaml)
         #print(secret_yaml)
         #print(deployment_files)
         #print(matchmaking_model)
     except OSError as err:
-        if not err:
+        if err:
             error = 'Deploy operation not executed successfully due to the following error: ' + err.strerror
         else:
             error = 'Deploy operation not executed successfully due to an unknown error! '
@@ -98,9 +105,9 @@ def deploy(body):
     return 200
 
 def undeploy(body):
-    error = 'Deploy operation not implemented yet!'
+    error = 'Undeploy operation not implemented yet!'
     return {'reason': error}, 500
-    return 200
+    #return 200
 
 def orchestrator_LM_request(body):  # noqa: E501
     """orchestrator_lm_request

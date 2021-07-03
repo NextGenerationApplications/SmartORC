@@ -101,8 +101,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     app_components_request_model.append(self.component_requirements_translation(component['host']['requirements']))                           
         return app_components_request_model
     
-    def generate_federation_resource_availability_model(self, RID_response):
-        node_parts = RID_response.split('\n')
+    def generate_federation_resource_availability_model(self, node_parts):
         federation_resource_availability_model = []
         for i in range(len(node_parts)-1):          
             node = json.loads(node_parts[i])
@@ -120,10 +119,15 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         :type : 
         :rtype: List[str] list of file names
                 return a None List if there is an error during process 
+                status: -1 Error
+                         4 Infeasible 
+                         5 No solution found
+                                              
         """
         App_Components_req = self.generate_app_components_request_model(components,matchmaking_model)
         
-        Fed_res_availability = self.generate_federation_resource_availability_model(RID_response)
+        node_parts = RID_response.split('\n')
+        Fed_res_availability = self.generate_federation_resource_availability_model(node_parts)
                 
         # Construction of Python-MIP MILP problem
         
@@ -150,7 +154,6 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                 if not (resource[0] == 'Q'):
                     n=0
                     for Node in Fed_res_availability:    
-                        (App_Components_req[j])[resource] = 0 
                         MILP += xsum(((decision_variables[n][j])*((App_Components_req[j])[resource])) 
                                      for j in range(NumComponents) 
                                         if resource in (App_Components_req[j])) <= Node[resource]
@@ -256,24 +259,28 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                                     if not (resource[0] == 'Q')))     
          
         status = MILP.optimize()
-        result_documents = []
+        result_documents = {}
         if status == OptimizationStatus.ERROR:
-            return None    
+            return None, status    
         if status == OptimizationStatus.NO_SOLUTION_FOUND or status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE or status == OptimizationStatus.UNBOUNDED:  
-            return result_documents
+            return result_documents, status
         if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
-            print('solution:')
+            #print('solution:')
             n=0
             for v in MILP.vars:
                 if(v.name[0] == 'x'):
-                    print('Nodes: ', divmod(n,NumComponents)[0])
-                    Nodes = divmod(n,NumComponents)[0]
-                    print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
+                    #print('Nodes: ', divmod(n,NumComponents)[0])
+                    Nodes = divmod(n,NumComponents)[0]                              
+                    #print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
                     Appcomponent = divmod(n,NumComponents)[1]
-                    if Appcomponent == 0:
-                        result_documents.append([])
+                    #if Appcomponent == 0:
+                    #    result_documents.append([])
                     if v.x == 1:
-                        result_documents[Nodes].append(Appcomponent)          
-                    print('{} : {}'.format(v.name, v.x))
+                        minicloud_id = str(json.loads(node_parts[Nodes]).get('minicloud_id'))
+                        if not result_documents.get(minicloud_id):
+                            result_documents[minicloud_id] = []
+                        name = components[Appcomponent].component_name
+                        result_documents[minicloud_id].append(name)    
+                    #print('{} : {}'.format(v.name, v.x))
                     n+=1 
-        return result_documents       
+        return result_documents, status       
