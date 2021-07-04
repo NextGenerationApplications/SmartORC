@@ -69,10 +69,10 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         else:
             node_res_translation['QEos'] = 0
         
-        node_res_translation['cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
-        node_res_translation['ram'] = int(node['available_memory(bytes)'])
+        node_res_translation['hardware_requirements_cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
+        node_res_translation['hardware_requirements_ram'] = int(node['available_memory(bytes)'])
         
-        node_res_translation['disk'] = int(node ['disk_free_space(bytes)'])
+        node_res_translation['hardware_requirements_disk'] = int(node ['disk_free_space(bytes)'])
    
         if 'Intel' in node['device.GPU.GPU_name']:
             node_res_translation['QEhardware_requirements_gpu_model'] = 3
@@ -171,7 +171,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                 res_diff = (App_Components_req[j])[resource] - Node[resource]
                                 if not (res_diff == 0):
                                     MILP += ((decision_variables[n][j])*res_diff) <= 0                                
-                                    n+=1                                            
+                        n+=1                                            
         
         # every dep plan must respect constraints on QoS indicators of every Node
         #(case of a resource with first letter Q, followed by the letter E 
@@ -187,7 +187,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                             if resource in (App_Components_req[j]):
                                 if not ((App_Components_req[j])[resource] == Node[resource]):
                                     MILP += (decision_variables[n][j]) == 0                                
-                                    n+=1  
+                        n+=1  
                
         # auxiliary decision variables: decision_vars y (ijn1n2) with i and j in Components with i!=j, n1 and n2 in Nodes with n1!=n2 
         #auxiliary_decision_variables = [[[[MILP.add_var('y({},{},{},{})'.format(i, j, n1, n2), var_type=BINARY)
