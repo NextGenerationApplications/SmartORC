@@ -2,15 +2,16 @@ import connexion
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
 from dynamic_orchestrator.converter.Converter import namespace,secret_generation, tosca_to_k8s  
-from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
-from dynamic_orchestrator.models.request_body import RequestBody  # noqa: E501
-from dynamic_orchestrator import util
-from  urllib.error import HTTPError
+#from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
+from dynamic_orchestrator.models.request_body import RequestBody
+from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
+#from dynamic_orchestrator import util
+#from  urllib.error import HTTPError
 import base64
 import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
-import logging
+#import logging
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
@@ -83,16 +84,19 @@ def deploy(body):
             return {'reason': error}, 500 
                  
         namespace_yaml = namespace(app_instance)
-        secret_yaml = secret_generation(secret(app_name), app_instance)
+        secret_yaml = secret_generation(secret(app_name), app_instance)            
+
+        vim_component_ids = []
+        vim_sender_workers_list = []
+        for EdgeMinicloud, component_list in dep_plan.items():
+            vim_sender_workers_list.append(vim_sender_worker(app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_component_ids)) 
         
-        for EdgeMinicloud in dep_plan:
-            print(EdgeMinicloud)       
-            deployment_files, persistent_files, service_files = tosca_to_k8s(nodelist, imagelist, app_instance, EdgeMinicloud)
-      
-        #print(namespace_yaml)
-        #print(secret_yaml)
-        #print(deployment_files)
-        #print(matchmaking_model)
+        for tid in vim_sender_workers_list:
+            tid.start()
+            
+        for tid in vim_sender_workers_list:
+            tid.join()
+
     except OSError as err:
         if err:
             error = 'Deploy operation not executed successfully due to the following error: ' + err.strerror
@@ -107,7 +111,6 @@ def deploy(body):
 def undeploy(body):
     error = 'Undeploy operation not implemented yet!'
     return {'reason': error}, 500
-    #return 200
 
 def orchestrator_LM_request(body):  # noqa: E501
     """orchestrator_lm_request
@@ -120,7 +123,6 @@ def orchestrator_LM_request(body):  # noqa: E501
     :rtype: None
     """
    
-    
     if connexion.request.is_json:
         body = RequestBody.from_dict(connexion.request.get_json())  # noqa: E501         
         operation = supported_operation(body.operation)
