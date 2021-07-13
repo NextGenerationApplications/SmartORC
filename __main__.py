@@ -17,7 +17,7 @@ def main(argv):
         sys.exit(2)
     #kubernetes_folder = './kubernetes'
     #kubernetes_config_file_name = 'kubeconfig'
-    port_number = 9000
+    port_number = 7000
     for opt, arg in opts:
         if opt == '-h':
             #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
