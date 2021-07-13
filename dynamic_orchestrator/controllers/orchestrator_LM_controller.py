@@ -71,8 +71,8 @@ def deploy(body):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400     
         
-        Debug_response = requests.get('http://146.48.82.93:9001/debug', timeout=5)
-        Debug_response.raise_for_status()
+        #Debug_response = requests.get('http://146.48.82.93:9001/debug', timeout=5)
+        #Debug_response.raise_for_status()
         
         #RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)
         RID_response = requests.get('http://146.48.82.93:9001/miniclouds', timeout=5)
@@ -113,18 +113,6 @@ def deploy(body):
             
         for tid in vim_sender_workers_list:
             tid.join()
-           
-
-        #request_to_ASR = {  "id": "accordion-ovr-0-0-1-1234-signalingserver-8aofyny7ylfm", "creationTime": 12345, "externalIp": None, 
-        #                    "resources": None } 
-        
-        #data = json.dumps(request_to_ASR)   
-        #headers = {'Content-type': 'application/json'}
-        #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = data, headers={'Content-type': 'application/json'})
-        #ASR_response.raise_for_status()
-        
-        #ASR_response = requests.get('http://62.217.127.19:3000/v1/applicationComponentInstance?id=accordion-ovr-0-0-1-1234-signalingserver-8aofyny7ylfm',timeout=5)
-        #ASR_response.raise_for_status()   
            
         for vim_result in vim_results:
             for component_result in vim_result:
