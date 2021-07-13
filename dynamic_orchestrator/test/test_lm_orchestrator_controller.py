@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from flask import json
 
-from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
+#from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody  # noqa: E501
 from dynamic_orchestrator.test import BaseTestCase
 
@@ -34,28 +34,39 @@ class TestLMOrchestratorController(BaseTestCase):
         json_file = open('intermidietmodel-UC1.json')
         app_model = json.load(json_file)
         application_parameters = None
-        body = RequestBody([{'component_name':'accordion-ovr-0-0-1-1234-signalingserver'}],'deploy',app_model,application_parameters)
+        body1 = RequestBody([{'component_name':'accordion-ovr-0-0-1-1234-signalingserver'}],'deploy',app_model,application_parameters)
            
-        response = self.client.open(
+        response1 = self.client.open(
             '/orchestrator/request',
             method='POST',
-            data=json.dumps(body),
+            data=json.dumps(body1),
             content_type='application/json')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
         
         #put a request to kubernetes API to wait until the first service is up and running
         
-        body = RequestBody(['accordion-ovr-0_0_1-1234-localservice'],'deploy',app_model,application_parameters)
+        body2 = RequestBody([{'component_name':'accordion-ovr-0-0-1-1234-localservice'}],'deploy',app_model,application_parameters)
            
-        response = self.client.open(
+        response2 = self.client.open(
             '/orchestrator/request',
             method='POST',
-            data=json.dumps(body),
+            data=json.dumps(body2),
             content_type='application/json')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-    
+        
+        body3 = RequestBody([{'component_name':'accordion-ovr-0-0-1-1234-relayserver'}],'deploy',app_model,application_parameters)
+           
+        response3 = self.client.open(
+            '/orchestrator/request',
+            method='POST',
+            data=json.dumps(body3),
+            content_type='application/json')
+
+        self.assert200(response1,
+                       'Response body is : ' + response1.data.decode('utf-8'))
+        self.assert200(response2,
+                       'Response body is : ' + response2.data.decode('utf-8'))
+        self.assert200(response3,
+                       'Response body is : ' + response3.data.decode('utf-8'))
+        
     def test_orchestrator_lm_request_orbk(self):
         """Test case for orchestrator_lm_request_orbk    
         """      

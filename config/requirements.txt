@@ -1,7 +1,0 @@
-connexion >= 2.6.0
-requests_toolbelt >= 0.9.1
-hurry
-hurry.filesize
-oyaml
-kubernetes
-mip

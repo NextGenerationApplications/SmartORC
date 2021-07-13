@@ -84,9 +84,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             node_res_translation['QEhardware_requirements_gpu_model'] = 0
            
         if 'Integrated' in node['device.GPU.GPU_type']:
-            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
-        else:
             node_res_translation['Qhardware_requirements_gpu_dedicated'] = 0
+        else:
+            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
             
         return node_res_translation
         
@@ -256,14 +256,11 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                           for n in range(NumNodes)
                                                for resource in Fed_res_availability[0]
                                                   if not (resource == 'links')
-                                                    if not (resource[0] == 'Q')))     
-         
+                                                    if not (resource[0] == 'Q')))       
         status = MILP.optimize()
         result_documents = {}
-        if status == OptimizationStatus.ERROR:
-            return None, status    
-        if status == OptimizationStatus.NO_SOLUTION_FOUND or status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE or status == OptimizationStatus.UNBOUNDED:  
-            return result_documents, status
+        if status == OptimizationStatus.ERROR or status == OptimizationStatus.NO_SOLUTION_FOUND or status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE or status == OptimizationStatus.UNBOUNDED:  
+            return None, status
         if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
             #print('solution:')
             n=0

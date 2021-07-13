@@ -25,6 +25,10 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
             resource.set_mem(x.get_mem_size())
             resource.set_disk(x.get_disk_size())
             resource.set_name(x.get_name())
+            if x.get_architecture() == 'x86_64':
+                resource.set_arch('amd64')
+            else:
+                resource.set_arch(x.get_architecture())
             if 'EdgeNode' in x.get_type():
                 resource.set_gpu_model(x.get_gpu_model())
                 resource.set_gpu_dedicated(x.get_gpu_dedicated())
@@ -133,6 +137,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              'claimName': x.get_volumes_claimname()}}],
                                                                                                      'nodeSelector': {
                                                                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                         'beta.kubernetes.io/arch':resource.get_arch(),
                                                                                                          'resource': ''.join(
                                                                                                              [i for i in
                                                                                                               resource.get_name()
@@ -183,6 +188,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              'claimName': x.get_volumes_claimname()}}],
                                                                                                      'nodeSelector': {
                                                                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                         'beta.kubernetes.io/arch': resource.get_arch(),
                                                                                                          'resource': ''.join(
                                                                                                              [i for i in
                                                                                                               resource.get_name()
@@ -233,6 +239,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              'claimName': x.get_volumes_claimname()}}],
                                                                                                      'nodeSelector': {
                                                                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                         'beta.kubernetes.io/arch': resource.get_arch(),
                                                                                                          'resource': ''.join(
                                                                                                              [i for i in
                                                                                                               resource.get_name()
@@ -280,6 +287,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              'claimName': x.get_volumes_claimname()}}],
                                                                                                      'nodeSelector': {
                                                                                                          'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                         'beta.kubernetes.io/arch': resource.get_arch(),
                                                                                                          'resource': ''.join(
                                                                                                              [i for i in
                                                                                                               resource.get_name()
@@ -353,13 +361,14 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                          'labels': {
                                                                                              'kubevirt.io/os': 'linux'}},
                                                                                      'spec': {
-                                                                                         'running': True,
+                                                                                         'running': 'True',
                                                                                          'template': {
                                                                                              'metadata': {
                                                                                                  'labels': {
                                                                                                      'kubevirt.io/domain': x.get_flavor()}},
                                                                                              'spec': {'nodeSelector': {
                                                                                                  'beta.kubernetes.io/os': resource.get_os(),
+                                                                                                 'beta.kubernetes.io/arch': resource.get_arch(),
                                                                                                  'resource': ''.join(
                                                                                                      [i for i in
                                                                                                       resource.get_name()
@@ -376,7 +385,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              {
                                                                                                                  'cdrom': {
                                                                                                                      'bus': 'sata',
-                                                                                                                     'readonly': True},
+                                                                                                                     'readonly': 'True'},
                                                                                                                  'name': 'cloudinitdisk'}]},
                                                                                                      'machine': {
                                                                                                          'type': 'q35'},
@@ -391,8 +400,8 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                          'cloudInitNoCloud': {
                                                                                                              'userData': {
                                                                                                                  'hostname': x.get_name(),
-                                                                                                                 'ssh_pwauth': True,
-                                                                                                                 'disable_root': False,
+                                                                                                                 'ssh_pwauth': 'True',
+                                                                                                                 'disable_root': 'False',
                                                                                                                  'ssh_authorized_key': [
                                                                                                                      'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
                                                                                                          },
@@ -431,6 +440,10 @@ def extra_labels(deployment_file, gpu_model, gpu_dedicated, wifi_antennas):
             template = spec['template']
             template_spec = template['spec']
             nodeselector = template_spec['nodeSelector']
+            if "NVIDIA" in gpu_model:
+                gpu_model = "nvidia"
+            if "AMD" in gpu_model:
+                gpu_model = "amd"
             nodeselector['GPU.model'] = gpu_model
             nodeselector['GPU.dedicated'] = gpu_dedicated
     if wifi_antennas != "None":

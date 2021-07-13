@@ -139,4 +139,10 @@ class Resource:
     def get_wifi_antenna(self):
         return self.__wifi_antenna
 
+    def set_arch(self, arch):
+        self.__arch = arch
+
+    def get_arch(self):
+        return self.__arch
+
 

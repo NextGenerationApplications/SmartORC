@@ -10,14 +10,14 @@ VERSION = 1.0
 def main(argv):
     try:
         #opts, args = getopt.getopt(argv,"hp:d:k:")
-        opts = getopt.getopt(argv,"hp:")
+        opts, args = getopt.getopt(argv,"hp:")
     except getopt.GetoptError:
         #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')
         print ('__main__.py -p <orchestrator_port_number>')
         sys.exit(2)
     #kubernetes_folder = './kubernetes'
     #kubernetes_config_file_name = 'kubeconfig'
-    port_number = 8080
+    port_number = 9000
     for opt, arg in opts:
         if opt == '-h':
             #print ('__main__.py -k <kubernetes_app_model_file_folder> -d <upload_file_folder> -p <port_number>')

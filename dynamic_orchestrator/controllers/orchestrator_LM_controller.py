@@ -11,6 +11,8 @@ import base64
 import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
+from mip import OptimizationStatus
+
 #import logging
 
 def choose_application (name):   
@@ -50,6 +52,14 @@ def secret (name):
     json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
     return json_base64_string
 
+def dep_plan_status(status):
+    if status == OptimizationStatus.NO_SOLUTION_FOUND:
+        return 'no deploy solution found!'
+    if status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE:
+        return 'infeasible deploy solution found!'
+    if status == OptimizationStatus.UNBOUNDED:
+        return 'unbounded deploy solution found!'  
+    
 def deploy(body):
     try:
         components = body.app_component_names
@@ -61,10 +71,11 @@ def deploy(body):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
             return {'reason': error}, 400     
         
-        Debug_response = requests.get('http://localhost:9000/debug', timeout=5)
+        Debug_response = requests.get('http://146.48.82.93:9001/debug', timeout=5)
         Debug_response.raise_for_status()
         
-        RID_response = requests.get('http://localhost:9000/miniclouds', timeout=5)
+        #RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)
+        RID_response = requests.get('http://146.48.82.93:9001/miniclouds', timeout=5)
         RID_response.raise_for_status()
         RID_response = RID_response.json()
        
@@ -79,32 +90,72 @@ def deploy(body):
         
         solver = ConcreteOrchestrator() 
         dep_plan, status = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        
         if not dep_plan:
-            error = 'Deploy operation not executed successfully: no solution or unfeasible solution found!'
+            error = 'Deploy operation not executed successfully: '
+            error += dep_plan_status(status)
             return {'reason': error}, 500 
                  
         namespace_yaml = namespace(app_instance)
         secret_yaml = secret_generation(secret(app_name), app_instance)            
 
-        vim_component_ids = []
+        vim_results = [[]] * len(dep_plan);
+        
         vim_sender_workers_list = []
+        
+        thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
-            vim_sender_workers_list.append(vim_sender_worker(app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_component_ids)) 
+            vim_sender_workers_list.append(vim_sender_worker(thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
+            thread_id+=1 
         
         for tid in vim_sender_workers_list:
             tid.start()
             
         for tid in vim_sender_workers_list:
             tid.join()
+           
 
+        #request_to_ASR = {  "id": "accordion-ovr-0-0-1-1234-signalingserver-8aofyny7ylfm", "creationTime": 12345, "externalIp": None, 
+        #                    "resources": None } 
+        
+        #data = json.dumps(request_to_ASR)   
+        #headers = {'Content-type': 'application/json'}
+        #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = data, headers={'Content-type': 'application/json'})
+        #ASR_response.raise_for_status()
+        
+        #ASR_response = requests.get('http://62.217.127.19:3000/v1/applicationComponentInstance?id=accordion-ovr-0-0-1-1234-signalingserver-8aofyny7ylfm',timeout=5)
+        #ASR_response.raise_for_status()   
+           
+        for vim_result in vim_results:
+            for component_result in vim_result:
+                for component_instance_name, date_or_error in component_result.items():
+                    if isinstance(date_or_error,int):
+                        # send component instance id and creation date time to ASR
+                        request_to_ASR = {  "id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }                        
+                        ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
+                        ASR_response.raise_for_status()
+                    else:
+                        #detected an error: report it to 
+                        return {'reason': date_or_error}, 500    
+                
+             
+    except requests.exceptions.Timeout as err:
+        error = 'Deploy operation not executed successfully due to a timeout in the communication with the Rid or ASR!'
+        return {'reason': error}, 500 
+        
+    except requests.exceptions.RequestException as err:
+        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Rid or ASR: ' + err.response.reason
+        return {'reason': error}, 500
+    
     except OSError as err:
         if err:
-            error = 'Deploy operation not executed successfully due to the following error: ' + err.strerror
+            error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
         else:
-            error = 'Deploy operation not executed successfully due to an unknown error! '
+            error = 'Deploy operation not executed successfully due to an unknown internal server error! '
         return {'reason': error}, 500
+    
     except:
-        error = 'Deploy operation not executed successfully due to an unknown error!'
+        error = 'Deploy operation not executed successfully due to an unknown internal server error!'
         return {'reason': error}, 500
     return 200
 
