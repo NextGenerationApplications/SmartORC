@@ -72,8 +72,12 @@ class vim_sender_worker(threading.Thread):
                           
             vim_request = MultipartEncoder(fields={'operation': 'deploy', 'file': (component, yaml_file, 'text/plain')})  
             
-            vim_result = requests.post("http://localhost:9000/VIM/request", data=vim_request,
+            vim_response = requests.post("http://localhost:5000/VIM/request", data=vim_request,
                               headers={'Content-Type': vim_request.content_type})
+            
+            vim_response.raise_for_status()
+            vim_result = vim_response.json()
+            
             result = []
             for component in self.components:
                 component_name = component + '-' + self.EdgeMinicloud
