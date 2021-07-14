@@ -44,6 +44,30 @@ paths:
         default:
           description: Unexpected error
       x-openapi-router-controller: dynamic_orchestrator.controllers.orchestrator_LM_controller
+  /SetLoggingLevel: 
+    post:
+      tags:
+      - Logging level of Orchestrator
+      description: Set the logging level of the Orchestrator. Possible values are CRITICAL, DEBUG, INFO, ERROR, WARNING
+      operationId: set_logging_level
+      parameters:
+      - in: query
+        name: logginglevel     
+        schema:
+          type: string 
+        required: true
+        style: form
+        explode: true
+      responses:
+        "200":
+          description: Loggin level set succesfully to the requested one
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: Unexpected error
+      x-openapi-router-controller: dynamic_orchestrator.controllers.orchestrator_LM_controller
 components:
   schemas:
     request_body:

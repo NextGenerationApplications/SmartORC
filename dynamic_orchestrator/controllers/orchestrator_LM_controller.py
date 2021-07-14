@@ -1,10 +1,11 @@
 import connexion
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
-from dynamic_orchestrator.converter.Converter import namespace,secret_generation, tosca_to_k8s  
+from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
 #from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
 from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
+from flask import current_app
 #from dynamic_orchestrator import util
 #from  urllib.error import HTTPError
 import base64
@@ -12,8 +13,6 @@ import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
-
-#import logging
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
@@ -61,24 +60,31 @@ def dep_plan_status(status):
         return 'unbounded deploy solution found!'  
     
 def deploy(body):
+    current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
         components = body.app_component_names
         if(components == None):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
+            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to the following error: no application components to be deployed. Returning code 400' )
             return {'reason': error}, 400
         
         if(len(components) == 0):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
+            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to the following error: no application components to be deployed. Returning code 400')
             return {'reason': error}, 400     
         
         #Debug_response = requests.get('http://146.48.82.93:9001/debug', timeout=5)
         #Debug_response.raise_for_status()
         
         #RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)
-        RID_response = requests.get('http://146.48.82.93:9001/miniclouds', timeout=5)
+        current_app.config.get('LOGGER').debug(" Request to RID started")
+        RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
         RID_response.raise_for_status()
         RID_response = RID_response.json()
-       
+        
+        current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response)
+        current_app.config.get('LOGGER').debug(" Request to RID finished succesfully!")
+
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
         app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
@@ -94,6 +100,7 @@ def deploy(body):
         if not dep_plan:
             error = 'Deploy operation not executed successfully: '
             error += dep_plan_status(status)
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
                  
         namespace_yaml = namespace(app_instance)
@@ -122,17 +129,18 @@ def deploy(body):
                         request_to_ASR = {  "id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }                        
                         ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         ASR_response.raise_for_status()
-                    else:
-                        #detected an error: report it to 
+                    else:                        
                         return {'reason': date_or_error}, 500    
                 
              
     except requests.exceptions.Timeout as err:
         error = 'Deploy operation not executed successfully due to a timeout in the communication with the Rid or ASR!'
+        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the Rid or ASR. Returning code 500')  
         return {'reason': error}, 500 
         
     except requests.exceptions.RequestException as err:
         error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Rid or ASR: ' + err.response.reason
+        current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
     except OSError as err:
@@ -140,15 +148,19 @@ def deploy(body):
             error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
         else:
             error = 'Deploy operation not executed successfully due to an unknown internal server error! '
+        current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
     except:
         error = 'Deploy operation not executed successfully due to an unknown internal server error!'
+        current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     return 200
 
 def undeploy(body):
+    current_app.config.get('LOGGER').info("------------------ Undeploy request started ---------------------")
     error = 'Undeploy operation not implemented yet!'
+    current_app.config.get('LOGGER').error(error + ". Returning code 500")
     return {'reason': error}, 500
 
 def orchestrator_LM_request(body):  # noqa: E501
@@ -161,37 +173,32 @@ def orchestrator_LM_request(body):  # noqa: E501
 
     :rtype: None
     """
-   
-    if connexion.request.is_json:
+    current_app.config.get('LOGGER').debug('----------------------------------------------------------------')
+    current_app.config.get('LOGGER').debug('Received a request for the Orchestrator to be served')
+
+    if connexion.request.is_json:  
         body = RequestBody.from_dict(connexion.request.get_json())  # noqa: E501         
         operation = supported_operation(body.operation)
+    else:
+        current_app.config.get('LOGGER').debug('Bad request: it should be Json formatted')
     if operation == None:
         error = 'Request not executed successfully due to the following error: operation not supported!' 
+        current_app.config.get('LOGGER').debug('Request not executed successfully due to the following error: operation not supported. Returning code 400')
         return {'reason': error}, 400
     return operation(body)
 
-        #kube_config_file = os.path.join( './config', current_app.config.get('KUBERNETES_CONFIG_FILE'))
-        #config.load_kube_config(kube_config_file)
-        #k8s_client = client.ApiClient()
-        #kustomization_file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'kustomization.yaml')  
-        #kustomization_file = open(kustomization_file_path, 'rb')
-  
-        #kustomization_file_content = yaml.safe_load(kustomization_file)
-        #kustomization_file.close()
-        
-        #file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, '_namespace.yaml') 
-        #result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
-        #if 'secret.yaml' in kustomization_file_content.get('resources'):
-        #    file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, 'secret.yaml') 
-        #    result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
+def set_logging_level(logginglevel):
 
-        #for file_name in kustomization_file_content.get('resources'):
-        #    if file_name != 'secret.yaml' and file_name!='_namespace.yaml':
-        #        file_path = os.path.join(current_app.config.get('KUBERNETES_FOLDER') , name, file_name) 
-        #        result = utils.create_from_yaml(k8s_client, file_path, verbose=True, pretty=True)
+    current_app.config.get('LOGGER').debug('----------------------------------------------------------------')
+    current_app.config.get('LOGGER').debug('Received a request for the Orchestrator to change Logging level')   
+    if logginglevel in current_app.config.get('LOGGINGLEVELS'):
+        current_app.config.get('LOGGER').info("changing logging level to %s" % logginglevel)
+        current_app.config.get('LOGGERHANDLER').setLevel(current_app.config.get('LOGGINGLEVELS')[logginglevel])
+    else:
+        current_app.config.get('LOGGER').error("Requested logging level (%s) not supported. Returning code 500" % logginglevel) 
+        return 500
 
-    #except utils.FailToCreateError as KubeErr:
-    #    error = 'Application ' + name + ' not deployed succesfully due to a Kubernetes error! '
-    #    print(KubeErr)
-    #    return {'message': error}, 500
+    current_app.config.get('LOGGER').debug("Returning from SET LOGGING LEVEL request. Returning code 200")
+    
+    return 'Logging level set to ' + logginglevel, 200 
     

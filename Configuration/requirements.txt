@@ -1,0 +1,4 @@
+connexion>=2.7.0
+requests>=2.25.1
+requests_toolbelt>=0.9.1
+oyaml>=1.0
