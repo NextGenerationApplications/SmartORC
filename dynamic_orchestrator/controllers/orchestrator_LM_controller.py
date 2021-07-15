@@ -73,17 +73,22 @@ def deploy(body):
             current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to the following error: no application components to be deployed. Returning code 400')
             return {'reason': error}, 400     
         
-        #Debug_response = requests.get('http://146.48.82.93:9001/debug', timeout=5)
-        #Debug_response.raise_for_status()
+        current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
+        for i in range(len(components)):
+            current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
+            current_app.config.get('LOGGER').debug("----- App model: %s " % body.app_model.get('requirements')[i].get('toscaDescription'))
         
-        #RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)
-        current_app.config.get('LOGGER').debug(" Request to RID started")
+        
+        Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
+        Debug_response.raise_for_status()
+        
+        current_app.config.get('LOGGER').info(" Request to RID started ---")
         RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
         RID_response.raise_for_status()
         RID_response = RID_response.json()
         
+        current_app.config.get('LOGGER').info(" Request to RID finished succesfully!")
         current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response)
-        current_app.config.get('LOGGER').debug(" Request to RID finished succesfully!")
 
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
@@ -91,17 +96,27 @@ def deploy(body):
         app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
         app_instance = app_name + '-' + app_component_name_parts[5]
         
+        current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
         nodelist, imagelist, app_version = ReadFile(body.app_model)
+        current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
+
+        current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
         matchmaking_model = generate(nodelist, app_instance)
-        
+        current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
+
         solver = ConcreteOrchestrator() 
+        
+        current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
         dep_plan, status = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
         
         if not dep_plan:
             error = 'Deploy operation not executed successfully: '
             error += dep_plan_status(status)
             current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
+
+        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)  
                  
         namespace_yaml = namespace(app_instance)
         secret_yaml = secret_generation(secret(app_name), app_instance)            
@@ -112,7 +127,7 @@ def deploy(body):
         
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
-            vim_sender_workers_list.append(vim_sender_worker(thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
+            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
             thread_id+=1 
         
         for tid in vim_sender_workers_list:
@@ -126,7 +141,7 @@ def deploy(body):
                 for component_instance_name, date_or_error in component_result.items():
                     if isinstance(date_or_error,int):
                         # send component instance id and creation date time to ASR
-                        request_to_ASR = {  "id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }                        
+                        request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }                        
                         ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         ASR_response.raise_for_status()
                     else:                        
@@ -155,6 +170,8 @@ def deploy(body):
         error = 'Deploy operation not executed successfully due to an unknown internal server error!'
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
+    
+    current_app.config.get('LOGGER').info("------------------ Deploy request finished succesfully ---------------------")
     return 200
 
 def undeploy(body):

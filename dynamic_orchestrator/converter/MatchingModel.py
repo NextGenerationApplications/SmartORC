@@ -57,8 +57,6 @@ def generate(nodelist, application):
     for x in nodelist:
         for y in resourcelist:
             if x.get_node() == y.get('type'):
-                print(y)
-                print(x.get_name())
                 unit = x.get_unit()
                 name = x.get_name()
                 if x.get_port():

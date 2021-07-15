@@ -14,7 +14,7 @@ class vim_sender_worker(threading.Thread):
     '''
     classdocs
     '''
-    def __init__(self, thread_id, app_instance, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results):
+    def __init__(self, logger, thread_id, app_instance, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results):
         threading.Thread.__init__(self)
         self.app_instance = app_instance
         self.nodelist = nodelist
@@ -25,6 +25,7 @@ class vim_sender_worker(threading.Thread):
         self.components = components
         self.thread_id = thread_id
         self.vim_results = vim_results
+        self.logger = logger
         
     def calculate_pers_files_list(self,deployment_file):
         pers_f_list = []  
@@ -46,9 +47,16 @@ class vim_sender_worker(threading.Thread):
         
       
     def run(self):
+        
+        self.logger.info("Thread " + self.thread_id + " launched to deploy following components on EdgeMinicloud %s :" % self.EdgeMinicloud)
+        for i in range(len(self.components)):
+            self.logger.info("--- Component:  %s " % self.components[i])
+
         try:
             yaml_files_list = [self.namespace_yaml, self.secret_yaml]
             
+            
+            self.logger.info("Thread " + self.thread_id + ": " )
             deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud)
     
             for component in self.components:

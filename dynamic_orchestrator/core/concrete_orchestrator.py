@@ -274,7 +274,6 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     #    result_documents.append([])
                     if v.x == 1:
                         minicloud_id = json.loads(node_parts[Nodes]).get('minicloud_id')
-                        minicloud_id = minicloud_id[:4]
                         if not result_documents.get(minicloud_id):
                             result_documents[minicloud_id] = []
                         name = components[Appcomponent].component_name

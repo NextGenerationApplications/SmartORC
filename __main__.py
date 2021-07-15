@@ -39,7 +39,7 @@ def main(argv):
     logger.setLevel(logging.DEBUG)
     # create console handler and set level to info
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(logging.DEBUG)
     # create formatter
     formatter = logging.Formatter('[%(asctime)s,%(msecs)d] %(name)s/%(threadName)s/%(funcName)s (line: %(lineno)d) %(levelname)s: %(message)s', '%d/%b/%Y %H:%M:%S')
     # add formatter to console handler (ch)

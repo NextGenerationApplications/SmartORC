@@ -12,7 +12,6 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
     service_files = []
     persistent_files = []
     deployment_files = []
-    print(application)
     resource_list = []
     resources = []
     value = 7000
@@ -65,7 +64,6 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                             service_port = []
                             for port in port_yaml:
                                 value = value + y
-                                print(value)
                                 content = {'port': value, 'targetPort': int(port.get('containerPort'))}
                                 service_port.append(content)
                                 y = y + 1
@@ -455,5 +453,4 @@ def extra_labels(deployment_file, gpu_model, gpu_dedicated, wifi_antennas):
             template_spec = template['spec']
             nodeselector = template_spec['nodeSelector']
             nodeselector['Wifi.External.Antenna'] = wifi_antennas
-    print(deployment_file)
     return deployment_file

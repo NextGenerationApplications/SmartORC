@@ -21,7 +21,6 @@ def ReadFile(json):
     registry = json.get('registry')
     application_details = json.get('details')
     application_version = application_details.get('version')
-    print(registry)
     repolist = []
     for repository in registry:
         repo = Repository.Repository()
@@ -66,7 +65,6 @@ def ReadFile(json):
                     images = createSession_properties.get('images')
                     cloud.set_application(application)
                     for image in images:
-                        print(image)
                         _object = Image.Image()
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
@@ -84,7 +82,6 @@ def ReadFile(json):
                     order = terminate_properties.get("order")
                     cloud.set_application(application)
                     for image in images:
-                        print(image)
                         _object = Image.Image()
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
@@ -138,7 +135,6 @@ def ReadFile(json):
             container.set_volumeMounts_name(name + '-persistent-storage')
             container.set_volumeMounts_path('/var/lib/' + name)
             if properties.get('env'):
-                print(properties.get('env'))
                 container.set_env(properties.get('env'))
             else:
                 container.set_env(None)
