@@ -82,12 +82,13 @@ def deploy(body):
         Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
         Debug_response.raise_for_status()
         
-        current_app.config.get('LOGGER').info(" Request to RID started ---")
+        current_app.config.get('LOGGER').info(" Request to RID started")
         RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
         RID_response.raise_for_status()
+        current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
+
         RID_response = RID_response.json()
         
-        current_app.config.get('LOGGER').info(" Request to RID finished succesfully!")
         current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response)
 
         app_component_name = components[0].component_name
@@ -128,10 +129,14 @@ def deploy(body):
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
             vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
-            thread_id+=1 
-        
+            thread_id+=1
+             
+        thread_id=0
         for tid in vim_sender_workers_list:
+            current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
             tid.start()
+            thread_id+=1
+
             
         for tid in vim_sender_workers_list:
             tid.join()
@@ -141,20 +146,25 @@ def deploy(body):
                 for component_instance_name, date_or_error in component_result.items():
                     if isinstance(date_or_error,int):
                         # send component instance id and creation date time to ASR
-                        request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }                        
+                        current_app.config.get('LOGGER').info("Request to ASR started")      
+                        request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
+                        current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
                         ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         ASR_response.raise_for_status()
-                    else:                        
+                        current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
+                        current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
+                    else:   
+                        current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500    
                 
              
     except requests.exceptions.Timeout as err:
-        error = 'Deploy operation not executed successfully due to a timeout in the communication with the Rid or ASR!'
-        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the Rid or ASR. Returning code 500')  
+        error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID or ASR!'
+        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the RID or ASR. Returning code 500')  
         return {'reason': error}, 500 
         
     except requests.exceptions.RequestException as err:
-        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Rid or ASR: ' + err.response.reason
+        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the RID or ASR: ' + err.response.reason
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     

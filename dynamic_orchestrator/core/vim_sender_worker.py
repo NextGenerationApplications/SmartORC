@@ -9,6 +9,7 @@ import yaml
 from requests_toolbelt import MultipartEncoder
 import requests
 from datetime import datetime
+import json
 
 class vim_sender_worker(threading.Thread):
     '''
@@ -48,7 +49,7 @@ class vim_sender_worker(threading.Thread):
       
     def run(self):
         
-        self.logger.info("Thread " + self.thread_id + " launched to deploy following components on EdgeMinicloud %s :" % self.EdgeMinicloud)
+        self.logger.info("Thread " + str(self.thread_id) + " started to deploy following components on EdgeMinicloud %s :" % self.EdgeMinicloud)
         for i in range(len(self.components)):
             self.logger.info("--- Component:  %s " % self.components[i])
 
@@ -56,9 +57,10 @@ class vim_sender_worker(threading.Thread):
             yaml_files_list = [self.namespace_yaml, self.secret_yaml]
             
             
-            self.logger.info("Thread " + self.thread_id + ": " )
+            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)
             deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud)
-    
+            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function terminated" % self.app_instance)
+
             for component in self.components:
                 componentEMC = component + '-' + self.EdgeMinicloud
                 for deployment_component in deployment_files:
@@ -77,13 +79,20 @@ class vim_sender_worker(threading.Thread):
                             yaml_files_list.append(service_desc)
     
             yaml_file = yaml.dump_all(yaml_files_list)  
+               
+            self.logger.debug("Thread " + str(self.thread_id) + ": K3S configuration file content")
+            self.logger.debug("Thread " + str(self.thread_id) + ": %s" % yaml_file)
                           
             vim_request = MultipartEncoder(fields={'operation': 'deploy', 'file': (component, yaml_file, 'text/plain')})  
             
-            vim_response = requests.post("http://localhost:5000/VIM/request", data=vim_request,
-                              headers={'Content-Type': vim_request.content_type})
             
+            self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw started")
+            vim_response = requests.post("http://localhost:5000/VIM/request", timeout=10, data=vim_request,
+                              headers={'Content-Type': vim_request.content_type})
             vim_response.raise_for_status()
+            self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw finished succesfully!")
+            self.logger.debug("Thread " + str(self.thread_id) + ": Request to VimGw returned with response: %s" % vim_response.text)
+
             vim_result = vim_response.json()
             
             result = []
