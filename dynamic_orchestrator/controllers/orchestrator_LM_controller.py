@@ -13,18 +13,16 @@ import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
+from pyasn1.type.univ import Null
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
-        token_name = 'gitlab+deploy-token-420906'
-        token_pass = 'jwCSDnkoZDeZqwf2i9-m'
+        return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
     if name == 'accordion-orbk-0-0-1':
-        token_name = 'gitlab+deploy-token-420904'
-        token_pass = 'gzP9s2bkJV-yeh1a6fn3'
+        return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
     if name == 'accordion-ovr-0-0-1':
-        token_name = 'gitlab+deploy-token-430087'
-        token_pass = 'NDxnnzt9WvuR7zyAHchX'
-    return token_name, token_pass
+        return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
+    return None, None
 
 def supported_operation (operation):
     if operation == 'deploy':
@@ -36,6 +34,8 @@ def supported_operation (operation):
 
 def secret (name):  
     token_name, token_pass = choose_application(name)
+    if not token_name:
+        return None 
     sample_string = token_name + ":" + token_pass
     sample_string_bytes = sample_string.encode("ascii")
     base64_bytes = base64.b64encode(sample_string_bytes)
@@ -77,26 +77,58 @@ def deploy(body):
         for i in range(len(components)):
             current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
             current_app.config.get('LOGGER').debug("----- App model: %s " % body.app_model.get('requirements')[i].get('toscaDescription'))
-        
-        
-        Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
-        Debug_response.raise_for_status()
-        
-        current_app.config.get('LOGGER').info(" Request to RID started")
-        RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
-        RID_response.raise_for_status()
-        current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
-
-        RID_response = RID_response.json()
-        
-        current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response)
-
+            
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
-        app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
-        app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
-        app_instance = app_name + '-' + app_component_name_parts[5]
         
+        try:
+            app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
+            app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
+            app_instance = app_name + '-' + app_component_name_parts[5]
+        except:
+            error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+            current_app.config.get('LOGGER').error(error + ". Returning code 400")
+            return {'reason': error}, 400      
+                
+        secret_string = secret(app_name)
+               
+        if not secret_string:
+            error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+            return {'reason': error}, 500      
+                    
+        try:
+            current_app.config.get('LOGGER').info(" Request to RID started")
+
+            #Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
+            Debug_response = requests.get('http://localhost:9001/debug', timeout=5)
+            Debug_response.raise_for_status()
+            
+            #RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
+            RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)                  
+            RID_response.raise_for_status()
+            RID_response_json = RID_response.json()                         
+            current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
+            
+        except requests.exceptions.Timeout as err:
+            error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
+            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the RID. Returning code 500')  
+            return {'reason': error}, 500 
+        
+        except requests.exceptions.RequestException as err:
+            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the RID: ' + str(err)
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+            return {'reason': error}, 500
+        
+        except json.JSONDecodeError as err:
+            error = 'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error: ' + str(err)
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+            return {'reason': error}, 500
+        
+        current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response_json)
+        
+        
+        # Error handling to be finished
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
         nodelist, imagelist, app_version = ReadFile(body.app_model)
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
@@ -108,7 +140,7 @@ def deploy(body):
         solver = ConcreteOrchestrator() 
         
         current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
-        dep_plan, status = solver.calculate_dep_plan(components, RID_response, matchmaking_model)
+        dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
         current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
         
         if not dep_plan:
@@ -117,29 +149,38 @@ def deploy(body):
             current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
 
-        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)  
+        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)   
                  
-        namespace_yaml = namespace(app_instance)
-        secret_yaml = secret_generation(secret(app_name), app_instance)            
-
+        namespace_yaml = namespace(app_instance)        
+                
+        secret_yaml = secret_generation(secret_string, app_instance)
+                    
         vim_results = [[]] * len(dep_plan);
         
         vim_sender_workers_list = []
         
+        current_app.config.get('LOGGER').info(" Initialization of threads started")  
+
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
             vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
             thread_id+=1
-             
+            
+        current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
+  
         thread_id=0
         for tid in vim_sender_workers_list:
             current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
             tid.start()
             thread_id+=1
 
-            
+        current_app.config.get('LOGGER').info(" Threads launched correctly!")  
+
         for tid in vim_sender_workers_list:
             tid.join()
+            
+        current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
+
            
         for vim_result in vim_results:
             for component_result in vim_result:
@@ -159,12 +200,12 @@ def deploy(body):
                 
              
     except requests.exceptions.Timeout as err:
-        error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID or ASR!'
-        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the RID or ASR. Returning code 500')  
+        error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'
+        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the ASR. Returning code 500')  
         return {'reason': error}, 500 
         
     except requests.exceptions.RequestException as err:
-        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the RID or ASR: ' + err.response.reason
+        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the ASR: ' + str(err)
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
@@ -209,8 +250,8 @@ def orchestrator_LM_request(body):  # noqa: E501
     else:
         current_app.config.get('LOGGER').debug('Bad request: it should be Json formatted')
     if operation == None:
-        error = 'Request not executed successfully due to the following error: operation not supported!' 
-        current_app.config.get('LOGGER').debug('Request not executed successfully due to the following error: operation not supported. Returning code 400')
+        error = 'Request not executed successfully due to the following error: empty operation parameter!' 
+        current_app.config.get('LOGGER').debug('Request not executed successfully due to the following error: empty operation parameter. Returning code 400')
         return {'reason': error}, 400
     return operation(body)
 
