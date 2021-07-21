@@ -93,10 +93,11 @@ def pretty_print(req):
 #except Exception as e:
 #    print('Connection Error')    
 
-try:
+try:     
     json_file = open('intermidietmodel-UC1.json')
     app_model = json.load(json_file)
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-1-1234-signalingserver'}], 'operation':'deploy', 'app_model' : app_model, 'application_parameters': {}} 
+    #r1 = requests.get('http://app.accordion-project.eu:31724/application?name=UC 1&isLatest=true')
+    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-1-1626876643-signalingserver'}], 'operation':'deploy', 'app_model' : app_model, 'application_parameters': None} 
     data = json.dumps(body1)
     r10 = requests.post('http://localhost:7000/orchestrator/request', data = data, headers={'Content-type': 'application/json'})
     pretty_print(r10)

@@ -13,14 +13,13 @@ import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
-from pyasn1.type.univ import Null
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
         return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
     if name == 'accordion-orbk-0-0-1':
         return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
-    if name == 'accordion-ovr-0-0-1':
+    if name == 'accordion-ovr-0-0-3':
         return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
     return None, None
 
@@ -58,7 +57,7 @@ def dep_plan_status(status):
         return 'infeasible deploy solution found!'
     if status == OptimizationStatus.UNBOUNDED:
         return 'unbounded deploy solution found!'  
-    
+  
 def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
@@ -76,8 +75,11 @@ def deploy(body):
         current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
         for i in range(len(components)):
             current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
-            current_app.config.get('LOGGER').debug("----- App model: %s " % body.app_model.get('requirements')[i].get('toscaDescription'))
-            
+            #current_app.config.get('LOGGER').debug("----- App model: %s " % body.app_model.get('requirements')[i].get('toscaDescription'))
+            current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+            current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
+            current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
+     
         app_component_name = components[0].component_name
         app_component_name_parts = app_component_name.split('-')
         
@@ -90,6 +92,8 @@ def deploy(body):
             current_app.config.get('LOGGER').error(error + ". Returning code 400")
             return {'reason': error}, 400      
                 
+                
+                        
         secret_string = secret(app_name)
                
         if not secret_string:
@@ -138,8 +142,10 @@ def deploy(body):
             return {'reason': error}, 500 
         
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
-
+        for image in imagelist:
+            print(image.get_name())
         current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
+        
         matchmaking_model = generate(nodelist, app_instance)
         current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
 
@@ -164,12 +170,12 @@ def deploy(body):
         vim_results = [[]] * len(dep_plan);
         
         vim_sender_workers_list = []
-        
+ 
         current_app.config.get('LOGGER').info(" Initialization of threads started")  
 
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
-            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list , vim_results))
+            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
             thread_id+=1
             
         current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
@@ -186,7 +192,6 @@ def deploy(body):
             tid.join()
             
         current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
-
            
         for vim_result in vim_results:
             for component_result in vim_result:
@@ -202,8 +207,7 @@ def deploy(body):
                         current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
-                        return {'reason': date_or_error}, 500    
-                
+                        return {'reason': date_or_error}, 500               
              
     except requests.exceptions.Timeout as err:
         error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'
