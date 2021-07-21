@@ -101,11 +101,11 @@ def deploy(body):
             current_app.config.get('LOGGER').info(" Request to RID started")
 
             #Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
-            Debug_response = requests.get('http://localhost:9001/debug', timeout=5)
-            Debug_response.raise_for_status()
+            #Debug_response = requests.get('http://localhost:9001/debug', timeout=5)
+            #Debug_response.raise_for_status()
             
-            #RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
-            RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)                  
+            RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
+            #RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()                         
             current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
@@ -121,7 +121,7 @@ def deploy(body):
             return {'reason': error}, 500
         
         except json.JSONDecodeError as err:
-            error = 'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error: ' + str(err)
+            error = 'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500
         
@@ -130,7 +130,13 @@ def deploy(body):
         
         # Error handling to be finished
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
-        nodelist, imagelist, app_version = ReadFile(body.app_model)
+        try:
+            nodelist, imagelist, app_version = ReadFile(body.app_model)
+        except:
+            error = 'Deploy operation not executed successfully: Application Model is not parsable'
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+            return {'reason': error}, 500 
+        
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
 
         current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  

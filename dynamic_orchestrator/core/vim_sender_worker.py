@@ -111,7 +111,7 @@ class vim_sender_worker(threading.Thread):
             self.vim_results[self.thread_id] = result
             
         except requests.exceptions.RequestException as err:
-            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Vim of the EdgeMinicloud with id:  ' + self.EdgeMinicloud + ": " + err.response.reason
+            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Vim of the EdgeMinicloud with id:  ' + self.EdgeMinicloud + ": " + str(err)
             result = []
             for component in self.components:
                 component_name = component + '-' + self.EdgeMinicloud

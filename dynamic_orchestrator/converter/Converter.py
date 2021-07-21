@@ -359,7 +359,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                          'labels': {
                                                                                              'kubevirt.io/os': 'linux'}},
                                                                                      'spec': {
-                                                                                         'running': 'True',
+                                                                                         'running': 'true',
                                                                                          'template': {
                                                                                              'metadata': {
                                                                                                  'labels': {
@@ -383,7 +383,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                              {
                                                                                                                  'cdrom': {
                                                                                                                      'bus': 'sata',
-                                                                                                                     'readonly': 'True'},
+                                                                                                                     'readonly': 'true'},
                                                                                                                  'name': 'cloudinitdisk'}]},
                                                                                                      'machine': {
                                                                                                          'type': 'q35'},
@@ -398,8 +398,8 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                          'cloudInitNoCloud': {
                                                                                                              'userData': {
                                                                                                                  'hostname': x.get_name(),
-                                                                                                                 'ssh_pwauth': 'True',
-                                                                                                                 'disable_root': 'False',
+                                                                                                                 'ssh_pwauth': 'true',
+                                                                                                                 'disable_root': 'false',
                                                                                                                  'ssh_authorized_key': [
                                                                                                                      'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
                                                                                                          },
@@ -443,7 +443,8 @@ def extra_labels(deployment_file, gpu_model, gpu_dedicated, wifi_antennas):
             if "AMD" in gpu_model:
                 gpu_model = "amd"
             nodeselector['GPU.model'] = gpu_model
-            nodeselector['GPU.dedicated'] = gpu_dedicated
+            nodeselector['GPU.dedicated'] = str(gpu_dedicated).lower()
+
     if wifi_antennas != "None":
         key = deployment_file.keys()
         for k in key:
@@ -452,5 +453,5 @@ def extra_labels(deployment_file, gpu_model, gpu_dedicated, wifi_antennas):
             template = spec['template']
             template_spec = template['spec']
             nodeselector = template_spec['nodeSelector']
-            nodeselector['Wifi.External.Antenna'] = wifi_antennas
+            nodeselector['Wifi.External.Antenna'] = str(wifi_antennas).lower()
     return deployment_file
