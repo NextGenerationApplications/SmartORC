@@ -52,8 +52,10 @@ def ReadFile(json):
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
                             _object.set_path(dict_.get('name'))
+                            if not dict_.get('internal'):
+                                _object.set_url(dict_.get('url'))
                             component_names.append(name.lower())
-                            _object.set_name(name)
+                            _object.set_component(name)
                             imagelist.append(_object)
                     actionlist.append({'action': 'deploy', 'order': order, 'components': component_names})
                 if 'requestSession' in actions:
@@ -69,8 +71,10 @@ def ReadFile(json):
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
                             _object.set_path(dict_.get('name'))
+                            if not dict_.get('internal'):
+                                _object.set_url(dict_.get('url'))
                             component_names.append(name.lower())
-                            _object.set_name(name)
+                            _object.set_component(name)
                             imagelist.append(_object)
                     actionlist.append({'action': 'requestSession', 'order': order, 'components': component_names})
                 if 'terminate' in actions:
@@ -87,7 +91,7 @@ def ReadFile(json):
                             _object.set_internal(dict_.get('internal'))
                             _object.set_path(dict_.get('name'))
                             component_names.append(name.lower())
-                            _object.set_name(name)
+                            _object.set_component(name)
                             imagelist.append(_object)
                     actionlist.append({'action': 'terminate', 'order': order, 'components': component_names})
                 if 'requestAnblick' in actions:
@@ -103,11 +107,12 @@ def ReadFile(json):
                         for name, dict_ in image.items():
                             _object.set_internal(dict_.get('internal'))
                             _object.set_path(dict_.get('name'))
-                            component_names.append(name)
-                            _object.set_name(name)
+                            if not dict_.get('internal'):
+                                _object.set_url(dict_.get('url'))
+                            component_names.append(name.lower())
+                            _object.set_component(name)
                             imagelist.append(_object)
-                    actionlist.append({'action': 'createSession', 'order': order, 'components': component_names})
-
+                    actionlist.append({'action': 'requestAnblick', 'order': order, 'components': component_names})
                 cloud.set_actions(actionlist)
             nodelist.append(cloud)
         if 'Component' in _type:
@@ -163,13 +168,13 @@ def ReadFile(json):
             relationship = host.get('relationship')
             container.set_relatioship(relationship)
             for image in imagelist:
-                if name == image.get_name().lower():
+                if name == image.get_component().lower():
                     if not image.get_internal():
                         container.set_internal(image.get_internal())
                         container.set_image(image.get_path())
                     if image.get_internal():
                         for repo in repolist:
-                            if repo.get_component() in image.get_name():
+                            if repo.get_component() in image.get_component():
                                 container.set_image(repo.get_path() + ":" + repo.get_version())
                                 container.set_internal(image.get_internal())
             nodelist.append(container)

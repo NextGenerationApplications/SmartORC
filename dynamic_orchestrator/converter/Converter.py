@@ -1,7 +1,7 @@
 import oyaml as yaml
 from dynamic_orchestrator.converter import ComputeNode
 
-def tosca_to_k8s(nodelist, imagelist, application, minicloud):
+def tosca_to_k8s(nodelist, imagelist, application, minicloud,externalIP):
     images = []
     deployment = {}
     edge_os = ''
@@ -77,6 +77,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                         'app': application}},
                                 'spec': {
                                     'ports': service_port,
+                                    'externalIPs': [externalIP],
                                     'selector': {'app': application},
                                     'type': 'LoadBalancer'}}}
                             service_files.append(service)
@@ -304,6 +305,10 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                          'ephemeral-storage': resource.get_disk()}}
 
                     if host == resource.get_name():
+                        url = ""
+                        for image in imagelist:
+                            if x.get_image() == image.get_path():
+                                url = image.get_url()
                         if resource.get_disk():
                             persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
                                                                              'kind': 'PersistentVolumeClaim',
@@ -314,7 +319,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                      'app': application},
                                                                                  'annotations':
                                                                                      {
-                                                                                         'cdi.kubevirt.io/storage.import.endpoint': x.get_image()}},
+                                                                                         'cdi.kubevirt.io/storage.import.endpoint': url}},
                                                                              'spec':
                                                                                  {'accessModes':
                                                                                       ['ReadWriteOnce'],
@@ -345,6 +350,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                         'spec': {
                                             'externalTrafficPolicy': 'Cluster',
                                             'ports': service_port,
+                                            'externalIPs':[externalIP],
                                             'selector': {'app': application},
                                             'type': 'LoadBalancer'}}}
                                 service_files.append(service)
@@ -359,7 +365,7 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                          'labels': {
                                                                                              'kubevirt.io/os': 'linux'}},
                                                                                      'spec': {
-                                                                                         'running': 'true',
+                                                                                         'running': True,
                                                                                          'template': {
                                                                                              'metadata': {
                                                                                                  'labels': {
@@ -379,31 +385,18 @@ def tosca_to_k8s(nodelist, imagelist, application, minicloud):
                                                                                                          'disks': [{
                                                                                                              'disk': {
                                                                                                                  'bus': 'virtio'},
-                                                                                                             'name': 'disk0'},
-                                                                                                             {
-                                                                                                                 'cdrom': {
-                                                                                                                     'bus': 'sata',
-                                                                                                                     'readonly': 'true'},
-                                                                                                                 'name': 'cloudinitdisk'}]},
-                                                                                                     'machine': {
-                                                                                                         'type': 'q35'},
+                                                                                                             'name': 'cloudinitdisk'},
+
+                                                                                                                 ]},
+
                                                                                                      'resources': {
                                                                                                          'requests': {
                                                                                                              'memory': resource.get_mem()}}},
                                                                                                  'volumes': [
-                                                                                                     {'name': 'disk0',
+                                                                                                     {'name': 'cloudinitdisk',
                                                                                                       'persistentVolumeClaim': {
                                                                                                           'claimName': x.get_volumes_claimname()}},
-                                                                                                     {
-                                                                                                         'cloudInitNoCloud': {
-                                                                                                             'userData': {
-                                                                                                                 'hostname': x.get_name(),
-                                                                                                                 'ssh_pwauth': 'true',
-                                                                                                                 'disable_root': 'false',
-                                                                                                                 'ssh_authorized_key': [
-                                                                                                                     'ssh-rsa YOUR_SSH_PUB_KEY_HERE']},
-                                                                                                         },
-                                                                                                         'name': 'cloudinitdisk'}]}}}}}
+                                                                                                     ]}}}}}
                             deployment = extra_labels(deployment, resource.get_gpu_model(),
                                                       resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                             deployment_files.append(deployment)

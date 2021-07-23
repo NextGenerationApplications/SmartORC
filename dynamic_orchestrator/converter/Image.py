@@ -1,9 +1,15 @@
 class Image:
 
-    def set_name(self, image):
+    def set_component(self, component):
+        self.__component = component
+
+    def get_component(self):
+        return self.__component
+
+    def set_image_name(self, image):
         self.__image = image
 
-    def get_name(self):
+    def get_image_name(self):
         return self.__image
 
     def set_internal(self, booelan):
@@ -17,3 +23,9 @@ class Image:
 
     def get_path(self):
         return self.__path
+
+    def set_url(self, url):
+        self.__url = url
+
+    def get_url(self):
+        return self.__url

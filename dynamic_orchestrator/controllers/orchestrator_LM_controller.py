@@ -75,7 +75,6 @@ def deploy(body):
         current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
         for i in range(len(components)):
             current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
-            #current_app.config.get('LOGGER').debug("----- App model: %s " % body.app_model.get('requirements')[i].get('toscaDescription'))
             current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
             current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
             current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
@@ -142,8 +141,8 @@ def deploy(body):
             return {'reason': error}, 500 
         
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
-        for image in imagelist:
-            print(image.get_name())
+        #for image in imagelist:
+        #    print(str(image))
         current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
         
         matchmaking_model = generate(nodelist, app_instance)

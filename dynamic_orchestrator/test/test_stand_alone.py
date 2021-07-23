@@ -94,14 +94,32 @@ def pretty_print(req):
 #    print('Connection Error')    
 
 try:     
-    json_file = open('intermidietmodel-UC1.json')
-    app_model = json.load(json_file)
-    #r1 = requests.get('http://app.accordion-project.eu:31724/application?name=UC 1&isLatest=true')
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-1-1626876643-signalingserver'}], 'operation':'deploy', 'app_model' : app_model, 'application_parameters': None} 
-    data = json.dumps(body1)
-    r10 = requests.post('http://localhost:7000/orchestrator/request', data = data, headers={'Content-type': 'application/json'})
-    pretty_print(r10)
-    print(r10.status_code)
-    print(r10.text)
+    #json_file1 = open('intermidietmodel-UC2.json')
+    #app_model_orbk = json.load(json_file1)
+    AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
+    #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
+    AB_response = AB_resp.json()
+    
+    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1487523654-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
+    #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-1487523654-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
+ 
+    data1 = json.dumps(body1)
+    r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
+    pretty_print(r1)
+    print(r1.status_code)
+    print(r1.text)
 except Exception as e:
-    print('Connection Error')  
+    print('Connection Error with the Orchestrator for the Orbk Use Case')  
+    
+#try:     
+#    json_file2 = open('intermidietmodel-UC1.json')
+#    app_model_ovr = json.load(json_file2)
+    #r1 = requests.get('http://app.accordion-project.eu:31724/application?name=UC 1&isLatest=true')
+#    body2 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1626876643-signalingserver'}], 'operation':'deploy', 'app_model' : app_model_ovr, 'application_parameters': None} 
+#    data2 = json.dumps(body2)
+#    r2 = requests.post('http://localhost:7000/orchestrator/request', data = data2, headers={'Content-type': 'application/json'})
+#    pretty_print(r2)
+#    print(r2.status_code)
+#    print(r2.text)
+#except Exception as e:
+#    print('Connection Error with the Orchestrator for the Ovr Use Case')  

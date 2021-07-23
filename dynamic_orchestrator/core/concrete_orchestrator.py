@@ -39,18 +39,18 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                         component_translation['hardware_requirements_ram'] = int(hw_requirement_value)
                     if hw_requirement_name == 'disk':
                         component_translation['hardware_requirements_disk'] = int(hw_requirement_value)
-                    if hw_requirement_name == 'gpu':
-                        for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
-                            if gpu_requirement_name == 'model':
-                                if 'INTEL' in gpu_requirement_value:
-                                    component_translation['QEhardware_requirements_gpu_model'] = 3
-                                if 'NVIDIA' in gpu_requirement_value:
-                                    component_translation['QEhardware_requirements_gpu_model'] = 1
-                                elif 'AMD' in gpu_requirement_value:
-                                    component_translation['QEhardware_requirements_gpu_model'] = 2
-                            if gpu_requirement_name == 'dedicated':
-                                if gpu_requirement_value == 'True':
-                                    component_translation['Qhardware_requirements_gpu_dedicated'] = 1
+                    #if hw_requirement_name == 'gpu':
+                    #    for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
+                    #        if gpu_requirement_name == 'model':
+                    #            if 'INTEL' in gpu_requirement_value:
+                    #                component_translation['QEhardware_requirements_gpu_model'] = 3
+                    #            if 'NVIDIA' in gpu_requirement_value:
+                    #                component_translation['QEhardware_requirements_gpu_model'] = 1
+                    #            elif 'AMD' in gpu_requirement_value:
+                    #                component_translation['QEhardware_requirements_gpu_model'] = 2
+                    #        if gpu_requirement_name == 'dedicated':
+                    #            if gpu_requirement_value == 'True':
+                    #                component_translation['Qhardware_requirements_gpu_dedicated'] = 1
                                                                     
         return component_translation
 
