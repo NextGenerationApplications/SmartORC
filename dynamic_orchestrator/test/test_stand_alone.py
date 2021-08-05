@@ -1,5 +1,5 @@
 import requests
-from requests_toolbelt.multipart.encoder import MultipartEncoder
+#from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
 
 def pretty_print(req):
@@ -94,14 +94,14 @@ def pretty_print(req):
 #    print('Connection Error')    
 
 try:     
-    #json_file1 = open('intermidietmodel-UC2.json')
-    #app_model_orbk = json.load(json_file1)
-    AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
+    json_file1 = open('intermidietmodel-UC2.json')
+    AB_response = json.load(json_file1)
+    #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
     #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
-    AB_response = AB_resp.json()
-    
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1487523654-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
-    #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-1487523654-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
+    #AB_response = AB_resp.json()
+    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1654548478-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
+    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1234567-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
+    body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-1487523654-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
  
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
@@ -109,7 +109,7 @@ try:
     print(r1.status_code)
     print(r1.text)
 except Exception as e:
-    print('Connection Error with the Orchestrator for the Orbk Use Case')  
+    print('Connection Error with the Orchestrator for the Ovr Use Case')  
     
 #try:     
 #    json_file2 = open('intermidietmodel-UC1.json')

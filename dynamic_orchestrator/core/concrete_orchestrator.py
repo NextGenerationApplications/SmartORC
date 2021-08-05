@@ -5,10 +5,10 @@ Created on 11 feb 2021
 '''
 
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
-from numbers import Number
+#from numbers import Number
 from mip import Model, xsum, BINARY, maximize, OptimizationStatus
 import json
-import math
+#import math
 
 class ConcreteOrchestrator(AbstractOrchestrator):
     '''
@@ -74,19 +74,19 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         
         node_res_translation['hardware_requirements_disk'] = int(node ['disk_free_space(bytes)'])
    
-        if 'Intel' in node['device.GPU.GPU_name']:
-            node_res_translation['QEhardware_requirements_gpu_model'] = 3
-        if 'AMD' in node['device.GPU.GPU_name']:
-            node_res_translation['QEhardware_requirements_gpu_model'] = 2
-        elif 'Nvidia' in node['device.GPU.GPU_name']:
-            node_res_translation['QEhardware_requirements_gpu_model'] = 1
-        else:
-            node_res_translation['QEhardware_requirements_gpu_model'] = 0
+        #if 'Intel' in node['device.GPU.GPU_name']:
+        #    node_res_translation['QEhardware_requirements_gpu_model'] = 3
+        #if 'AMD' in node['device.GPU.GPU_name']:
+        #    node_res_translation['QEhardware_requirements_gpu_model'] = 2
+        #elif 'Nvidia' in node['device.GPU.GPU_name']:
+        #    node_res_translation['QEhardware_requirements_gpu_model'] = 1
+        #else:
+        #    node_res_translation['QEhardware_requirements_gpu_model'] = 0
            
-        if 'Integrated' in node['device.GPU.GPU_type']:
-            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 0
-        else:
-            node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
+        #if 'Integrated' in node['device.GPU.GPU_type']:
+        #    node_res_translation['Qhardware_requirements_gpu_dedicated'] = 0
+        #else:
+        #    node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
             
         return node_res_translation
         
