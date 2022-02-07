@@ -119,12 +119,6 @@ class Container:
     def get_service(self):
         return self.__service
 
-    def set_node(self, node):
-        self.__node = node
-
-    def get_node(self):
-        return self.__node
-
     def set_ingress(self, ingress):
         self.__ingress = ingress
 

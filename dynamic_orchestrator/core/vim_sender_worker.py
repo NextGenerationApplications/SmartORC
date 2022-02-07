@@ -9,7 +9,7 @@ import yaml
 from requests_toolbelt import MultipartEncoder
 import requests
 from datetime import datetime
-import json
+#import json
 
 class vim_sender_worker(threading.Thread):
     '''
@@ -50,14 +50,15 @@ class vim_sender_worker(threading.Thread):
     def run(self):
         
         self.logger.info("Thread " + str(self.thread_id) + " started to deploy following components on EdgeMinicloud %s :" % self.EdgeMinicloud)
-        for i in range(len(self.components)):
-            self.logger.info("--- Component:  %s " % self.components[i])
+        for component in self.components:
+            self.logger.info("--- Component:  %s " % self.component)
 
         try:
             yaml_files_list = [self.namespace_yaml, self.secret_yaml]
             
             
-            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
+            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)    
+                
             deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud, '146.48.86.248')
             self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function terminated" % self.app_instance)
 

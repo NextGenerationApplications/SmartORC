@@ -1,12 +1,14 @@
 # coding: utf-8
 
 from __future__ import absolute_import
-from datetime import date, datetime  # noqa: F401
+#from datetime import date, datetime  # noqa: F401
 
-from typing import List, Dict  # noqa: F401
+from typing import List  # noqa: F401
 
 from dynamic_orchestrator.models.base_model_ import Model
 from dynamic_orchestrator.models.request_body_app_component_names import RequestBodyAppComponentNames  # noqa: F401,E501
+from dynamic_orchestrator.models.request_body_application_parameters import RequestBodyApplicationParameters  # noqa: F401,E501
+
 from dynamic_orchestrator import util
 
 
@@ -15,7 +17,7 @@ class RequestBody(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, app_component_names: List[RequestBodyAppComponentNames]=None, operation: str=None, app_model: object=None, application_parameters: object=None):  # noqa: E501
+    def __init__(self, app_component_names: List[RequestBodyAppComponentNames]=None, operation: str=None, app_model: object=None, application_parameters: List[RequestBodyApplicationParameters]=None):  # noqa: E501
         """RequestBody - a model defined in Swagger
 
         :param app_component_names: The app_component_names of this RequestBody.  # noqa: E501
@@ -25,13 +27,13 @@ class RequestBody(Model):
         :param app_model: The app_model of this RequestBody.  # noqa: E501
         :type app_model: object
         :param application_parameters: The application_parameters of this RequestBody.  # noqa: E501
-        :type application_parameters: object
+        :type application_parameters: List[RequestBodyApplicationParameters]
         """
         self.swagger_types = {
             'app_component_names': List[RequestBodyAppComponentNames],
             'operation': str,
             'app_model': object,
-            'application_parameters': object
+            'application_parameters': List[RequestBodyApplicationParameters]
         }
 
         self.attribute_map = {
@@ -120,7 +122,7 @@ class RequestBody(Model):
         self._app_model = app_model
 
     @property
-    def application_parameters(self) -> object:
+    def application_parameters(self) -> List[RequestBodyApplicationParameters]:
         """Gets the application_parameters of this RequestBody.
 
 
@@ -130,7 +132,7 @@ class RequestBody(Model):
         return self._application_parameters
 
     @application_parameters.setter
-    def application_parameters(self, application_parameters: object):
+    def application_parameters(self, application_parameters: List[RequestBodyApplicationParameters]):
         """Sets the application_parameters of this RequestBody.
 
 

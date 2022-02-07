@@ -1,1 +1,452 @@
-{"details":{"id":"60c09eb9f1e45743ca0e7573","name":"plexus","version":"0.0.1","isLatest":true},"registry":[{"repository":"registry.gitlab.com/accordion-project/wp6/uc_3/rs","version":"latest","id":"b777f84","size":"438.52MB","imageName":"accordion-project/wp6/uc_3/rs","component":"RemoteService"},{"repository":"registry.gitlab.com/accordion-project/wp6/uc_3/ls","version":"latest","id":"34c0b29","size":"307.28MB","imageName":"accordion-project/wp6/uc_3/ls","component":"LocalService"}],"requirements":[{"environment":"PRODUCTION","toscaDescription":{"tosca_definitions_version":"tosca_simple_yaml_1_2","description":"Experiments with deployment of wordpress and mysql","data_types":{"generate":{"properties":{"secret":{"name":{"type":"string"},"namespace":{"type":"string"},"literals":{"type":"list"},"resources":{"type":"list"}},"order":{"type":"string"}}},"discover":{"propeties":{"target":{"type":"string"},"order":{"type":"string"}}},"deploy":{"properties":{"application":{"type":"string"},"images":{"type":"list"},"order":"string"}}},"node_types":{"tosca.nodes.Compute.EdgeNode":{"derived_from":"tosca.nodes.Compute","properties":{"wifi_antenna":{"type":"boolean","required":false},"gpu_model":{"model":{"type":"string","required":false},"dedicated":{"type":"boolean","default":true},"type":"map","required":false}}},"tosca.nodes.Compute.PublicCloud":{"derived_from":"tosca.nodes.Compute"},"ACCORDION.Cloud_Framework":{"derived_from":"tosca.nodes.Container.Application.Docker","properties":{"actions":{"type":"map"}}},"Component":{"derived_from":"tosca.nodes.Container.Application.Docker","properties":{"name":{"type":"string"},"application":{"type":"string"},"external_ip":{"type":"boolean"},"ip":{"type":"string"},"deployment_unit":{"type":"string"},"port":{"type":"string","required":false},"env":{"type":"list","required":false},"dependency":{"type":"list","required":false},"flavor":{"type":"string"},"input":{"type":"map","required":false}},"requirements":[{"host":{"node":"tosca.nodes.Compute","relationship":"hostedOn"}}]}},"relationship_types":{"hostedOn":{"derived_from":"tosca.relationships.Root","valid_target_types":["tosca.capabilities.Node"]}},"topology_template":{"inputs":{"ip":{"type":"string","description":"IP of containers","required":false}},"node_templates":{"Cloud_Framework":{"type":"ACCORDION.Cloud_Framework","properties":{"actions":{"deploy":{"properties":{"application":"plexus","images":[{"LocalService":{"name":"ls","internal":true}}],"order":1}},"requestAnblick":{"properties":{"application":"plexus","images":[{"RemoteService":{"name":"rs","internal":true}}],"order":2}}}}},"EdgeNode":{"type":"tosca.nodes.Compute.EdgeNode","properties":{"wifi_antenna":true},"capabilities":{"host":{"properties":{"num_cpus":4,"mem_size":"4096 MB","disk_size":"32 GB"}},"os":{"properties":{"architecture":"arm64","type":"linux","distribution":"Raspberry Pi OS"}}}},"PublicCloud":{"type":"tosca.nodes.Compute.PublicCloud","capabilities":{"host":{"properties":{"num_cpus":1,"mem_size":"512 MB","disk_size":"20 GB"}},"os":{"properties":{"architecture":"x86_64","type":"linux"}}}},"RemoteService":{"type":"Component","properties":{"name":"remoteservice","application":"plexus","external_ip":false,"ip":{"get_input":"ip"},"deployment_unit":"container","port":"5432, 8000"},"requirements":[{"host":{"node":"PublicCloud","relationship":"hostedOn"}}]},"LocalService":{"type":"Component","properties":{"name":"localservice","application":"plexus","external_ip":false,"ip":{"get_input":"ip"},"deployment_unit":"container","port":"7979"},"requirements":[{"host":{"node":"EdgeNode","relationship":"hostedOn"}}]}}}}}],"metadata":{"createdAt":"2021-03-25T13:41:55.042","createdBy":"admin@accordion.eu","modifiedAt":"2021-03-25T13:41:55.042","modifiedBy":"user@accordion.eu"}}
+{
+   "details":{
+      "id":"60c09eb9f1e45743ca0e7573",
+      "name":"plexus",
+      "version":"0.0.1",
+      "isLatest":true
+   },
+   "registry":[
+      {
+         "repository":"registry.gitlab.com/accordion-project/wp6/uc_3/rs",
+         "version":"latest",
+         "id":"b777f84",
+         "size":"438.52MB",
+         "imageName":"accordion-project/wp6/uc_3/rs",
+         "component":"RemoteService"
+      },
+      {
+         "repository":"registry.gitlab.com/accordion-project/wp6/uc_3/ls",
+         "version":"latest",
+         "id":"34c0b29",
+         "size":"307.28MB",
+         "imageName":"accordion-project/wp6/uc_3/ls",
+         "component":"LocalService"
+      }
+   ],
+   "requirements":[
+      {
+         "environment":"PRODUCTION",
+         "toscaDescription":{
+  "tosca_definitions_version": "tosca_simple_yaml_1_2",
+  "description": "Application model of PLEXUS Use Case",
+  "data_types": {
+    "geolocation": {
+      "properties": {
+        "Continent": {
+          "type": "string",
+          "required": false
+        },
+        "Country": {
+          "type": "string",
+          "required": false
+        },
+        "City": {
+          "type": "string",
+          "required": false
+        },
+        "latitude": {
+          "type": "string",
+          "required": false
+        },
+        "longtitude": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    "metrics": {
+      "properties": {
+        "avg_latency": {
+          "type": "string",
+          "required": false
+        },
+        "network_bandwidth": {
+          "type": "string",
+          "required": false
+        },
+        "cpu_usage": {
+          "type": "string",
+          "required": false
+        },
+        "memory_usage": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    "dependent": {
+      "properties": {
+        "component": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "LocalService",
+                "RemoteService"
+              ]
+            }
+          ]
+        },
+        "property": {
+          "type": "string"
+        }
+      }
+    },
+    "input": {
+      "properties": {
+        "component": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "LocalService",
+                "RemoteService"
+              ]
+            }
+          ]
+        },
+        "property": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string",
+          "required": false,
+          "constaints": [
+            {
+              "valid_values": [
+                "LocalService",
+                "RemoteService"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "image": {
+      "properties": {
+        "target": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "LocalService",
+                "RemoteService"
+              ]
+            }
+          ]
+        },
+        "image_name": {
+          "type": "string",
+          "constraints": [
+            {
+              "valid_values": [
+                "rs",
+                "ls"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "constraints": [
+            {
+              "valid_values": [
+                "VM",
+                "Docker"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "actionset": {
+      "description": "myactions",
+      "properties": {
+        "name": {
+          "type": "string",
+          "constraints": [
+            {
+              "valid_values": [
+                "deploy",
+                "requestAnblick",
+                "send"
+              ]
+            }
+          ]
+        },
+        "images": {
+          "type": "list",
+          "entry_schema": {
+            "type": "image"
+          }
+        },
+        "order": {
+          "type": "integer"
+        },
+        "input": {
+          "type": "list",
+          "entry_schema": {
+            "type": "input"
+          },
+          "required": false
+        },
+        "criteria": {
+          "type": "list",
+          "entry_schema": {
+            "type": "metrics"
+          },
+          "required": false
+        }
+      }
+    }
+  },
+  "node_types": {
+    "tosca.nodes.Compute.EdgeNode": {
+      "derived_from": "tosca.nodes.Compute",
+      "properties": {
+        "wifi_antenna": {
+          "type": "boolean",
+          "required": false
+        },
+        "geolocation": {
+          "type": "map",
+          "required": false,
+          "entry_schema": {
+            "type": "geolocation"
+          }
+        },
+        "gpu_model": {
+          "model": {
+            "type": "string",
+            "required": false
+          },
+          "dedicated": {
+            "type": "boolean",
+            "default": true
+          },
+          "type": "map",
+          "required": false
+        }
+      }
+    },
+    "tosca.nodes.Compute.PublicCloud": {
+      "derived_from": "tosca.nodes.Compute"
+    },
+    "ACCORDION.Cloud_Framework": {
+      "derived_from": "tosca.nodes.Container.Application.Docker",
+      "properties": {
+        "application": {
+          "type": "string"
+        },
+        "deployment_phase": {
+          "type": "list",
+          "entry_schema": {
+            "type": "actionset"
+          }
+        }
+      }
+    },
+    "Component": {
+      "derived_from": "tosca.nodes.SoftwareComponent",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "application": {
+          "type": "string"
+        },
+        "external_ip": {
+          "type": "boolean"
+        },
+        "ip": {
+          "type": "string"
+        },
+        "deployment_unit": {
+          "type": "string",
+          "contraints": [
+            {
+              "valid_values": [
+                "VM",
+                "Container"
+              ]
+            }
+          ]
+        },
+        "port": {
+          "type": "string",
+          "required": false
+        },
+        "dependency": {
+          "type": "list",
+          "entry_schema": {
+            "type": "dependent"
+          },
+          "required": false
+        },
+        "flavor": {
+          "type": "string",
+          "required": false
+        }
+      }
+    }
+  },
+  "topology_template": {
+    "inputs": {
+      "ip": {
+        "type": "string",
+        "description": "IP of containers",
+        "required": false
+      }
+    },
+    "node_templates": {
+      "Cloud_Framework": {
+        "type": "ACCORDION.Cloud_Framework",
+        "properties": {
+          "application": "plexus",
+          "deployment_phase": [
+            {
+              "name": "deploy",
+              "order": 1,
+              "images": [
+                {
+                  "target": "LocalService",
+                  "image_name": "ls",
+                  "type": "Docker"
+                }
+              ],
+              "criteria": [
+                {
+                  "avg_latency": "<= 20ms"
+                },
+                {
+                  "network_bandwidth": ">= 80-90%"
+                },
+                {
+                  "cpu_usage": "<= 80%"
+                },
+                {
+                  "memory_usage": "<= 80%"
+                }
+              ]
+            },
+            {
+              "name": "requestAnblick",
+              "order": 2,
+              "images": [
+                {
+                  "target": "RemoteService",
+                  "image_name": "rs",
+                  "type": "Docker"
+                }
+              ],
+              "criteria": [
+                {
+                  "avg_latency": "<= 20ms"
+                },
+                {
+                  "cpu_usage": "<= 80%"
+                },
+                {
+                  "memory_usage": "<= 80%"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "EdgeNode": {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "properties": {
+          "wifi_antenna": true,
+          "geolocation": {
+            "properties": {
+              "Continent": "Europe",
+              "Country": "Greece",
+              "City": "Athens",
+              "latitude": "37.983810",
+              "longtitude": "23.727539"
+            }
+          }
+        },
+        "capabilities": {
+          "host": {
+            "properties": {
+              "num_cpus": 4,
+              "mem_size": "4096 MB",
+              "disk_size": "32 GB"
+            }
+          },
+          "os": {
+            "properties": {
+              "architecture": "arm64",
+              "type": "linux",
+              "distribution": "Raspberry Pi OS"
+            }
+          }
+        }
+      },
+      "PublicCloud": {
+        "type": "tosca.nodes.Compute.PublicCloud",
+        "capabilities": {
+          "host": {
+            "properties": {
+              "num_cpus": 1,
+              "mem_size": "512 MB",
+              "disk_size": "20 GB"
+            }
+          },
+          "os": {
+            "properties": {
+              "architecture": "x86_64",
+              "type": "linux"
+            }
+          }
+        }
+      },
+      "RemoteService": {
+        "type": "Component",
+        "properties": {
+          "name": "remoteservice",
+          "application": "plexus",
+          "external_ip": false,
+          "ip": {
+            "get_input": "ip"
+          },
+          "deployment_unit": "Container",
+          "port": "5432, 8000"
+        },
+        "requirements": [
+          {
+            "host": "PublicCloud"
+          }
+        ]
+      },
+      "LocalService": {
+        "type": "Component",
+        "properties": {
+          "name": "localservice",
+          "application": "plexus",
+          "external_ip": false,
+          "ip": {
+            "get_input": "ip"
+          },
+          "deployment_unit": "Container",
+          "port": "7979"
+        },
+        "requirements": [
+          {
+            "host": "EdgeNode"
+          }
+        ]
+      }
+    }
+  }
+}}
+   ],
+   "metadata":{
+      "createdAt":"2021-03-25T13:41:55.042",
+      "createdBy":"admin@accordion.eu",
+      "modifiedAt":"2021-03-25T13:41:55.042",
+      "modifiedBy":"user@accordion.eu"
+   }
+}

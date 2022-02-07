@@ -19,7 +19,18 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         '''
         Constructor
         '''               
-        
+    def add_latency_to_component_requirements(self,component_reqs,application_component_instance_name, application_parameters): 
+        for component in application_parameters:
+            if component._component_name == application_component_instance_name:
+                if component._latency_threshold:
+                    component_reqs['hardware_requirements']['latency_threshold'] = component._latency_threshold
+    
+    def add_latency_to_resource_availability_model(self,current_app,node,application_parameters,lat_qoe_levels):
+        if lat_qoe_levels:
+            None
+            #for lat_qoe_levels.
+                #if node['minicloud_id'] == lat_qoe_levels
+                
     def component_requirements_translation(self, requirements):
         component_translation = {}
         for requirement_name, requirement_value in requirements.items():
@@ -39,6 +50,8 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                         component_translation['hardware_requirements_ram'] = int(hw_requirement_value)
                     if hw_requirement_name == 'disk':
                         component_translation['hardware_requirements_disk'] = int(hw_requirement_value)
+                    if hw_requirement_name == 'latency_threshold':
+                        component_translation['Qhardware_requirements_latency_threshold'] = hw_requirement_value
                     #if hw_requirement_name == 'gpu':
                     #    for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
                     #        if gpu_requirement_name == 'model':
@@ -54,25 +67,40 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                                                     
         return component_translation
 
-    def node_resources_translation(self, node): 
+    def node_resources_translation(self, current_app, node): 
         node_res_translation = {}
         
-        if 'arm' in node['device.CPU.Arch']:
+        current_app.config.get('LOGGER').info('[') 
+        current_app.config.get('LOGGER').info('   ... ')
+        current_app.config.get('LOGGER').info('   Node name: %s' % node['device.device_name'])
+        
+        if 'arm' in node['device.CPU.Arch']:                    
             node_res_translation['QEarch'] = 2
+            current_app.config.get('LOGGER').info('   Architecture: Armv7')
         elif node['device.CPU.Arch'] == 'x86_64':
             node_res_translation['QEarch'] = 1
+            current_app.config.get('LOGGER').info('   Architecture: Intel x86_64')
         else:
             node_res_translation['QEarch'] = 0
             
         if node['device.OS.OS_name'] == 'Linux':
+            current_app.config.get('LOGGER').info('   OS: Linux')
             node_res_translation['QEos'] = 1
         else:
             node_res_translation['QEos'] = 0
         
         node_res_translation['hardware_requirements_cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
+        current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['device.CPU.cores'])
+        
         node_res_translation['hardware_requirements_ram'] = int(node['available_memory(bytes)'])
+        current_app.config.get('LOGGER').info('   Memory: %s ' % node['device.RAM(bytes)'])
+
         
         node_res_translation['hardware_requirements_disk'] = int(node ['disk_free_space(bytes)'])
+        current_app.config.get('LOGGER').info('   Disk size: %s ' % node['device.DISK.size'])
+        current_app.config.get('LOGGER').info('   ...')
+        current_app.config.get('LOGGER').info(']')
+
    
         #if 'Intel' in node['device.GPU.GPU_name']:
         #    node_res_translation['QEhardware_requirements_gpu_model'] = 3
@@ -90,7 +118,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             
         return node_res_translation
         
-    def generate_app_components_request_model(self, components, matchmaking_model):      
+    def generate_app_components_request_model(self, components, matchmaking_model,application_parameters):      
         app_components_request_model = []    
         application_component_instance_parts = components[0].component_name.rsplit('-',1)
         application_instance = application_component_instance_parts[0]
@@ -98,17 +126,19 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             for application_component_instance_req in components:
                 if application_component_instance_req.component_name == component['component']:
                     # Found the requirements of one the component to be deployed
+                    self.add_latency_to_component_requirements(component['host']['requirements'], application_component_instance_req.component_name, application_parameters) 
                     app_components_request_model.append(self.component_requirements_translation(component['host']['requirements']))                           
         return app_components_request_model
     
-    def generate_federation_resource_availability_model(self, node_parts):
+    def generate_federation_resource_availability_model(self, current_app, node_parts,application_parameters,lat_qoe_levels):
         federation_resource_availability_model = []
-        for i in range(len(node_parts)-1):          
-            node = json.loads(node_parts[i])
-            federation_resource_availability_model.append(self.node_resources_translation(node))       
+        for node in node_parts:          
+            #node = json.loads(node_parts[i])
+            self.add_latency_to_resource_availability_model(current_app,node,application_parameters,lat_qoe_levels) 
+            federation_resource_availability_model.append(self.node_resources_translation(current_app,node))       
         return federation_resource_availability_model
     
-    def calculate_dep_plan(self, components, RID_response, matchmaking_model):
+    def calculate_dep_plan(self, current_app, components, RID_response, matchmaking_model, application_parameters,lat_qoe_levels):
         """calculate_dep_plan
            matchmaking of components and ACCORDION federation resources will be done in this method
         :param components: 
@@ -123,14 +153,16 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                          4 Infeasible 
                          5 No solution found
                                               
-        """
-        App_Components_req = self.generate_app_components_request_model(components,matchmaking_model)
+        """            
         
-        node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(node_parts)
+        App_Components_req = self.generate_app_components_request_model(components,matchmaking_model,application_parameters)
+        
+        #node_parts = RID_response.split('\n')
+        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, RID_response,application_parameters,lat_qoe_levels)
                 
         # Construction of Python-MIP MILP problem
-        
+        current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
+
         MILP = Model()
         NumComponents = len(App_Components_req)
         NumNodes = len(Fed_res_availability)
@@ -273,8 +305,8 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     #if Appcomponent == 0:
                     #    result_documents.append([])
                     if v.x == 1:
-                        minicloud_id = json.loads(node_parts[Nodes]).get('minicloud_id')
-                        minicloud_id = minicloud_id[:2]
+                        minicloud_id = 1 #json.loads(node_parts[Nodes]).get('minicloud_id')
+                        #minicloud_id = minicloud_id[:2]
                         if not result_documents.get(minicloud_id):
                             result_documents[minicloud_id] = []
                         name = components[Appcomponent].component_name

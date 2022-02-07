@@ -13,6 +13,10 @@ import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
+#from pickle import NONE
+import ipaddress
+#from symbol import except_clause
+#from Configuration import Constants
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
@@ -26,8 +30,8 @@ def choose_application (name):
 def supported_operation (operation):
     if operation == 'deploy':
         return deploy
-    if operation == 'undeploy':
-        return undeploy
+    if operation == 'terminate':
+        return terminate
     return None
     
 
@@ -50,6 +54,97 @@ def secret (name):
     json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
     return json_base64_string
 
+def check_application_parameters(operation, components, application_parameters):
+    if (application_parameters):
+        if (len(application_parameters)!=0):       
+            if( operation == 'deploy'):
+                for parameter in application_parameters:
+                    if(parameter._component_name):
+                        find = False
+                        for component in components:
+                            if (component._component_name == parameter._component_name):
+                                find = True
+                        if (find == False):
+                            return 'Deploy operation not executed successfully: an application parameter component is not a component of the request'
+                if(parameter._external_ip):
+                    try:
+                        ipaddress.ip_address(parameter._external_ip)
+                    except:
+                        return 'Deploy operation not executed successfully: the application parameter external_ip' + parameter._external_ip +  ' is not a valid ip address'
+            if(parameter._latency_threshold):
+                if(parameter._device_ip):     
+                    try:
+                        ipaddress.ip_address(parameter._device_ip)
+                    except:
+                        return 'Deploy operation not executed successfully: the application parameter device_ip' + parameter._device_ip +  ' is not a valid ip address'                       
+                else:
+                    return 'Deploy operation not executed successfully: the application parameter device_ip is missing but a latency_threshold parameter has been specified: both are needed'
+
+            else:
+                if(parameter._device_ip):
+                    return 'Deploy operation not executed successfully: the application parameter latency_threshold is missing but a device_ip parameter has been specified: both are needed'
+     
+    return None
+
+def send_MMM_request(component_name,device_ip):
+    MMM_IP = "83.212.125.74"
+    MMM_PORT  = "40110"
+    try:        
+        Request_URL = "http://" + MMM_IP + ":" + MMM_PORT + "/qoelevel/" + device_ip
+
+        current_app.config.get('LOGGER').info(" Request to Minicloud Membership Management service for component " + component_name + " started")
+        current_app.config.get('LOGGER').info(" Request sent: HTTP GET + " + Request_URL)
+    
+        MMM_response = requests.get(Request_URL)
+        
+        MMM_response.raise_for_status()
+        
+        MMM_response_json = json.loads(MMM_response.json())
+        
+        current_app.config.get('LOGGER').info(" Request to MMM for component " + component_name + " successfully completed!")
+
+    except requests.exceptions.Timeout as err:
+        return None,'Deploy operation not executed successfully due to a timeout in the communication with the MMM!'
+        
+    except requests.exceptions.RequestException as err:
+        return None,'Deploy operation not executed successfully due to the following internal server error in the communication with the MMM: ' + str(err)
+        
+    except json.JSONDecodeError as err:
+        return None,'Deploy operation not executed successfully due to an internal server error. Response from MMM not Json parsable due to error ' + str(err)
+                            
+    return MMM_response_json, None
+
+def send_RID_request():
+        RID_IP = "localhost"
+        RID_PORT = "9001"
+        try:
+            
+            Request_URL_miniclouds = "http://" + RID_IP + ":" + RID_PORT + "/miniclouds"
+            Request_URL_debug = "http://" + RID_IP + ":" + RID_PORT + "/debug"
+            current_app.config.get('LOGGER').info(" Request to Resource Indexing & Discovery service started")
+            current_app.config.get('LOGGER').info(" Request sent: HTTP GET" + Request_URL_miniclouds)
+
+            Debug_response = requests.get(Request_URL_debug) #, timeout=5)
+            Debug_response.raise_for_status()
+     
+            RID_response = requests.get(Request_URL_miniclouds)          
+            RID_response.raise_for_status()
+            RID_response_json = RID_response.json()                         
+            current_app.config.get('LOGGER').info(" Request to RID successfully completed!")
+            
+        except requests.exceptions.Timeout as err:
+            return None,'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
+        
+        except requests.exceptions.RequestException as err:
+            return None,'Deploy operation not executed successfully due to the following internal server error in the communication with the RID: ' + str(err)
+        
+        except json.JSONDecodeError as err:
+            return None,'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)                    
+
+        current_app.config.get('LOGGER').debug(" Request to Resource Indexing & Discovery service returned with response: #%s " % RID_response_json)
+        
+        return RID_response_json, None
+
 def dep_plan_status(status):
     if status == OptimizationStatus.NO_SOLUTION_FOUND:
         return 'no deploy solution found!'
@@ -58,40 +153,51 @@ def dep_plan_status(status):
     if status == OptimizationStatus.UNBOUNDED:
         return 'unbounded deploy solution found!'  
   
-def deploy(body):
-    current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
-    try:
-        components = body.app_component_names
-        if(components == None):
-            error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
-            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to the following error: no application components to be deployed. Returning code 400' )
-            return {'reason': error}, 400
+def check_components (body):  
+        components_number = len(body.app_component_names)
+
+        if(body.app_component_names == None):
+            return None, None, 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
         
-        if(len(components) == 0):
-            error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed'
-            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to the following error: no application components to be deployed. Returning code 400')
-            return {'reason': error}, 400     
+        if(components_number == 0):
+            return None, None, 'Deploy operation not executed successfully due to the following error: no application components to be deployed'   
         
         current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
-        for i in range(len(components)):
-            current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
-            current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+        for i in range(components_number):
+            current_app.config.get('LOGGER').debug("----- Component name: %s" % body.app_component_names[i].component_name)
+            #current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+            json_pp = json.dumps(body.app_model.get('requirements')[0].get('toscaDescription'), indent=4)
+            current_app.config.get('LOGGER').debug("----- App model: %s " % json_pp)
+            #current_app.config.get('LOGGER').debug("----- Application model: [ ... ] ")
+
+
             current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
             current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
      
-        app_component_name = components[0].component_name
+        app_component_name = body.app_component_names[0].component_name
         app_component_name_parts = app_component_name.split('-')
-        
+              
         try:
             app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
             app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
             app_instance = app_name + '-' + app_component_name_parts[5]
         except:
-            error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+            return None, None, 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+        return app_name, app_instance, None
+  
+def deploy(body):
+    current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
+    try:
+       
+        app_name, app_instance, error = check_components(body)
+        if(error):
             current_app.config.get('LOGGER').error(error + ". Returning code 400")
-            return {'reason': error}, 400      
-                
-                
+            return {'reason': error}, 400 
+          
+        error = check_application_parameters('deploy', body.app_component_names, body.application_parameters)
+        if(error):
+            current_app.config.get('LOGGER').error(error + ". Returning code 400")
+            return {'reason': error}, 400                     
                         
         secret_string = secret(app_name)
                
@@ -99,37 +205,6 @@ def deploy(body):
             error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500      
-                    
-        try:
-            current_app.config.get('LOGGER').info(" Request to RID started")
-
-            #Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
-            Debug_response = requests.get('http://localhost:9001/debug', timeout=5)
-            Debug_response.raise_for_status()
-            
-            #RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
-            RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)                  
-            RID_response.raise_for_status()
-            RID_response_json = RID_response.json()                         
-            current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
-            
-        except requests.exceptions.Timeout as err:
-            error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
-            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the RID. Returning code 500')  
-            return {'reason': error}, 500 
-        
-        except requests.exceptions.RequestException as err:
-            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the RID: ' + str(err)
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500
-        
-        except json.JSONDecodeError as err:
-            error = 'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500
-        
-        current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response_json)
-        
         
         # Error handling to be finished
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
@@ -150,8 +225,23 @@ def deploy(body):
 
         solver = ConcreteOrchestrator() 
         
-        current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
-        dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
+        RID_response_json, error = send_RID_request()
+        if(error):
+            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+            return {'reason': error}, 500    
+        
+        
+        lat_qoe_levels = {}
+        for parameter in body.application_parameters:
+            if (parameter._device_ip):
+                MMM_response_json, error =send_MMM_request(parameter._component_name,parameter._device_ip)
+                if(error):
+                    current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                    return {'reason': error}, 500
+                lat_qoe_levels[parameter._component_name] = MMM_response_json
+                
+                    
+        dep_plan, status = solver.calculate_dep_plan(current_app, body._app_component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
         current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
         
         if not dep_plan:
@@ -160,7 +250,7 @@ def deploy(body):
             current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
 
-        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)   
+        current_app.config.get('LOGGER').debug(" Deployment plan: ")
                  
         namespace_yaml = namespace(app_instance)        
                 
@@ -174,6 +264,8 @@ def deploy(body):
 
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
+            current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
+            current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
             vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
             thread_id+=1
             
@@ -197,13 +289,15 @@ def deploy(body):
                 for component_instance_name, date_or_error in component_result.items():
                     if isinstance(date_or_error,int):
                         # send component instance id and creation date time to ASR
-                        current_app.config.get('LOGGER').info("Request to ASR started")      
+                        current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
                         request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
-                        current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
+                        current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
+                        current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
+     
                         ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         ASR_response.raise_for_status()
-                        current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
-                        current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
+                        current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
+                        current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500               
@@ -234,7 +328,7 @@ def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request finished succesfully ---------------------")
     return 200
 
-def undeploy(body):
+def terminate(body):
     current_app.config.get('LOGGER').info("------------------ Undeploy request started ---------------------")
     error = 'Undeploy operation not implemented yet!'
     current_app.config.get('LOGGER').error(error + ". Returning code 500")
@@ -251,7 +345,7 @@ def orchestrator_LM_request(body):  # noqa: E501
     :rtype: None
     """
     current_app.config.get('LOGGER').debug('----------------------------------------------------------------')
-    current_app.config.get('LOGGER').debug('Received a request for the Orchestrator to be served')
+    current_app.config.get('LOGGER').debug('Received a request for the Orchestrator from the LifeCycle Manager to be served')
 
     if connexion.request.is_json:  
         body = RequestBody.from_dict(connexion.request.get_json())  # noqa: E501         

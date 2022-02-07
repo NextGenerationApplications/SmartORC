@@ -1,1 +1,425 @@
-{"details":{"id":"60c0c00ef1e45743ca0e7576","name":"orbk","version":"0.0.1","isLatest":true},"registry":[{"repository":"registry.gitlab.com/accordion-project/wp6/uc2/orbkaccserver","version":"latest","id":"343ba97","size":"146.94MB","imageName":"accordion-project/wp6/uc2/orbkaccserver","component":"GameServer"}],"requirements":[{"environment":"PRODUCTION","toscaDescription":{"tosca_definitions_version":"tosca_simple_yaml_1_2","description":"Experiments with deployment of wordpress and mysql","data_types":{"generate":{"properties":{"secret":{"name":{"type":"string"},"namespace":{"type":"string"},"literals":{"type":"list"},"resources":{"type":"list"}},"order":{"type":"integer"}}},"discover":{"propeties":{"target":{"type":"string"},"order":{"type":"string"}}},"deploy":{"properties":{"application":{"type":"string"},"images":{"type":"list"},"order":{"type":"string"}}}},"node_types":{"tosca.nodes.Compute.EdgeNode":{"derived_from":"tosca.nodes.Compute","properties":{"wifi_antenna":{"type":"boolean","required":false},"gpu_model":{"model":{"type":"string","required":false},"dedicated":{"type":"boolean","default":true},"type":"map","required":false}}},"tosca.nodes.Compute.PublicCloud":{"derived_from":"tosca.nodes.Compute","properties":{"gpu_model":{"model":{"type":"string","required":false},"dedicated":{"type":"boolean","default":true},"type":"map","required":false}}},"ACCORDION.Cloud_Framework":{"derived_from":"tosca.nodes.Container.Application.Docker","properties":{"actions":{"type":"map"}}},"Component":{"derived_from":"tosca.nodes.Container.Application.Docker","properties":{"name":{"type":"string"},"application":{"type":"string"},"external_ip":{"type":"boolean"},"deployment_unit":{"type":"string"},"ip":{"type":"string"},"port":{"type":"string"},"env":{"type":"list","required":false},"dependency":{"type":"list","required":false},"input":{"type":"map","required":false},"flavor":{"type":"string"}},"requirements":[{"host":{"node":"tosca.nodes.Compute","relationship":"hostedOn"}}]}},"relationship_types":{"hostedOn":{"derived_from":"tosca.relationships.Root","valid_target_types":["tosca.capabilities.Node"]}},"topology_template":{"inputs":{"ip":{"type":"string","description":"IP of containers","required":false}},"node_templates":{"Cloud_Framework":{"type":"ACCORDION.Cloud_Framework","properties":{"actions":{"deploy":{"properties":{"application":"orbk","images":[{"GameServer":{"name":"orbkaccserver","internal":true}}],"order":1}},"terminate":{"properties":{"application":"orbk","images":[{"GameServer":{"name":"orbkaccserver","internal":true}}],"order":2}}}}},"EdgeNode":{"type":"tosca.nodes.Compute.EdgeNode","capabilities":{"host":{"properties":{"num_cpus":1,"mem_size":"512 MB","disk_size":"20 GB"}},"os":{"properties":{"architecture":"x86_64","type":"linux"}}}},"GameServer":{"type":"Component","properties":{"name":"gameserver","application":"orbk","external_ip":true,"deployment_unit":"container","ip":{"get_input":"ip"},"port":"20765"},"requirements":[{"host":{"node":"EdgeNode","relationship":"hostedOn"}}]}}}}}],"metadata":{"createdAt":"2021-03-25T13:41:55.042","createdBy":"admin@accordion.eu","modifiedAt":"2021-03-25T13:41:55.042","modifiedBy":"user@accordion.eu"}}
+{
+   "details":{
+      "id":"60c0c00ef1e45743ca0e7576",
+      "name":"orbk",
+      "version":"0.0.1",
+      "isLatest":true
+   },
+   "registry":[
+      {
+         "repository":"registry.gitlab.com/accordion-project/wp6/uc2/orbkaccserver",
+         "version":"latest",
+         "id":"343ba97",
+         "size":"146.94MB",
+         "imageName":"accordion-project/wp6/uc2/orbkaccserver",
+         "component":"GameServer"
+      }
+   ],
+   "requirements":[
+      {
+         "environment":"PRODUCTION",
+         "toscaDescription": {
+  "tosca_definitions_version": "tosca_simple_yaml_1_2",
+  "description": "Application model of ORBK Use Case",
+  "data_types": {
+    "metrics": {
+      "properties": {
+        "avg_latency": {
+          "type": "string",
+          "required": false
+        },
+        "network_bandwidth": {
+          "type": "string",
+          "required": false
+        },
+        "cpu_usage": {
+          "type": "string",
+          "required": false
+        },
+        "memory_usage": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    "dependent": {
+      "properties": {
+        "component": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "GameServer"
+              ]
+            }
+          ]
+        },
+        "property": {
+          "type": "string"
+        }
+      }
+    },
+    "input": {
+      "properties": {
+        "component": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "GameServer"
+              ]
+            }
+          ]
+        },
+        "property": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string",
+          "required": false,
+          "constaints": [
+            {
+              "valid_values": [
+                "GameServer"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "properties": {
+        "component": {
+          "type": "string",
+          "constaints": [
+            {
+              "valid_values": [
+                "GameServer"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "constraints": [
+            {
+              "valid_values": [
+                "VM",
+                "Container"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "actionset": {
+      "description": "myactions",
+      "properties": {
+        "name": {
+          "type": "string",
+          "constraints": [
+            {
+              "valid_values": [
+                "deploy",
+                "terminate",
+                "send"
+              ]
+            }
+          ]
+        },
+        "components": {
+          "type": "list",
+          "entry_schema": {
+            "type": "components"
+          },
+          "required": false
+        },
+        "order": {
+          "type": "integer"
+        },
+        "input": {
+          "type": "list",
+          "entry_schema": {
+            "type": "input"
+          },
+          "required": false
+        }
+      }
+    },
+    "scenario": {
+      "description": "myscenarios",
+      "properties": {
+        "scenario": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "list",
+          "entry_schema": {
+            "type": "actionset"
+          }
+        }
+      }
+    }
+  },
+  "node_types": {
+    "tosca.nodes.Compute.EdgeNode": {
+      "derived_from": "tosca.nodes.Compute",
+      "properties": {
+        "wifi_antenna": {
+          "type": "boolean",
+          "required": false
+        },
+        "gpu_model": {
+          "model": {
+            "type": "string",
+            "required": false
+          },
+          "dedicated": {
+            "type": "boolean",
+            "default": true
+          },
+          "type": "map",
+          "required": false
+        }
+      }
+    },
+    "tosca.nodes.Compute.PublicCloud": {
+      "derived_from": "tosca.nodes.Compute",
+      "properties": {
+        "gpu_model": {
+          "model": {
+            "type": "string",
+            "required": false
+          },
+          "dedicated": {
+            "type": "boolean",
+            "default": true
+          },
+          "type": "map",
+          "required": false
+        }
+      }
+    },
+    "ACCORDION.Cloud_Framework": {
+      "derived_from": "tosca.nodes.Container.Application.Docker",
+      "properties": {
+        "application": {
+          "type": "string"
+        },
+        "workflows": {
+          "type": "list",
+          "entry_schema": {
+            "type": "scenario"
+          }
+        },
+        "deployment_phase": {
+          "type": "list",
+          "entry_schema": {
+            "type": "actionset"
+          }
+        }
+      }
+    },
+    "Component": {
+      "derived_from": "tosca.nodes.SoftwareComponent",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "application": {
+          "type": "string"
+        },
+        "external_ip": {
+          "type": "boolean"
+        },
+        "deployment_unit": {
+          "type": "string",
+          "contraints": [
+            {
+              "valid_values": [
+                "VM",
+                "Container"
+              ]
+            }
+          ]
+        },
+        "ip": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        },
+        "dependency": {
+          "type": "list",
+          "entry_schema": {
+            "type": "dependent"
+          },
+          "required": false
+        },
+        "flavor": {
+          "type": "string",
+          "required": false
+        }
+      }
+    }
+  },
+  "topology_template": {
+    "inputs": {
+      "ip": {
+        "type": "string",
+        "description": "IP of containers",
+        "required": false
+      }
+    },
+    "node_templates": {
+      "Cloud_Framework": {
+        "type": "ACCORDION.Cloud_Framework",
+        "properties": {
+          "application": "orbk",
+          "deployment_phase": [
+            {
+              "name": "deploy",
+              "order": 1,
+              "components": [
+                {
+                  "component": "GameServer",
+                  "type": "Container"
+                }
+              ]
+            },
+            {
+              "name": "terminate",
+              "order": 2,
+              "components": [
+                {
+                  "component": "GameServer",
+                  "type": "Container"
+                }
+              ]
+            }
+          ],
+          "workflows": [
+            {
+              "scenario": "max number of players",
+              "target": "GameServer",
+              "condition": "players >= 100",
+              "actions": [
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "GameServer",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                }
+              ]
+            },
+            {
+              "scenario": "server empty",
+              "target": "GameServer",
+              "condition": "players = 0",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "GameServer",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                }
+              ]
+            },
+            {
+              "scenario": "GameServer failed",
+              "target": "GameServer",
+              "condition": "status == fail",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "GameServer",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                }
+              ]
+            },
+            {
+              "scenario": "20 players far from server",
+              "target": "GameServer",
+              "condition": "20 players far from server",
+              "actions": [
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "GameServer",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "EdgeNode": {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "capabilities": {
+          "host": {
+            "properties": {
+              "num_cpus": 1,
+              "mem_size": "512 MB",
+              "disk_size": "20 GB"
+            }
+          },
+          "os": {
+            "properties": {
+              "architecture": "x86_64",
+              "type": "linux"
+            }
+          }
+        }
+      },
+      "GameServer": {
+        "type": "Component",
+        "properties": {
+          "name": "gameserver",
+          "application": "orbk",
+          "external_ip": true,
+          "deployment_unit": "Container",
+          "ip": {
+            "get_input": "ip"
+          },
+          "port": "20765"
+        },
+        "requirements": [
+          {
+            "host": "EdgeNode"
+          }
+        ]
+      }
+    }
+  }
+}}
+   ],
+   "metadata":{
+      "createdAt":"2021-03-25T13:41:55.042",
+      "createdBy":"admin@accordion.eu",
+      "modifiedAt":"2021-03-25T13:41:55.042",
+      "modifiedBy":"user@accordion.eu"
+   }
+}

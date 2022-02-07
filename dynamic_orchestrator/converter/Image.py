@@ -12,11 +12,11 @@ class Image:
     def get_image_name(self):
         return self.__image
 
-    def set_internal(self, booelan):
-        self.__boolean = booelan
+    def set_image_type(self, type):
+        self.__type = type
 
-    def get_internal(self):
-        return self.__boolean
+    def get_image_type(self):
+        return self.__type
 
     def set_path(self, path):
         self.__path = path
@@ -24,8 +24,5 @@ class Image:
     def get_path(self):
         return self.__path
 
-    def set_url(self, url):
-        self.__url = url
 
-    def get_url(self):
-        return self.__url
+
