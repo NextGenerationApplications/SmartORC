@@ -4,3 +4,4 @@ requests_toolbelt>=0.9.1
 oyaml>=1.0
 hurry.filesize>=0.9
 mip>=1.13.0
+kafka-python>=2.0.2
