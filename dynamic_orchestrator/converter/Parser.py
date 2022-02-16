@@ -114,11 +114,7 @@ def ReadFile(json):
             container.set_unit(unit)
             port = properties.get('port')
             if port:
-                if ', ' in port:
-                    ports = port.split(', ')
-                    container.set_port(ports)
-                else:
-                    container.set_port(port)
+                container.set_port(port)
             else:
                 container.set_port(None)
             container.set_volumeMounts_name(name + '-persistent-storage')

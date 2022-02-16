@@ -78,7 +78,7 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "constraints": [
             {
               "valid_values": [
                 "LocalService",
@@ -96,7 +96,7 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "constraints": [
             {
               "valid_values": [
                 "LocalService",
@@ -111,7 +111,7 @@
         "to": {
           "type": "string",
           "required": false,
-          "constaints": [
+          "constraints": [
             {
               "valid_values": [
                 "LocalService",
@@ -122,26 +122,17 @@
         }
       }
     },
-    "image": {
+    "components": {
       "properties": {
-        "target": {
-          "type": "string",
-          "constaints": [
-            {
-              "valid_values": [
-                "LocalService",
-                "RemoteService"
-              ]
-            }
-          ]
-        },
-        "image_name": {
+        "component": {
           "type": "string",
           "constraints": [
             {
               "valid_values": [
-                "rs",
-                "ls"
+                "LocalService",
+                "RemoteService",
+                "Traqus",
+                "LS_NUC"
               ]
             }
           ]
@@ -152,7 +143,7 @@
             {
               "valid_values": [
                 "VM",
-                "Docker"
+                "Container"
               ]
             }
           ]
@@ -174,10 +165,10 @@
             }
           ]
         },
-        "images": {
+        "components": {
           "type": "list",
           "entry_schema": {
-            "type": "image"
+            "type": "components"
           }
         },
         "order": {
@@ -187,13 +178,6 @@
           "type": "list",
           "entry_schema": {
             "type": "input"
-          },
-          "required": false
-        },
-        "criteria": {
-          "type": "list",
-          "entry_schema": {
-            "type": "metrics"
           },
           "required": false
         }
@@ -258,6 +242,14 @@
         "external_ip": {
           "type": "boolean"
         },
+        "load_balancer": {
+          "type": "boolean",
+          "required": false
+        },
+        "daemon_set": {
+          "type": "boolean",
+          "required": false
+        },
         "ip": {
           "type": "string"
         },
@@ -273,7 +265,7 @@
           ]
         },
         "port": {
-          "type": "string",
+          "type": "list",
           "required": false
         },
         "dependency": {
@@ -307,51 +299,72 @@
             {
               "name": "deploy",
               "order": 1,
-              "images": [
+              "components": [
                 {
-                  "target": "LocalService",
-                  "image_name": "ls",
-                  "type": "Docker"
-                }
-              ],
-              "criteria": [
-                {
-                  "avg_latency": "<= 20ms"
+                  "component": "LocalService",
+                  "type": "Container"
                 },
                 {
-                  "network_bandwidth": ">= 80-90%"
-                },
-                {
-                  "cpu_usage": "<= 80%"
-                },
-                {
-                  "memory_usage": "<= 80%"
+                  "component": "LS_NUC",
+                  "type": "Container"
                 }
               ]
             },
             {
               "name": "requestAnblick",
               "order": 2,
-              "images": [
+              "components": [
                 {
-                  "target": "RemoteService",
-                  "image_name": "rs",
-                  "type": "Docker"
-                }
-              ],
-              "criteria": [
-                {
-                  "avg_latency": "<= 20ms"
+                  "component": "RemoteService",
+                  "type": "Container"
                 },
                 {
-                  "cpu_usage": "<= 80%"
-                },
-                {
-                  "memory_usage": "<= 80%"
+                  "component": "Traqus",
+                  "type": "Container"
                 }
               ]
             }
           ]
+        }
+      },
+      "EdgeNode1": {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "capabilities": {
+          "host": {
+            "properties": {
+              "num_cpus": 2,
+              "mem_size": "4096 MB",
+              "disk_size": "128 GB"
+            }
+          },
+          "os": {
+            "properties": {
+              "architecture": "x86_64",
+              "type": "linux",
+              "distribution": "Ubuntu",
+              "version": 20.04
+            }
+          }
+        }
+      },
+      "PublicCloud1": {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "capabilities": {
+          "host": {
+            "properties": {
+              "num_cpus": 2,
+              "mem_size": "4096 MB",
+              "disk_size": "500 GB"
+            }
+          },
+          "os": {
+            "properties": {
+              "architecture": "x86_64",
+              "type": "linux",
+              "distribution": "Ubuntu",
+              "version": 20.04
+            }
+          }
         }
       },
       "EdgeNode": {
@@ -380,7 +393,8 @@
             "properties": {
               "architecture": "arm64",
               "type": "linux",
-              "distribution": "Raspberry Pi OS"
+              "distribution": "Ubuntu",
+              "version": 20.04
             }
           }
         }
@@ -398,10 +412,33 @@
           "os": {
             "properties": {
               "architecture": "x86_64",
-              "type": "linux"
+              "type": "linux",
+              "distribution": "Ubuntu",
+              "version": 20.04
             }
           }
         }
+      },
+      "Traqus": {
+        "type": "Component",
+        "properties": {
+          "name": "traqus",
+          "application": "plexus",
+          "external_ip": false,
+          "daemon_set": false,
+          "ip": {
+            "get_input": "ip"
+          },
+          "deployment_unit": "Container",
+          "port": [
+            9080
+          ]
+        },
+        "requirements": [
+          {
+            "host": "PublicCloud1"
+          }
+        ]
       },
       "RemoteService": {
         "type": "Component",
@@ -409,11 +446,14 @@
           "name": "remoteservice",
           "application": "plexus",
           "external_ip": false,
+          "daemon_set": false,
           "ip": {
             "get_input": "ip"
           },
           "deployment_unit": "Container",
-          "port": "5432, 8000"
+          "port": [
+            9081
+          ]
         },
         "requirements": [
           {
@@ -427,15 +467,40 @@
           "name": "localservice",
           "application": "plexus",
           "external_ip": false,
+          "daemon_set": true,
           "ip": {
             "get_input": "ip"
           },
           "deployment_unit": "Container",
-          "port": "7979"
+          "port": [
+            7979
+          ]
         },
         "requirements": [
           {
             "host": "EdgeNode"
+          }
+        ]
+      },
+      "LS_NUC": {
+        "type": "Component",
+        "properties": {
+          "name": "lsnuc",
+          "application": "plexus",
+          "external_ip": false,
+          "daemon_set": false,
+          "ip": {
+            "get_input": "ip"
+          },
+          "deployment_unit": "Container",
+          "port": [
+            1883,
+            5556
+          ]
+        },
+        "requirements": [
+          {
+            "host": "EdgeNode1"
           }
         ]
       }

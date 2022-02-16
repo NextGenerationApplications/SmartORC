@@ -19,7 +19,7 @@
       {
          "environment":"PRODUCTION",
          "toscaDescription":
-      {
+     {
   "tosca_definitions_version": "tosca_simple_yaml_1_2",
   "description": "Application model of OVR Use Case",
   "data_types": {
@@ -47,11 +47,10 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "LocalService",
-                "SignaligServer",
                 "RemoteService"
               ]
             }
@@ -66,11 +65,10 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "LocalService",
-                "SignaligServer",
                 "RemoteService"
               ]
             }
@@ -82,11 +80,10 @@
         "to": {
           "type": "string",
           "required": false,
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "LocalService",
-                "SignaligServer",
                 "RemoteService"
               ]
             }
@@ -98,11 +95,10 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "LocalService",
-                "SignaligServer",
                 "RemoteService"
               ]
             }
@@ -239,6 +235,10 @@
           "type": "string",
           "required": false
         },
+        "daemon_set": {
+          "type": "boolean",
+          "required": false
+        },
         "ip": {
           "type": "string"
         },
@@ -258,7 +258,7 @@
           "required": false
         },
         "port": {
-          "type": "string",
+          "type": "list",
           "required": false
         },
         "dependency": {
@@ -289,10 +289,6 @@
               "name": "deploy",
               "order": 1,
               "components": [
-                {
-                  "component": "SignalingServer",
-                  "type": "Container"
-                },
                 {
                   "component": "LocalService",
                   "type": "VM"
@@ -335,17 +331,6 @@
                     }
                   ],
                   "order": 2
-                },
-                {
-                  "name": "send",
-                  "input": [
-                    {
-                      "component": "LocalService",
-                      "property": "ip",
-                      "to": "message broker"
-                    }
-                  ],
-                  "order": 3
                 }
               ]
             },
@@ -373,17 +358,6 @@
                     }
                   ],
                   "order": 2
-                },
-                {
-                  "name": "send",
-                  "input": [
-                    {
-                      "component": "SignalingServer",
-                      "property": "ip",
-                      "to": "LocalService"
-                    }
-                  ],
-                  "order": 3
                 }
               ]
             },
@@ -457,11 +431,6 @@
                       "component": "RelayServer",
                       "property": "ip",
                       "to": "LocalService"
-                    },
-                    {
-                      "component": "SignalingServer",
-                      "property": "ip",
-                      "to": "LocalService"
                     }
                   ],
                   "order": 3
@@ -495,24 +464,6 @@
           }
         }
       },
-      "EdgeNode2": {
-        "type": "tosca.nodes.Compute.EdgeNode",
-        "capabilities": {
-          "host": {
-            "properties": {
-              "num_cpus": 1,
-              "mem_size": "256 MB",
-              "disk_size": "918 MB"
-            }
-          },
-          "os": {
-            "properties": {
-              "architecture": "x86_64",
-              "type": "linux"
-            }
-          }
-        }
-      },
       "PublicCloud": {
         "type": "tosca.nodes.Compute.PublicCloud",
         "capabilities": {
@@ -531,36 +482,22 @@
           }
         }
       },
-      "SignalingServer": {
-        "type": "Component",
-        "properties": {
-          "name": "signalingserver",
-          "application": "ovr",
-          "external_ip": false,
-          "ip": {
-            "get_input": "ip"
-          },
-          "port": "9090",
-          "deployment_unit": "Container"
-        },
-        "requirements": [
-          {
-            "host": "EdgeNode2"
-          }
-        ]
-      },
       "RelayServer": {
         "type": "Component",
         "properties": {
           "name": "relayserver",
           "application": "ovr",
           "external_ip": true,
+          "daemon_set": false,
           "ip": {
             "get_input": "ip"
           },
           "deployment_unit": "VM",
           "flavor": "win2k12-iso",
-          "port": "5055, 5056",
+          "port": [
+            5055,
+            5056
+          ],
           "dependency": [
             {
               "component": "RelayServer",
@@ -580,16 +517,16 @@
           "name": "localservice",
           "application": "ovr",
           "external_ip": false,
+          "daemon_set": false,
           "ip": {
             "get_input": "ip"
           },
           "deployment_unit": "VM",
           "flavor": "win2k12-iso",
+          "port": [
+            9090
+          ],
           "dependency": [
-            {
-              "component": "SignalingServer",
-              "property": "ip"
-            },
             {
               "component": "RelayServer",
               "property": "ip"
@@ -604,8 +541,7 @@
       }
     }
   }
-}
-      }
+}}
    ],
    "metadata":{
       "createdAt":null,

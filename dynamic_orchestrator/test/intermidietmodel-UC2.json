@@ -46,7 +46,7 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "GameServer"
@@ -63,7 +63,7 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "GameServer"
@@ -77,7 +77,7 @@
         "to": {
           "type": "string",
           "required": false,
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "GameServer"
@@ -91,7 +91,7 @@
       "properties": {
         "component": {
           "type": "string",
-          "constaints": [
+          "contraints": [
             {
               "valid_values": [
                 "GameServer"
@@ -236,7 +236,12 @@
           "type": "string"
         },
         "external_ip": {
-          "type": "boolean"
+          "type": "boolean",
+          "required": false
+        },
+        "daemon_set": {
+          "type": "boolean",
+          "requirend": false
         },
         "deployment_unit": {
           "type": "string",
@@ -253,7 +258,8 @@
           "type": "string"
         },
         "port": {
-          "type": "string"
+          "type": "list",
+          "required": false
         },
         "dependency": {
           "type": "list",
@@ -400,11 +406,14 @@
           "name": "gameserver",
           "application": "orbk",
           "external_ip": true,
+          "daemon_set": false,
           "deployment_unit": "Container",
           "ip": {
             "get_input": "ip"
           },
-          "port": "20765"
+          "port": [
+            20765
+          ]
         },
         "requirements": [
           {
