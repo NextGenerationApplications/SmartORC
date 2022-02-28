@@ -102,7 +102,7 @@ try:
     #print(json.dumps(AB_response))
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1654548478-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
     body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
-             'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_threshold':20,'device_ip':'94.66.223.207'}]}
+             'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
 
     #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
     

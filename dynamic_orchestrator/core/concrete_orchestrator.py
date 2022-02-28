@@ -22,16 +22,10 @@ class ConcreteOrchestrator(AbstractOrchestrator):
     def add_latency_to_component_requirements(self,component_reqs,application_component_instance_name, application_parameters): 
         for component in application_parameters:
             if component._component_name == application_component_instance_name:
-                if component._latency_threshold:
-                    component_reqs['hardware_requirements']['latency_threshold'] = component._latency_threshold
-    
-    def add_latency_to_resource_availability_model(self,current_app,node,application_parameters,lat_qoe_levels):
-        if lat_qoe_levels:
-            None
-            #for lat_qoe_levels.
-                #if node['minicloud_id'] == lat_qoe_levels
-                
-    def component_requirements_translation(self, requirements):
+                if component._latency_qoe_level_threshold:
+                    component_reqs['hardware_requirements']['latency_qoe_level_threshold_' + application_component_instance_name] = component._latency_qoe_level_threshold
+                                        
+    def component_requirements_translation(self, requirements, application_component_instance_name):
         component_translation = {}
         for requirement_name, requirement_value in requirements.items():
             if requirement_name == 'os':
@@ -50,8 +44,8 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                         component_translation['hardware_requirements_ram'] = int(hw_requirement_value)
                     if hw_requirement_name == 'disk':
                         component_translation['hardware_requirements_disk'] = int(hw_requirement_value)
-                    if hw_requirement_name == 'latency_threshold':
-                        component_translation['Qhardware_requirements_latency_threshold'] = hw_requirement_value
+                    if 'latency_qoe_level_threshold' in hw_requirement_name:
+                        component_translation['Qlatency_qoe_level_threshold_' + application_component_instance_name] = hw_requirement_value
                     #if hw_requirement_name == 'gpu':
                     #    for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
                     #        if gpu_requirement_name == 'model':
@@ -67,7 +61,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                                                     
         return component_translation
 
-    def node_resources_translation(self, current_app, node): 
+    def node_resources_translation(self, current_app, node, lat_qoe_levels): 
         node_res_translation = {}
         
         current_app.config.get('LOGGER').info('[') 
@@ -87,8 +81,25 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             current_app.config.get('LOGGER').info('   OS: Linux')
             node_res_translation['QEos'] = 1
         else:
-            node_res_translation['QEos'] = 0
-        
+            node_res_translation['QEos'] = 0        
+          
+        for app_component_name, lat_qoe_level_list in lat_qoe_levels.items():
+            minicloud_found = False
+            for lat_qoe_level in lat_qoe_level_list:                  
+                if lat_qoe_level:
+                    if lat_qoe_level['minicloudId'] == node['minicloud_id']:
+                        node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] =  lat_qoe_level['qoe']
+                        current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': %s ' % (node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name]))
+                        minicloud_found = True
+                else:
+                    node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] = -1
+                    current_app.config.get('LOGGER').info('   Latency QoE Threshold for component' + app_component_name + ': NA ')
+
+            if minicloud_found == False:
+                node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] = -1
+                current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': NA ')
+
+
         node_res_translation['hardware_requirements_cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
         current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['device.CPU.cores'])
         
@@ -100,8 +111,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         current_app.config.get('LOGGER').info('   Disk size: %s ' % node['device.DISK.size'])
         current_app.config.get('LOGGER').info('   ...')
         current_app.config.get('LOGGER').info(']')
-
-   
+        
         #if 'Intel' in node['device.GPU.GPU_name']:
         #    node_res_translation['QEhardware_requirements_gpu_model'] = 3
         #if 'AMD' in node['device.GPU.GPU_name']:
@@ -127,15 +137,14 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                 if application_component_instance_req.component_name == component['component']:
                     # Found the requirements of one the component to be deployed
                     self.add_latency_to_component_requirements(component['host']['requirements'], application_component_instance_req.component_name, application_parameters) 
-                    app_components_request_model.append(self.component_requirements_translation(component['host']['requirements']))                           
+                    app_components_request_model.append(self.component_requirements_translation(component['host']['requirements'], application_component_instance_req.component_name))                           
         return app_components_request_model
     
-    def generate_federation_resource_availability_model(self, current_app, node_parts,application_parameters,lat_qoe_levels):
+    def generate_federation_resource_availability_model(self, current_app, node_parts,lat_qoe_levels):
         federation_resource_availability_model = []
         for node in node_parts:          
             #node = json.loads(node_parts[i])
-            self.add_latency_to_resource_availability_model(current_app,node,application_parameters,lat_qoe_levels) 
-            federation_resource_availability_model.append(self.node_resources_translation(current_app,node))       
+            federation_resource_availability_model.append(self.node_resources_translation(current_app,node,lat_qoe_levels))       
         return federation_resource_availability_model
     
     def calculate_dep_plan(self, current_app, components, RID_response, matchmaking_model, application_parameters,lat_qoe_levels):
@@ -158,7 +167,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         App_Components_req = self.generate_app_components_request_model(components,matchmaking_model,application_parameters)
         
         #node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, RID_response,application_parameters,lat_qoe_levels)
+        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, RID_response,lat_qoe_levels)
                 
         # Construction of Python-MIP MILP problem
         current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  

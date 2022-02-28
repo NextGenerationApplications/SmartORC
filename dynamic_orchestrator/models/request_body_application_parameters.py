@@ -14,34 +14,34 @@ class RequestBodyApplicationParameters(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, component_name: str=None, external_ip: str=None, latency_threshold: float=None, device_ip: str=None):  # noqa: E501
+    def __init__(self, component_name: str=None, external_ip: str=None, latency_qoe_level_threshold: float=None, device_ip: str=None):  # noqa: E501
         """RequestBodyApplicationParameters - a model defined in Swagger
 
         :param component_name: The component_name of this RequestBodyApplicationParameters.  # noqa: E501
         :type component_name: str
         :param external_ip: The external_ip of this RequestBodyApplicationParameters.  # noqa: E501
         :type external_ip: str
-        :param latency_threshold: The latency_threshold of this RequestBodyApplicationParameters.  # noqa: E501
-        :type latency_threshold: float
+        :param latency_qoe_level_threshold: The latency_threshold of this RequestBodyApplicationParameters.  # noqa: E501
+        :type latency_qoe_level_threshold: float
         :param device_ip: The device_ip of this RequestBodyApplicationParameters.  # noqa: E501
         :type device_ip: str
         """
         self.swagger_types = {
             'component_name': str,
             'external_ip': str,
-            'latency_threshold': float,
+            'latency_qoe_level_threshold': float,
             'device_ip': str
         }
 
         self.attribute_map = {
             'component_name': 'component_name',
             'external_ip': 'external_ip',
-            'latency_threshold': 'latency_threshold',
+            'latency_qoe_level_threshold': 'latency_qoe_level_threshold',
             'device_ip': 'device_ip'
         }
         self._component_name = component_name
         self._external_ip = external_ip
-        self._latency_threshold = latency_threshold
+        self._latency_qoe_level_threshold = latency_qoe_level_threshold
         self._device_ip = device_ip
 
     @classmethod
@@ -98,17 +98,17 @@ class RequestBodyApplicationParameters(Model):
         self._external_ip = external_ip
 
     @property
-    def latency_threshold(self) -> float:
-        """Gets the latency_threshold of this RequestBodyApplicationParameters.
+    def latency_qoe_level_threshold(self) -> float:
+        """Gets the latency_qoe_level_threshold of this RequestBodyApplicationParameters.
 
 
-        :return: The latency_threshold of this RequestBodyApplicationParameters.
+        :return: The latency_qoe_level_threshold of this RequestBodyApplicationParameters.
         :rtype: float
         """
-        return self._latency_threshold
+        return self._latency_qoe_level_threshold
 
-    @latency_threshold.setter
-    def latency_threshold(self, latency_threshold: float):
+    @latency_qoe_level_threshold.setter
+    def latency_qoe_level_threshold(self, latency_qoe_level_threshold: float):
         """Sets the latency_threshold of this RequestBodyApplicationParameters.
 
 
@@ -116,7 +116,7 @@ class RequestBodyApplicationParameters(Model):
         :type latency_threshold: float
         """
 
-        self._latency_threshold = latency_threshold
+        self._latency_qoe_level_threshold = latency_qoe_level_threshold
 
     @property
     def device_ip(self) -> str:

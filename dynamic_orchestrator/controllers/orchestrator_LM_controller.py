@@ -56,6 +56,7 @@ def secret (name):
 
 def check_application_parameters(operation, components, application_parameters):
     if (application_parameters):
+        found_components = set();
         if (len(application_parameters)!=0):       
             if( operation == 'deploy'):
                 for parameter in application_parameters:
@@ -64,6 +65,10 @@ def check_application_parameters(operation, components, application_parameters):
                         for component in components:
                             if (component._component_name == parameter._component_name):
                                 find = True
+                                if( parameter._component_name in found_components):
+                                    return 'Deploy operation not executed successfully: an application parameter component ' + parameter._component_name + ' appears at least twice in the request application parameters'
+                                else:
+                                    found_components.add(parameter._component_name)
                         if (find == False):
                             return 'Deploy operation not executed successfully: an application parameter component is not a component of the request'
                 if(parameter._external_ip):
@@ -71,7 +76,7 @@ def check_application_parameters(operation, components, application_parameters):
                         ipaddress.ip_address(parameter._external_ip)
                     except:
                         return 'Deploy operation not executed successfully: the application parameter external_ip' + parameter._external_ip +  ' is not a valid ip address'
-            if(parameter._latency_threshold):
+            if(parameter._latency_qoe_level_threshold):
                 if(parameter._device_ip):     
                     try:
                         ipaddress.ip_address(parameter._device_ip)
@@ -99,7 +104,12 @@ def send_MMM_request(component_name,device_ip):
         
         MMM_response.raise_for_status()
         
-        MMM_response_json = json.loads(MMM_response.json())
+        MMM_response_json = MMM_response.json()
+        
+        if(MMM_response_json == None):
+            return MMM_response_json, None
+        
+        MMM_response_final = json.loads(MMM_response.json())
         
         current_app.config.get('LOGGER').info(" Request to MMM for component " + component_name + " successfully completed!")
 
@@ -111,8 +121,8 @@ def send_MMM_request(component_name,device_ip):
         
     except json.JSONDecodeError as err:
         return None,'Deploy operation not executed successfully due to an internal server error. Response from MMM not Json parsable due to error ' + str(err)
-                            
-    return MMM_response_json, None
+                             
+    return MMM_response_final, None
 
 def send_RID_request():
         RID_IP = "localhost"
@@ -161,28 +171,39 @@ def check_components (body):
         
         if(components_number == 0):
             return None, None, 'Deploy operation not executed successfully due to the following error: no application components to be deployed'   
+
+        found_components = set();
         
         current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
+             
         for i in range(components_number):
             current_app.config.get('LOGGER').debug("----- Component name: %s" % body.app_component_names[i].component_name)
             #current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
             json_pp = json.dumps(body.app_model.get('requirements')[0].get('toscaDescription'), indent=4)
             current_app.config.get('LOGGER').debug("----- App model: %s " % json_pp)
             #current_app.config.get('LOGGER').debug("----- Application model: [ ... ] ")
-
+            if(body.app_component_names[i].component_name in found_components):
+                return None, None, 'Deploy operation not executed successfully: application component ' + body.app_component_names[i].component_name + ' appears at least twice in the request'
+            else:
+                found_components.add(body.app_component_names[i].component_name)
 
             current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
             current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
      
-        app_component_name = body.app_component_names[0].component_name
-        app_component_name_parts = app_component_name.split('-')
+            app_component_name = body.app_component_names[i].component_name
+            app_component_name_parts = app_component_name.split('-')
               
-        try:
-            app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
-            app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
-            app_instance = app_name + '-' + app_component_name_parts[5]
-        except:
-            return None, None, 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+            try:
+                app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
+                app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
+                if(i==0):
+                    app_instance = app_name + '-' + app_component_name_parts[5]
+                else:
+                    if((app_name + '-' + app_component_name_parts[5]) != app_instance):
+                        return None, None, 'Deploy operation not executed successfully: application components must be all of the same application'   
+            except:
+                return None, None, 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing'     
+        
         return app_name, app_instance, None
   
 def deploy(body):
@@ -234,7 +255,7 @@ def deploy(body):
         lat_qoe_levels = {}
         for parameter in body.application_parameters:
             if (parameter._device_ip):
-                MMM_response_json, error =send_MMM_request(parameter._component_name,parameter._device_ip)
+                MMM_response_json, error = send_MMM_request(parameter._component_name, parameter._device_ip)
                 if(error):
                     current_app.config.get('LOGGER').error(error + ". Returning code 500")
                     return {'reason': error}, 500

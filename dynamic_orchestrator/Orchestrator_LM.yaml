@@ -90,7 +90,7 @@ components:
                 type: string
               external_ip: 
                 type: string
-              latency_threshold:
+              latency_qoe_level_threshold:
                 type: number
               device_ip:
                 type: string            
