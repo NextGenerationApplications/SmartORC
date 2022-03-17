@@ -77,7 +77,6 @@ def ReadFile(json):
                         if action.get_name() != 'send':
                             images = actionset.get('components')
                             for image in images:
-                                print(image)
                                 _object = Image.Image()
                                 _object.set_image_type(image.get('type'))
                                 component_names.append(image.get('component').lower())
@@ -136,7 +135,6 @@ def ReadFile(json):
                     if image.get_image_type() == 'VM':
                         container.set_image(image.get_component().lower())
                     for repo in repolist:
-                        print(repo.get_component() + ":" + image.get_component())
                         if repo.get_component() in image.get_component():
                             container.set_image(repo.get_path() + ":" + repo.get_version())
             nodelist.append(container)

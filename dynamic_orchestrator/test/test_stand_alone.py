@@ -107,7 +107,7 @@ try:
     #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
     
     data1 = json.dumps(body1)
-    r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
+    r1 = requests.post('http://172.17.0.2:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)
     print(r1.status_code)
     print(r1.text)

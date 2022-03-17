@@ -74,6 +74,224 @@
                 }
               ]
             }
+          ],
+          "workflows": [
+            {
+              "scenario": "LocalService Hardware Overload",
+              "target": "LocalService",
+              "condition": "component_cpu > 80% or component_memory > 80%",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "LocalService Network Overload",
+              "target": "LocalService",
+              "condition": "bandwidth > 80% or avg_latency > 20 ms",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "RemoteService Hardware Overload",
+              "target": "Remotervice",
+              "condition": "component_cpu > 80% or component_memory > 80%",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "RemoteService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "RemoteService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "RemoteService Network Overload",
+              "target": "RemoteService",
+              "condition": "bandwidth > 80% or avg_latency > 20 ms",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "LocalService",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "LS_NUC Hardware Overload",
+              "target": "LC_NUC",
+              "condition": "component_cpu > 80% or component_memory > 80%",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "LS_NUC",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "LS_NUC",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "LS_NUC Network Overload",
+              "target": "LS_NUC",
+              "condition": "bandwidth > 80% or avg_latency > 20 ms",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "LS_NUC",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "LS_NUC",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "Traqus Hardware Overload",
+              "target": "Traqus",
+              "condition": "component_cpu > 80% or component_memory > 80%",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "Traqus",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "Traqus",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            },
+            {
+              "scenario": "Traqus Network Overload",
+              "target": "Traqus",
+              "condition": "bandwidth > 80% or avg_latency > 20 ms",
+              "actions": [
+                {
+                  "name": "terminate",
+                  "components": [
+                    {
+                      "component": "Traqus",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "Traqus",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
+                }
+              ]
+            }
           ]
         }
       },

@@ -51,7 +51,7 @@ class vim_sender_worker(threading.Thread):
         
         self.logger.info("Thread " + str(self.thread_id) + " started to deploy following components on EdgeMinicloud %s :" % self.EdgeMinicloud)
         for component in self.components:
-            self.logger.info("--- Component:  %s " % self.component)
+            self.logger.info("--- Component:  %s " % component)
 
         try:
             yaml_files_list = [self.namespace_yaml, self.secret_yaml]

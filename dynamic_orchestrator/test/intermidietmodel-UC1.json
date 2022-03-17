@@ -67,7 +67,7 @@
               "condition": "status == failed",
               "actions": [
                 {
-                  "name": "deploy",
+                  "name": "terminate",
                   "components": [
                     {
                       "component": "LocalService",
@@ -77,7 +77,7 @@
                   "order": 1
                 },
                 {
-                  "name": "terminate",
+                  "name": "deploy",
                   "components": [
                     {
                       "component": "LocalService",
@@ -198,8 +198,10 @@
         "type": "tosca.nodes.Compute.EdgeNode",
         "properties": {
           "gpu_model": {
-            "model": "NVIDIA GeForce RTX 20-series",
-            "dedicated": true
+            "properties": {
+              "model": "NVIDIA GeForce RTX 20-series",
+              "dedicated": true
+            }
           }
         },
         "capabilities": {

@@ -45,7 +45,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     if hw_requirement_name == 'disk':
                         component_translation['hardware_requirements_disk'] = int(hw_requirement_value)
                     if 'latency_qoe_level_threshold' in hw_requirement_name:
-                        component_translation['Qlatency_qoe_level_threshold_' + application_component_instance_name] = hw_requirement_value
+                        component_translation['QLlatency_qoe_level_threshold_' + application_component_instance_name] = hw_requirement_value
                     #if hw_requirement_name == 'gpu':
                     #    for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
                     #        if gpu_requirement_name == 'model':
@@ -88,17 +88,17 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             for lat_qoe_level in lat_qoe_level_list:                  
                 if lat_qoe_level:
                     if lat_qoe_level['minicloudId'] == node['minicloud_id']:
-                        node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] =  lat_qoe_level['qoe']
-                        current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': %s ' % (node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name]))
+                        node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] =  lat_qoe_level['qoe']
+                        current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': %s ' % (node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name]))
                         minicloud_found = True
                 else:
-                    node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] = -1
+                    node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] = -1
                     current_app.config.get('LOGGER').info('   Latency QoE Threshold for component' + app_component_name + ': NA ')
 
             if minicloud_found == False:
-                node_res_translation['Qlatency_qoe_level_threshold_' + app_component_name] = -1
+                node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] = -1
                 current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': NA ')
-
+                
 
         node_res_translation['hardware_requirements_cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
         current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['device.CPU.cores'])
@@ -147,7 +147,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             federation_resource_availability_model.append(self.node_resources_translation(current_app,node,lat_qoe_levels))       
         return federation_resource_availability_model
     
-    def calculate_dep_plan(self, current_app, components, RID_response, matchmaking_model, application_parameters,lat_qoe_levels):
+    def calculate_dep_plan(self, current_app, components, node_parts, matchmaking_model, application_parameters,lat_qoe_levels):
         """calculate_dep_plan
            matchmaking of components and ACCORDION federation resources will be done in this method
         :param components: 
@@ -167,7 +167,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         App_Components_req = self.generate_app_components_request_model(components,matchmaking_model,application_parameters)
         
         #node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, RID_response,lat_qoe_levels)
+        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, node_parts,lat_qoe_levels)
                 
         # Construction of Python-MIP MILP problem
         current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
@@ -288,7 +288,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         #                            MILP +=  (decision_variables[n1][i] + decision_variables[n2][j] - auxiliary_decision_variables[n2][n1][j][i]) <= 1
         #                            MILP +=  (decision_variables[n1][i]/2 + decision_variables[n2][j]/2 - auxiliary_decision_variables[n2][n1][j][i]) >= 0
      
-        # Maximize the availability of resources, except QoS indicators
+        # Maximize the availability of resources, except QoS indicators 
 
         MILP.objective = maximize(xsum ((Fed_res_availability[n])[resource] -  
                                         xsum(((decision_variables[n][j])*((App_Components_req[j])[resource]))
@@ -297,7 +297,17 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                           for n in range(NumNodes)
                                                for resource in Fed_res_availability[0]
                                                   if not (resource == 'links')
-                                                    if not (resource[0] == 'Q')))       
+                                                    if not (resource[0] == 'Q'))
+        
+                                #and maximize the QoE for latency
+                                + xsum ((Fed_res_availability[n])[resource] * (decision_variables[n][j])
+                                          for n in range(NumNodes)
+                                               for resource in Fed_res_availability[0]
+                                                    for j in range(NumComponents) 
+                                                        if resource in (App_Components_req[j]) 
+                                                            if not (resource == 'links')
+                                                                if ((resource[0] == 'Q') and (resource[1] == 'L'))))
+                                                                               
         status = MILP.optimize()
         result_documents = {}
         if status == OptimizationStatus.ERROR or status == OptimizationStatus.NO_SOLUTION_FOUND or status == OptimizationStatus.INFEASIBLE or status == OptimizationStatus.INT_INFEASIBLE or status == OptimizationStatus.UNBOUNDED:  
@@ -307,15 +317,13 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             n=0
             for v in MILP.vars:
                 if(v.name[0] == 'x'):
-                    #print('Nodes: ', divmod(n,NumComponents)[0])
-                    Nodes = divmod(n,NumComponents)[0]                              
-                    #print('AppComponent: ', divmod(n,NumComponents)[1])                                                    
-                    Appcomponent = divmod(n,NumComponents)[1]
-                    #if Appcomponent == 0:
-                    #    result_documents.append([])
                     if v.x == 1:
-                        minicloud_id = 1 #json.loads(node_parts[Nodes]).get('minicloud_id')
-                        #minicloud_id = minicloud_id[:2]
+                        Nodes = divmod(n,NumComponents)[0]  
+                        #print('Nodes: ', Nodes)                 
+                        Appcomponent = divmod(n,NumComponents)[1]
+                        #print('AppComponent: ', Appcomponent)                                                    
+                        minicloud_id = node_parts[Nodes].get('minicloud_id')
+                        minicloud_id = minicloud_id[:3]
                         if not result_documents.get(minicloud_id):
                             result_documents[minicloud_id] = []
                         name = components[Appcomponent].component_name

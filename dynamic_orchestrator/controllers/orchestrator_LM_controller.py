@@ -91,6 +91,14 @@ def check_application_parameters(operation, components, application_parameters):
      
     return None
 
+def test_MMM(MMM_response):
+    MMM_response[0]['minicloudId'] = 'mc1' 
+    MMM_response[0]['qoe'] = 30   
+  
+    MMM_response[1]['minicloudId'] = 'mc2'
+    MMM_response[1]['qoe'] = 10   
+    return MMM_response
+
 def send_MMM_request(component_name,device_ip):
     MMM_IP = "83.212.125.74"
     MMM_PORT  = "40110"
@@ -121,8 +129,16 @@ def send_MMM_request(component_name,device_ip):
         
     except json.JSONDecodeError as err:
         return None,'Deploy operation not executed successfully due to an internal server error. Response from MMM not Json parsable due to error ' + str(err)
-                             
+    
+    MMM_response_final = test_MMM(MMM_response_final)
+                                 
     return MMM_response_final, None
+
+def test_RID(RID_response):
+    RID_response[0]['minicloud_id'] = 'mc1'
+    RID_response[1]['minicloud_id'] = 'mc1'
+    RID_response[2]['minicloud_id'] = 'mc2'    
+    return RID_response
 
 def send_RID_request():
         RID_IP = "localhost"
@@ -152,7 +168,7 @@ def send_RID_request():
             return None,'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)                    
 
         current_app.config.get('LOGGER').debug(" Request to Resource Indexing & Discovery service returned with response: #%s " % RID_response_json)
-        
+        RID_response_json = test_RID(RID_response_json)
         return RID_response_json, None
 
 def dep_plan_status(status):
@@ -242,6 +258,12 @@ def deploy(body):
         current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
         
         matchmaking_model = generate(nodelist, app_instance)
+        
+        json_string = json.dumps(matchmaking_model)
+        Kafka_Producer = Producer()
+        Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
+        
+        
         current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
 
         solver = ConcreteOrchestrator() 

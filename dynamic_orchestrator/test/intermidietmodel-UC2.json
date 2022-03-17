@@ -97,7 +97,7 @@
             {
               "scenario": "GameServer failed",
               "target": "GameServer",
-              "condition": "status == fail",
+              "condition": "status == failed",
               "actions": [
                 {
                   "name": "terminate",
@@ -108,6 +108,16 @@
                     }
                   ],
                   "order": 1
+                },
+                {
+                  "name": "deploy",
+                  "components": [
+                    {
+                      "component": "GameServer",
+                      "type": "Container"
+                    }
+                  ],
+                  "order": 2
                 }
               ]
             },
