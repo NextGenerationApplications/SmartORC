@@ -100,14 +100,14 @@ try:
     #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
     #AB_response = AB_response.json()
     #print(json.dumps(AB_response))
-    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-1654548478-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}}
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
-             'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
+    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
+    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
+    #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
 
     #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
     
     data1 = json.dumps(body1)
-    r1 = requests.post('http://172.17.0.2:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
+    r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)
     print(r1.status_code)
     print(r1.text)
