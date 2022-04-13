@@ -115,7 +115,7 @@ def send_MMM_request(component_name,device_ip):
         MMM_response_json = MMM_response.json()
         
         if(MMM_response_json == None):
-            return MMM_response_json, None
+            return MMM_response_json,  None
         
         MMM_response_final = json.loads(MMM_response.json())
         
