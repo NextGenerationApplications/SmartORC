@@ -68,7 +68,6 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                         'app': application_instance}},
                                 'spec': {
                                     'ports': service_port,
-                                    'externalIPs': [externalIP],
                                     'selector': {'app': application_instance},
                                     'type': 'LoadBalancer'}}}
                             service_files.append(service)
@@ -96,7 +95,7 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                                                                               'namespace': application_instance,
                                                                                               'labels': {
                                                                                                   'app': application_instance,
-                                                                                                'component':application_instance + "-" + x.get_name() + "-" + minicloud}},
+                                                                                                  'component': application_instance + "-" + x.get_name() + "-" + minicloud}},
                                                                                           'spec': {
                                                                                               'selector': {
                                                                                                   'matchLabels': {
@@ -138,7 +137,7 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                                                                                                not i.isdigit()])},
                                                                                                       'imagePullSecrets': [
                                                                                                           {
-                                                                                                              'name': application_instance + "-" + minicloud + '-registry-credentials'}]}}}}}
+                                                                                                              'name': application_instance + '-registry-credentials'}]}}}}}
                         deployment = extra_labels(deployment, resource.get_gpu_model(),
                                                   resource.get_gpu_dedicated(), resource.get_wifi_antenna())
                         deployment_files.append(deployment)
@@ -175,8 +174,8 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                 i = 0
                                 for port in ports:
                                     i = i + 1
-                                    content = {'name': 'remote-desktop-' + str(i), 'port': int(port),
-                                               'targetPort': 3389}
+                                    content = {'name': 'port-' + str(i), 'port': int(port),
+                                               'targetPort': int(port)}
                                     port_yaml.append(content)
                                     service_port.append(content)
                                     service = {
@@ -191,8 +190,8 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                             'spec': {
                                                 'externalTrafficPolicy': 'Cluster',
                                                 'ports': service_port,
-                                                'externalIPs': [externalIP],
-                                                'selector': {'app': application_instance},
+                                                'selector': {
+                                                    'component': application_instance + "-" + x.get_name() + "-" + minicloud},
                                                 'type': 'LoadBalancer'}}}
                                 service_files.append(service)
 
