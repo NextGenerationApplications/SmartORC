@@ -145,9 +145,10 @@ def ReadFile(json):
             if properties:
                 gpu_model = properties.get('gpu_model')
                 if gpu_model:
-                    model = gpu_model.get('model')
+                    gpu_properties = gpu_model.get('properties')
+                    model = gpu_properties.get('model')
                     edgenode.set_gpu_model(model)
-                    dedicated = gpu_model.get('dedicated')
+                    dedicated = gpu_properties.get('dedicated')
                     edgenode.set_gpu_dedicated(dedicated)
                 wifi_antenna = properties.get('wifi_antenna')
                 if wifi_antenna:

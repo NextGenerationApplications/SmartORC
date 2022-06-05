@@ -94,17 +94,17 @@ def pretty_print(req):
 #    print('Connection Error')    
 
 try:     
-    json_file1 = open('intermidietmodel-UC1.json')
+    json_file1 = open('intermidietmodel-UC2.json')
     AB_response = json.load(json_file1)
     #AB_response = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
     #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
     #AB_response = AB_response.json()
     #print(json.dumps(AB_response))
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
+    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
     #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
 
-    #body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': {}} 
+    body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []} 
     
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
@@ -112,7 +112,7 @@ try:
     print(r1.status_code)
     print(r1.text)
 except Exception as e:
-    print('Connection Error with the Orchestrator for the Ovr Use Case')  
+    print('Connection Error with the Orchestrator for the Orbk Use Case')  
     
 #try:     
 #    json_file2 = open('intermidietmodel-UC1.json')

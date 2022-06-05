@@ -59,7 +59,7 @@ class vim_sender_worker(threading.Thread):
             
             self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)    
                 
-            deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud, '146.48.86.248')
+            deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud)
             self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function terminated" % self.app_instance)
 
             for component in self.components:
@@ -68,12 +68,12 @@ class vim_sender_worker(threading.Thread):
                     deployment_file = deployment_component.get(componentEMC)
                     if deployment_file:
                         persistent_files_list = self.calculate_pers_files_list(deployment_file)
-                        yaml_files_list.append(deployment_file) 
                         for pers_file_name in persistent_files_list:
                             for pers_file_record in persistent_files:
                                 pers_file = pers_file_record.get(pers_file_name)  
                                 if pers_file:
-                                    yaml_files_list.append(pers_file)  
+                                    yaml_files_list.append(pers_file)
+                        yaml_files_list.append(deployment_file)   
                 for service in service_files:
                     for service_name, service_desc in service.items():
                         if componentEMC in service_name:
@@ -88,7 +88,7 @@ class vim_sender_worker(threading.Thread):
             
             
             self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw started")
-            vim_response = requests.post("http://localhost:5000/VIM/request", timeout=10, data=vim_request,
+            vim_response = requests.post("http://localhost:5000/VIM/request", timeout=90, data=vim_request,
                               headers={'Content-Type': vim_request.content_type})
             vim_response.raise_for_status()
             self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw finished succesfully!")

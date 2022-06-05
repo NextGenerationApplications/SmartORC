@@ -2,6 +2,8 @@ import connexion
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
 from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
+from dynamic_orchestrator.converter.Kafka_Producer import Producer  
+
 #from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
 from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
@@ -22,7 +24,9 @@ def choose_application (name):
     if name == 'accordion-plexus-0-0-1':
         return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
     if name == 'accordion-orbk-0-0-1':
+        #return 'image-download', 'glpat-E3pNzWSwUV4Z6s1cShcJ'
         return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
+
     if name == 'accordion-ovr-0-0-3':
         return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
     return None, None
@@ -222,6 +226,8 @@ def check_components (body):
         
         return app_name, app_instance, None
   
+#TODO: remove external IP from the request and from the openapi3.0 interface file  
+  
 def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
@@ -327,23 +333,23 @@ def deploy(body):
             
         current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
            
-        for vim_result in vim_results:
-            for component_result in vim_result:
-                for component_instance_name, date_or_error in component_result.items():
-                    if isinstance(date_or_error,int):
+        #for vim_result in vim_results:
+            #for component_result in vim_result:
+                #for component_instance_name, date_or_error in component_result.items():
+                    #if isinstance(date_or_error,int):
                         # send component instance id and creation date time to ASR
-                        current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
-                        request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
-                        current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
-                        current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
+                        #current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
+                        #request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
+                        #current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
+                        #current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
      
-                        ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
-                        ASR_response.raise_for_status()
-                        current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
-                        current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
-                    else:   
-                        current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
-                        return {'reason': date_or_error}, 500               
+                        #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
+                        #ASR_response.raise_for_status()
+                        #current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
+                        #current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
+                    #else:   
+                       # current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
+                        #return {'reason': date_or_error}, 500               
              
     except requests.exceptions.Timeout as err:
         error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'

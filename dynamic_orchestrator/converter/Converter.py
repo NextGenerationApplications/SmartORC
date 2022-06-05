@@ -1,10 +1,11 @@
 from dynamic_orchestrator.converter import ComputeNode
 
-def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalIP):
+def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud):
     deployment = {}
     service_files = []
     persistent_files = []
     deployment_files = []
+    vm_flag = False
     resource_list = []
     value = 7000
     y = 0
@@ -41,6 +42,7 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                          'ephemeral-storage': resource.get_disk()}}
 
                     if host == resource.get_name():
+                        filelist = []
                         ports = x.get_port()
                         if isinstance(ports, str):
                             content = {'containerPort': int(ports), 'name': x.get_name()}
@@ -58,18 +60,22 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                 content = {'port': value, 'targetPort': int(port.get('containerPort'))}
                                 service_port.append(content)
                                 y = y + 1
-                            service = {application_instance + "-" + x.get_name() + "-" + minicloud + "-loadbalancer": {
-                                'apiVersion': 'v1',
-                                'kind': 'Service',
-                                'metadata': {
-                                    'name': application_instance + "-" + x.get_name() + "-" + minicloud + "-loadbalancer",
-                                    'namespace': application_instance,
-                                    'labels': {
-                                        'app': application_instance}},
-                                'spec': {
-                                    'ports': service_port,
-                                    'selector': {'app': application_instance},
-                                    'type': 'LoadBalancer'}}}
+                        #THIS PART BELOW HAS TO BE CHANGED, PLEASE CHECK THE EXAMPLE THAT I HAVE SENT IN SKYPE
+                            service = {
+                                application_instance + "-" + x.get_name() + "-" + minicloud + "-loadbalancer": {
+                                    'apiVersion': 'v1',
+                                    'kind': 'Service',
+                                    'metadata': {
+                                        'name': application_instance + "-" + x.get_name() + "-loadbalancer",
+                                        'namespace': application_instance,
+                                        'labels': {
+                                            'app': application_instance}},
+                                    'spec': {
+                                        'externalTrafficPolicy': 'Cluster',
+                                        'ports': service_port,
+                                        'selector': {
+                                            'component': application_instance + "-" + x.get_name() + "-" + minicloud},
+                                        'type': 'LoadBalancer'}}}
                             service_files.append(service)
                         if resource.get_disk():
                             persistent_volume = {x.get_volumes_claimname(): {'apiVersion': 'v1',
@@ -183,7 +189,7 @@ def tosca_to_k8s(nodelist, imagelist, application_instance, minicloud, externalI
                                             'apiVersion': 'v1',
                                             'kind': 'Service',
                                             'metadata': {
-                                                'name': application_instance + "-" + x.get_name() + "-" + minicloud + "-loadbalancer",
+                                                'name': application_instance + "-" + x.get_name() + "-loadbalancer",
                                                 'namespace': application_instance,
                                                 'labels': {
                                                     'app': application_instance}},
