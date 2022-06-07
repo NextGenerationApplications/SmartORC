@@ -108,7 +108,7 @@ def deploy(body):
             Debug_response.raise_for_status()
             
             #RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
-            RID_response = requests.get('http://localhost:9001/miniclouds', timeout=5)                  
+            RID_response = requests.get('http://localhost:9001/miniclouds') #, timeout=5)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()                         
             current_app.config.get('LOGGER').info(" Request to RID finished successfully!")

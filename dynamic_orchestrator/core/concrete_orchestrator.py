@@ -101,10 +101,10 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     app_components_request_model.append(self.component_requirements_translation(component['host']['requirements']))                           
         return app_components_request_model
     
-    def generate_federation_resource_availability_model(self, node_parts):
+    def generate_federation_resource_availability_model(self, RID_response):
         federation_resource_availability_model = []
-        for i in range(len(node_parts)-1):          
-            node = json.loads(node_parts[i])
+        for node in RID_response:          
+            #node = json.loads(node_parts[i])
             federation_resource_availability_model.append(self.node_resources_translation(node))       
         return federation_resource_availability_model
     
@@ -126,8 +126,8 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         """
         App_Components_req = self.generate_app_components_request_model(components,matchmaking_model)
         
-        node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(node_parts)
+        #node_parts = RID_response.split('\n')
+        Fed_res_availability = self.generate_federation_resource_availability_model(RID_response)
                 
         # Construction of Python-MIP MILP problem
         
