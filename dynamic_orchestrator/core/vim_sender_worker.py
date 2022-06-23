@@ -120,17 +120,17 @@ class vim_sender_worker(threading.Thread):
             
         except OSError as err:
             if err:
-                error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
+                error = '1 Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
             else:
-                error = 'Deploy operation not executed successfully due to an unknown internal server error! '
+                error = '2 Deploy operation not executed successfully due to an unknown internal server error! ' + err
             result = []
             for component in self.components:
                 component_name = component + '-' + self.EdgeMinicloud
                 result.append({component_name: error}) 
             self.vim_results[self.thread_id] = result        
             
-        except:
-            error = 'Deploy operation not executed successfully due to an unknown internal server error!'
+        except Exception as e:
+            error = '3 Deploy operation not executed successfully due to an unknown internal server error!' + e
             result = []
             for component in self.components:
                 component_name = component + '-' + self.EdgeMinicloud

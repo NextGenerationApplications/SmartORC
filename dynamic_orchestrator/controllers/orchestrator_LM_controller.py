@@ -1,4 +1,5 @@
 import connexion
+import traceback
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
 from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
@@ -220,14 +221,15 @@ def deploy(body):
     
     except OSError as err:
         if err:
-            error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
+            error = 'A Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
         else:
-            error = 'Deploy operation not executed successfully due to an unknown internal server error! '
+            error = 'B Deploy operation not executed successfully due to an unknown internal server error! '
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
-    except:
-        error = 'Deploy operation not executed successfully due to an unknown internal server error!'
+    except Exception as e:
+        error = 'C Deploy operation not executed successfully due to an unknown internal server error!'
+        traceback.print_exc()
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
