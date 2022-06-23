@@ -24,9 +24,7 @@ def choose_application (name):
     if name == 'accordion-plexus-0-0-1':
         return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
     if name == 'accordion-orbk-0-0-1':
-        #return 'image-download', 'glpat-E3pNzWSwUV4Z6s1cShcJ'
         return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
-
     if name == 'accordion-ovr-0-0-3':
         return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
     return None, None
