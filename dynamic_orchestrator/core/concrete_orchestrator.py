@@ -164,15 +164,10 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                               
         """            
         
-<<<<<<< HEAD
         App_Components_req = self.generate_app_components_request_model(components,matchmaking_model,application_parameters)
         
         #node_parts = RID_response.split('\n')
         Fed_res_availability = self.generate_federation_resource_availability_model(current_app, node_parts,lat_qoe_levels)
-=======
-        #node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(RID_response)
->>>>>>> branch 'master' of https://git@gitlab.com/accordion-project/wp4/dynamic-orchestrator.git
                 
         # Construction of Python-MIP MILP problem
         current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
