@@ -140,21 +140,11 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                     app_components_request_model.append(self.component_requirements_translation(component['host']['requirements'], application_component_instance_req.component_name))                           
         return app_components_request_model
     
-<<<<<<< HEAD
     def generate_federation_resource_availability_model(self, current_app, node_parts,lat_qoe_levels):
-=======
-    def generate_federation_resource_availability_model(self, RID_response):
->>>>>>> branch 'master' of https://git@gitlab.com/accordion-project/wp4/dynamic-orchestrator.git
         federation_resource_availability_model = []
-<<<<<<< HEAD
         for node in node_parts:          
             #node = json.loads(node_parts[i])
             federation_resource_availability_model.append(self.node_resources_translation(current_app,node,lat_qoe_levels))       
-=======
-        for node in RID_response:          
-            #node = json.loads(node_parts[i])
-            federation_resource_availability_model.append(self.node_resources_translation(node))       
->>>>>>> branch 'master' of https://git@gitlab.com/accordion-project/wp4/dynamic-orchestrator.git
         return federation_resource_availability_model
     
     def calculate_dep_plan(self, current_app, components, node_parts, matchmaking_model, application_parameters,lat_qoe_levels):
