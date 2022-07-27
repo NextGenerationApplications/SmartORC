@@ -1,13 +1,13 @@
 from hurry.filesize import size, iec
 
 
-def convert_bytes(_bytes):
+def convert_bytes(bytes):
     output = 0
-    if 'MB' in _bytes:
-        number = _bytes.replace('MB', ' ')
+    if 'MB' in bytes:
+        number = bytes.replace('MB', ' ')
         output = int(number) * 1024 * 1024
-    if 'GB' in _bytes:
-        number = _bytes.replace('GB', ' ')
+    if 'GB' in bytes:
+        number = bytes.replace('GB', ' ')
         output = int(number) * 1024 * 1024 * 1024
     return output
 
@@ -18,8 +18,8 @@ class ComputeNode:
 
     def get_name(self):
         return self.__name
-    def set_type(self, _type):
-        self.__type = _type
+    def set_type(self, type):
+        self.__type = type
 
     def get_type(self):
         return self.__type

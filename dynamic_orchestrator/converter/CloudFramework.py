@@ -1,6 +1,6 @@
 class CloudFramework:
-    def set_type(self, _type):
-        self.__type = _type
+    def set_type(self, type):
+        self.__type = type
 
     def get_type(self):
         return self.__type
@@ -11,7 +11,7 @@ class CloudFramework:
     def get_secret_name(self):
         return self.__secret_name
 
-    def set_application(self,app):
+    def set_application(self, app):
         self._app = app
 
     def get_application(self):
@@ -44,14 +44,14 @@ class CloudFramework:
     def get_relationship(self):
         return self.__relationship
 
-    def set_images(self, images):
-        self.__images = images
-
-    def get_images(self):
-        return self.__images
-
-    def set_actions(self, action):
-        self.__action = action
+    def set_actions(self, actiolist):
+        self.__actionlist = actiolist
 
     def get_actions(self):
-        return self.__action
+        return self.__actionlist
+
+    def set_workflows(self, workflowlist):
+        self.__workflowlist = workflowlist
+
+    def get_workflows(self):
+        return self.__workflowlist

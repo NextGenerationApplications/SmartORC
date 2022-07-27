@@ -5,8 +5,8 @@ class Container:
     def get_relationship(self):
         return self.__host
 
-    def set_type(self, _type):
-        self.__type = _type
+    def set_type(self, type):
+        self.__type = type
 
     def get_type(self):
         return self.__type
@@ -119,12 +119,6 @@ class Container:
     def get_service(self):
         return self.__service
 
-    def set_node(self, node):
-        self.__node = node
-
-    def get_node(self):
-        return self.__node
-
     def set_ingress(self, ingress):
         self.__ingress = ingress
 
@@ -155,8 +149,8 @@ class Container:
     def get_flavor(self):
         return self.__flavor
 
-    def set_dependency(self,dependency):
+    def set_dependency(self, dependency):
         self.__dependency = dependency
 
     def get_dependency(self):
-        return  self.__dependency
+        return self.__dependency

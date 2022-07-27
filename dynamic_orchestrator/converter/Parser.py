@@ -1,18 +1,24 @@
 import os
-from dynamic_orchestrator.converter import ComputeNode,Converter,CloudFramework,Container,Repository,Image,MatchingModel
+import sys
+sys.path.append(os.getcwd())
+import Action
+import MatchingModel
+import Repository
+import ComputeNode
+import Converter
 import yaml
+import CloudFramework
+import Container
+import Image
+import Workflows
 
 home = str(os.getcwd())
 
 
 def ReadFile(json):
     nodelist = []
-    actionlist = []
-    resource = ""
-    secret = ""
-    imagelist = []
 
-    backend = ""
+    imagelist = []
     application = ""
     requirements = json.get('requirements')
     definitions = requirements[0].get('toscaDescription')
@@ -21,173 +27,147 @@ def ReadFile(json):
     registry = json.get('registry')
     application_details = json.get('details')
     application_version = application_details.get('version')
+    print(registry)
     repolist = []
     for repository in registry:
         repo = Repository.Repository()
         repo.set_version(repository.get('version'))
         repo.set_imageName(repository.get('imageName'))
         repo.set_path(repository.get('repository'))
+        print(repository)
         repo.set_component(repository.get('component'))
         repolist.append(repo)
     node_names = node_template.keys()
+    print(node_names)
     for x in node_names:
         node = node_template.get(x)
-        _type = node.get('type')
+        type = node.get('type')
         properties = node.get('properties')
-        if 'Cloud_Framework' in _type:
+        if 'Cloud_Framework' in type:
             cloud = CloudFramework.CloudFramework()
-            cloud.set_type(_type)
-            if 'actions' in properties:
-                actions = properties.get('actions')
-                if 'deploy' in actions:
+            cloud.set_type(type)
+            application = properties.get('application')
+            cloud.set_application(application)
+            if 'deployment_phase' in properties:
+                actions = properties.get('deployment_phase')
+                actionlist = []
+                for actionset in actions:
                     component_names = []
-                    deploy = actions.get('deploy')
-                    deploy_properties = deploy.get('properties')
-                    application = deploy_properties.get('application')
-                    order = deploy_properties.get("order")
-                    images = deploy_properties.get('images')
-                    cloud.set_application(application)
+                    action = Action.Action()
+                    action.set_name(actionset.get('name'))
+                    action.set_order(actionset.get('order'))
+                    images = actionset.get('components')
                     for image in images:
-                        _object = Image.Image()
-                        for name, dict_ in image.items():
-                            _object.set_internal(dict_.get('internal'))
-                            _object.set_path(dict_.get('name'))
-                            if not dict_.get('internal'):
-                                _object.set_url(dict_.get('url'))
-                            component_names.append(name.lower())
-                            _object.set_component(name)
-                            imagelist.append(_object)
-                    actionlist.append({'action': 'deploy', 'order': order, 'components': component_names})
-                if 'requestSession' in actions:
-                    component_names = []
-                    createSession = actions.get('requestSession')
-                    createSession_properties = createSession.get('properties')
-                    application = createSession_properties.get('application')
-                    order = createSession_properties.get("order")
-                    images = createSession_properties.get('images')
-                    cloud.set_application(application)
-                    for image in images:
-                        _object = Image.Image()
-                        for name, dict_ in image.items():
-                            _object.set_internal(dict_.get('internal'))
-                            _object.set_path(dict_.get('name'))
-                            if not dict_.get('internal'):
-                                _object.set_url(dict_.get('url'))
-                            component_names.append(name.lower())
-                            _object.set_component(name)
-                            imagelist.append(_object)
-                    actionlist.append({'action': 'requestSession', 'order': order, 'components': component_names})
-                if 'terminate' in actions:
-                    component_names = []
-                    terminate = actions.get('terminate')
-                    terminate_properties = terminate.get('properties')
-                    application = terminate_properties.get('application')
-                    images = terminate_properties.get('images')
-                    order = terminate_properties.get("order")
-                    cloud.set_application(application)
-                    for image in images:
-                        _object = Image.Image()
-                        for name, dict_ in image.items():
-                            _object.set_internal(dict_.get('internal'))
-                            _object.set_path(dict_.get('name'))
-                            component_names.append(name.lower())
-                            _object.set_component(name)
-                            imagelist.append(_object)
-                    actionlist.append({'action': 'terminate', 'order': order, 'components': component_names})
-                if 'requestAnblick' in actions:
-                    component_names = []
-                    anblick = actions.get('requestAnblick')
-                    anblick_properties = anblick.get('properties')
-                    application = anblick_properties.get('application')
-                    images = anblick_properties.get('images')
-                    order = anblick_properties.get("order")
-                    cloud.set_application(application)
-                    for image in images:
-                        _object = Image.Image()
-                        for name, dict_ in image.items():
-                            _object.set_internal(dict_.get('internal'))
-                            _object.set_path(dict_.get('name'))
-                            if not dict_.get('internal'):
-                                _object.set_url(dict_.get('url'))
-                            component_names.append(name.lower())
-                            _object.set_component(name)
-                            imagelist.append(_object)
-                    actionlist.append({'action': 'requestAnblick', 'order': order, 'components': component_names})
+                        print(image)
+                        object = Image.Image()
+                        object.set_image_type(image.get('type'))
+                        component_names.append(image.get('component').lower())
+                        object.set_path(image.get('component').lower())
+                        object.set_component(image.get('component'))
+                        if not imagelist:
+                            imagelist.append(object)
+                        if imagelist[-1].get_path() != image.get('component').lower():
+                            imagelist.append(object)
+
+
+
+                    actionlist.append(
+                        {'action': action.get_name(), 'order': action.get_order(),
+                         'components': images})
                 cloud.set_actions(actionlist)
             nodelist.append(cloud)
-        if 'Component' in _type:
+            if 'workflows' in properties:
+                workflows = properties.get('workflows')
+                workflowlist = []
+                actionlist = []
+                for workflowset in workflows:
+                    workflow = Workflows.Workflows()
+                    workflow.set_scenario(workflowset.get('scenario'))
+                    workflow.set_condition(workflowset.get('condition'))
+                    actions = workflowset.get('actions')
+                    actionlist = []
+                    for actionset in actions:
+                        component_names = []
+                        action = Action.Action()
+                        action.set_name(actionset.get('name'))
+                        action.set_order(actionset.get('order'))
+                        if action.get_name() != 'send':
+                            images = actionset.get('components')
+                            for image in images:
+                                print(image)
+                                object = Image.Image()
+                                object.set_image_type(image.get('type'))
+                                component_names.append(image.get('component').lower())
+                                object.set_path(image.get('component').lower())
+                                object.set_component(image.get('component'))
+
+                            actionlist.append(
+                                {'action': action.get_name(), 'order': action.get_order(),
+                                 'components': images})
+                        if action.get_name() == 'send':
+                            if actionset.get('input'):
+                                target_list = actionset.get('input')
+                            for target in target_list:
+                                target.update(component=target.get('component').lower(), to=target.get('to').lower())
+
+                            actionlist.append(
+                                {'action': action.get_name(), 'order': action.get_order(),
+                                 'send': target_list})
+                    workflowlist.append({'scenario': workflow.get_scenario(), 'condition': workflow.get_condition(),
+                                         'actions': actionlist})
+                cloud.set_workflows(workflowlist)
+        if 'Component' in type:
             container = Container.Container()
-            container.set_type(_type)
+            container.set_type(type)
             name = properties.get('name')
             container.set_name(name)
             container.set_application(application)
             service = properties.get('external_ip')
             container.set_service(service)
             unit = properties.get('deployment_unit')
-            if unit == "vm":
+            if unit == "VM":
                 flavor = properties.get("flavor")
                 container.set_flavor(flavor)
             container.set_unit(unit)
-            port = properties.get('port')
-            if port:
-                if ', ' in port:
-                    ports = port.split(', ')
-                    container.set_port(ports)
-                else:
-                    container.set_port(port)
+            ports = properties.get('ports')
+            if ports:
+                container.set_port(ports)
             else:
                 container.set_port(None)
             container.set_volumeMounts_name(name + '-persistent-storage')
             container.set_volumeMounts_path('/var/lib/' + name)
-            if properties.get('env'):
-                container.set_env(properties.get('env'))
-            else:
-                container.set_env(None)
-            if properties.get('input'):
-                _input = properties.get('input')
-                input_parameters = _input.get('parameters')
-                if "ip" in input_parameters:
-                    container_name = container.get_name()
-                    if container_name.split('.')[0] == input_parameters.split('.')[0]:
-                        env = [
-                            {'name': container_name + "_IP", 'valueFrom': {'fieldRef': {'fieldPath': 'status.podIP'}}}]
-                        container.set_env(env)
-                    else:
-                        container.set_env(None)
-            container.set_dependency(None)
             if properties.get('dependency'):
                 dependency = properties.get('dependency')
                 container.set_dependency(dependency)
-
+            else:
+                container.set_dependency(None)
             container.set_volumes_name(name + '-persistent-storage')
             container.set_volumes_claimname(name + '-pv-claim')
             requirements = node.get('requirements')[0]
             host = requirements.get('host')
-            node = host.get('node')
-            container.set_node(node)
-            relationship = host.get('relationship')
-            container.set_relatioship(relationship)
+            container.set_host(host)
+            # here is done the matching between components of the application model and images of the intermediate model
+            # VM part is not fully developed since we don't have the description of these images at IM
             for image in imagelist:
-                if name == image.get_component().lower():
-                    if not image.get_internal():
-                        container.set_internal(image.get_internal())
-                        container.set_image(image.get_path())
-                    if image.get_internal():
-                        for repo in repolist:
-                            if repo.get_component() in image.get_component():
-                                container.set_image(repo.get_path() + ":" + repo.get_version())
-                                container.set_internal(image.get_internal())
+                if name == image.get_path():
+                    if image.get_image_type() == 'VM':
+                        container.set_image(image.get_component().lower())
+                    for repo in repolist:
+                        print(repo.get_component() + ":" + image.get_component())
+                        if repo.get_component() in image.get_component():
+                            container.set_image(repo.get_path() + ":" + repo.get_version())
             nodelist.append(container)
-        if 'EdgeNode' in _type:
+        if 'EdgeNode' in type:
             edgenode = ComputeNode.ComputeNode()
             edgenode.set_name(x)
-            edgenode.set_type(_type)
+            edgenode.set_type(type)
             if properties:
                 gpu_model = properties.get('gpu_model')
                 if gpu_model:
-                    model = gpu_model.get('model')
+                    gpu_properties = gpu_model.get('properties')
+                    model = gpu_properties.get('model')
                     edgenode.set_gpu_model(model)
-                    dedicated = gpu_model.get('dedicated')
+                    dedicated = gpu_properties.get('dedicated')
                     edgenode.set_gpu_dedicated(dedicated)
                 wifi_antenna = properties.get('wifi_antenna')
                 if wifi_antenna:
@@ -225,10 +205,10 @@ def ReadFile(json):
             edgenode.set_architecture(architecture)
             edgenode.set_os(os_type)
             nodelist.append(edgenode)
-        if 'PublicCloud' in _type:
+        if 'PublicCloud' in type:
             vm = ComputeNode.ComputeNode()
             vm.set_name(x)
-            vm.set_type(_type)
+            vm.set_type(type)
             capabilities = node.get('capabilities')
             if capabilities.get('host'):
                 host = capabilities.get('host')
@@ -250,4 +230,5 @@ def ReadFile(json):
             architecture = os_properties.get('architecture')
             vm.set_architecture(architecture)
             nodelist.append(vm)
-    return nodelist, imagelist, application_version.replace(".", "-")
+
+    return (nodelist), (imagelist), application_version.replace(".", "-")

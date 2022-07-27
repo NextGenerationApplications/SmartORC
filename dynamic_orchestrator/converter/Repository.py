@@ -11,8 +11,8 @@ class Repository:
     def get_version(self):
         return self.__version
 
-    def set_id(self, _id):
-        self.__id = _id
+    def set_id(self, id):
+        self.__id = id
 
     def get_id(self):
         return self.__id
