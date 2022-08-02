@@ -4,7 +4,10 @@ COPY /Configuration/requirements.txt .
 COPY /. .
 
 RUN python -m pip install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN pip install wheel
+RUN pip install tosca-to-k3s/
 
 EXPOSE 7000
 

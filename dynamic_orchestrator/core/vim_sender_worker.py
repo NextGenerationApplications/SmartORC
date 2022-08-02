@@ -4,7 +4,7 @@ Created on 5 lug 2021
 @author: Ferrucci
 '''
 import threading
-from dynamic_orchestrator.converter.Converter import tosca_to_k8s  
+from converter_package.Converter import tosca_to_k8s  
 import yaml
 from requests_toolbelt import MultipartEncoder
 import requests
