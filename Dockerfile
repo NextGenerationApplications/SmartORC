@@ -6,8 +6,7 @@ COPY /. .
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install wheel
-RUN pip install tosca-to-k3s/
+RUN pip install converter-package==0.7
 
 EXPOSE 7000
 
