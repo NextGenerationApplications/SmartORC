@@ -25,6 +25,8 @@ def choose_application (name):
         return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
     if name == 'accordion-ovr-0-0-3':
         return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
+    if name == 'accordion-Barcelona_UC1_RI-0-0-3':
+        return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
     return None, None
 
 def supported_operation (operation):
@@ -107,12 +109,10 @@ def deploy(body):
         try:
             current_app.config.get('LOGGER').info(" Request to RID started")
 
-            #Debug_response = requests.get('http://195.148.125.135:9001/debug', timeout=5)
-            Debug_response = requests.get('http://localhost:9001/debug', timeout=5)
+            Debug_response = requests.get('http://continuum.accordion-project.eu:9001/debug', timeout=5)
             Debug_response.raise_for_status()
             
-            #RID_response = requests.get('http://195.148.125.135:9001/miniclouds', timeout=5)
-            RID_response = requests.get('http://localhost:9001/miniclouds') #, timeout=5)                  
+            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds') #, timeout=5)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()                         
             current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
