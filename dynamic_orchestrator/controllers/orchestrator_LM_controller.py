@@ -5,6 +5,10 @@ from converter_package.Parser import ReadFile
 from converter_package.MatchingModel import generate
 from converter_package.Converter import namespace,secret_generation  
 
+import time
+import random
+from accordion_project import utils
+
 
 #from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
@@ -18,16 +22,6 @@ import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
 
-def choose_application (name):   
-    if name == 'accordion-plexus-0-0-1':
-        return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
-    if name == 'accordion-orbk-0-0-1':
-        return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
-    if name == 'accordion-ovr-0-0-3':
-        return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
-    if name == 'accordion-Barcelona_UC1_RI-0-0-3':
-        return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
-    return None, None
 
 def supported_operation (operation):
     if operation == 'deploy':
@@ -37,8 +31,8 @@ def supported_operation (operation):
     return None
     
 
-def secret (name):  
-    token_name, token_pass = choose_application(name)
+def secret ():  
+    token_name, token_pass = ("deploy-token", "EbLzW2-fNHJyi9UsFDrk")
     if not token_name:
         return None 
     sample_string = token_name + ":" + token_pass
@@ -67,6 +61,8 @@ def dep_plan_status(status):
 def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
+
+        # -- checking and logging of the received message --- #
         components = body.app_component_names
         if(components == None):
             error = 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
@@ -85,34 +81,42 @@ def deploy(body):
             current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
             current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
      
-        app_component_name = components[0].component_name
-        app_component_name_parts = app_component_name.split('-')
-        
+
+        # -- Parsing of the namespace --- #
+        # Must align to this format
+        # accordion-OVR-0-0-1-q123e2133f5663h7-LSPart-345g4g472gg68hf3-minicloud1
+            
+        #app_component_name = components[0].component_name
+        # app_component_name_parts = app_component_name.split('-')
+
         try:
-            app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
-            app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
-            app_instance = app_name + '-' + app_component_name_parts[5]
+            print(components[0].component_name)
+            ns = utils.parse(components[0].component_name)
+            app_component_name = ns['componentName']
+            app_version = ns['appVersion'] #app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
+            app_name =   ns['appName'] #app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
+            app_instance = ns['appInstanceId'] # app_name + '-' + app_component_name_parts[5]
         except:
             error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
             current_app.config.get('LOGGER').error(error + ". Returning code 400")
             return {'reason': error}, 400      
                 
-                
-                        
-        secret_string = secret(app_name)
+        # -- Secret Generation ---       
+        secret_string = secret()
                
         if not secret_string:
             error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500      
-                    
+        
+        # ---- Call the RID ---- #
         try:
             current_app.config.get('LOGGER').info(" Request to RID started")
 
             Debug_response = requests.get('http://continuum.accordion-project.eu:9001/debug', timeout=5)
             Debug_response.raise_for_status()
             
-            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds') #, timeout=5)                  
+            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes') #, timeout=5)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()                         
             current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
@@ -135,50 +139,61 @@ def deploy(body):
         current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response_json)
         
         
-        # Error handling to be finished
+        # -- Parsing the tosca model to get some info to be used for the solver -- #
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
         try:
-            nodelist, imagelist, app_version = ReadFile(body.app_model)
+            nodelist, imagelist, app_version = ReadFile(body.app_model) ## <- app_version not sure to be updated. Check with Ioannis?
         except:
             error = 'Deploy operation not executed successfully: Application Model is not parsable'
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500 
-        
         current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
-        #for image in imagelist:
-        #    print(str(image))
-        current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
         
-        matchmaking_model = generate(nodelist, app_instance)
+        
+        # -- Call the Converter to get a matchmaking model -- #
+        current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
+        matchmaking_model = generate(nodelist, app_instance) # list the feature needed by the application
         current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
 
-        solver = ConcreteOrchestrator() 
-        
-        current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  
-        dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
-        current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
-        
+
+        # -- Call the solver to provide the plan -- #
+        if body.application_parameters['selection_strategy'] == "specified":
+            dep_plan, status = ({body.application_parameters['minicloud_id']:[app_component_name]}, 'ok')
+        elif body.application_parameters['selection_strategy'] == "random":
+            # contact the MMM to get the list of the miniclouds
+            mmm_resp = requests.get('http://continuum.accordion-project.eu:40110/echoserverlist').json()
+            minicloud = random.choice(mmm_resp)['minicloudId']
+            dep_plan, status = ({minicloud:[app_component_name]}, 'ok')
+
+        elif body.application_parameters['selection_strategy'] == "optimize":
+            current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan")
+            solver = ConcreteOrchestrator()         
+            dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
+            current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
+
         if not dep_plan:
             error = 'Deploy operation not executed successfully: '
             error += dep_plan_status(status)
             current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
 
-        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)   
-                 
-        namespace_yaml = namespace(app_instance)        
-                
+        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)
+
+
+        # -- Generate yamls parts to send to k3s -- #
+        namespace_yaml = namespace(app_instance)           
         secret_yaml = secret_generation(secret_string, app_instance)
                     
-        vim_results = [[]] * len(dep_plan);
-        
+
+        # -- Generate threads for VIMs -- #
+        vim_results = [[]] * len(dep_plan)
         vim_sender_workers_list = []
- 
         current_app.config.get('LOGGER').info(" Initialization of threads started")  
 
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
-            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
+            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, 
+                imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
             thread_id+=1
             
         current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
@@ -196,6 +211,7 @@ def deploy(body):
             
         current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
            
+        # -- Process the results from the VIM gateways and contact ASR -- #
         for vim_result in vim_results:
             for component_result in vim_result:
                 for component_instance_name, date_or_error in component_result.items():
@@ -204,10 +220,13 @@ def deploy(body):
                         current_app.config.get('LOGGER').info("Request to ASR started")      
                         request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
                         current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
-                        ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
-                        ASR_response.raise_for_status()
+
+                        # TEMPORARY: Skip communication with ASR
+
+                        # ASR_response = requests.put('http://continuum.accordion-project.eu:40150/status/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
+                        # ASR_response.raise_for_status()
                         current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
-                        current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
+                        # current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500               

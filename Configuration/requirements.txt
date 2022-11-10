@@ -6,4 +6,5 @@ oyaml>=1.0
 hurry.filesize>=0.9
 mip>=1.13.0
 six>=1.16.0
-converter-package==0.7
+converter-package
+accordion-project
