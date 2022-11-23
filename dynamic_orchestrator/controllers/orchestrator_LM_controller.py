@@ -8,6 +8,7 @@ from converter_package.Converter import namespace,secret_generation
 import time
 import random
 from accordion_project import utils
+from accordion_project import accordion_operations as ops
 
 
 #from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
@@ -83,14 +84,7 @@ def deploy(body):
      
 
         # -- Parsing of the namespace --- #
-        # Must align to this format
-        # accordion-OVR-0-0-1-q123e2133f5663h7-LSPart-345g4g472gg68hf3-minicloud1
-            
-        #app_component_name = components[0].component_name
-        # app_component_name_parts = app_component_name.split('-')
-
         try:
-            print(components[0].component_name)
             ns = utils.parse(components[0].component_name)
             app_component_name = ns['componentName']
             app_version = ns['appVersion'] #app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
@@ -103,7 +97,8 @@ def deploy(body):
                 
         # -- Secret Generation ---       
         secret_string = secret()
-               
+        current_app.config.get('LOGGER').debug("Secret generation completed.")
+
         if not secret_string:
             error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
@@ -111,15 +106,13 @@ def deploy(body):
         
         # ---- Call the RID ---- #
         try:
-            current_app.config.get('LOGGER').info(" Request to RID started")
-
             Debug_response = requests.get('http://continuum.accordion-project.eu:9001/debug', timeout=5)
             Debug_response.raise_for_status()
             
-            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes') #, timeout=5)                  
+            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes', timeout=5)                  
             RID_response.raise_for_status()
-            RID_response_json = RID_response.json()                         
-            current_app.config.get('LOGGER').info(" Request to RID finished successfully!")
+            RID_response_json = RID_response.json()      
+            current_app.config.get('LOGGER').info(" Request to RID completed")                   
             
         except requests.exceptions.Timeout as err:
             error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
@@ -136,7 +129,7 @@ def deploy(body):
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500
         
-        current_app.config.get('LOGGER').debug(" Request to RID returned with response: %s " % RID_response_json)
+        current_app.config.get('LOGGER').info(" Request to RID returned with response: "+ str(RID_response.status_code) +" "+ RID_response.reason)
         
         
         # -- Parsing the tosca model to get some info to be used for the solver -- #
@@ -147,38 +140,56 @@ def deploy(body):
             error = 'Deploy operation not executed successfully: Application Model is not parsable'
             current_app.config.get('LOGGER').error(error + ". Returning code 500")
             return {'reason': error}, 500 
-        current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
+        # current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
         
         
         # -- Call the Converter to get a matchmaking model -- #
         current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
         matchmaking_model = generate(nodelist, app_instance) # list the feature needed by the application
-        current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
+        # current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
 
+    
+
+        # -- Call the MMM to get the list of miniclouds
+        mmm_resp = requests.get('http://continuum.accordion-project.eu:40110/echoserverlist').json()
+        print (mmm_resp)
+        minicloud_dict = {} # It is needed later to get the IP
+        print("\tAvailable mincilouds:")
+        for item in mmm_resp:
+            minicloud_dict[item['minicloudId']] = item['echoserverIp']
+            print("\t", item['minicloudId'], item['echoserverIp'])
 
         # -- Call the solver to provide the plan -- #
-        if body.application_parameters['selection_strategy'] == "specified":
+        if body.application_parameters['selection_strategy'] == ops.DEPLOY:
             dep_plan, status = ({body.application_parameters['minicloud_id']:[app_component_name]}, 'ok')
-        elif body.application_parameters['selection_strategy'] == "random":
-            # contact the MMM to get the list of the miniclouds
-            mmm_resp = requests.get('http://continuum.accordion-project.eu:40110/echoserverlist').json()
+        elif body.application_parameters['selection_strategy'] == ops.RANDOM_DEPLOY:
+            # contact the MMM to get the list of the miniclouds         
             minicloud = random.choice(mmm_resp)['minicloudId']
             dep_plan, status = ({minicloud:[app_component_name]}, 'ok')
 
-        elif body.application_parameters['selection_strategy'] == "optimize":
+        elif body.application_parameters['selection_strategy'] == ops.SMART_DEPLOY:
             current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan")
             solver = ConcreteOrchestrator()         
-            dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
-            current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
+            # dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
+            dep_plan, status = ({"Minicloud1":[app_component_name]}, 'optimal')
+            #current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
 
         if not dep_plan:
-            error = 'Deploy operation not executed successfully: '
+            error = 'Deploy operation not executed successfully, unable to provide a deployment plan: '
             error += dep_plan_status(status)
             current_app.config.get('LOGGER').error(error + ". Returning code 500")  
             return {'reason': error}, 500 
 
-        current_app.config.get('LOGGER').debug(" Deployment plan: %s " % dep_plan)
+        current_app.config.get('LOGGER').debug(" ** Deployment plan ** : %s " % dep_plan)
 
+        
+        # -- Check the plan against the QoE -- #
+        current_app.config.get('LOGGER').info("Contacting QoE for validation of the plan")
+        for minicloud, component in dep_plan.items():
+            # qoe_request = {"minicloud":minicloud, "application":app_component_name , "criteria":body.application_parameters['criteria']}
+            qoe_response = {"minicloud":minicloud,"application":app_component_name , "result":"pass"}
+
+            print("\t",component,"->",minicloud,":",qoe_response['result'])
 
         # -- Generate yamls parts to send to k3s -- #
         namespace_yaml = namespace(app_instance)           
@@ -188,15 +199,15 @@ def deploy(body):
         # -- Generate threads for VIMs -- #
         vim_results = [[]] * len(dep_plan)
         vim_sender_workers_list = []
-        current_app.config.get('LOGGER').info(" Initialization of threads started")  
+        current_app.config.get('LOGGER').info("Initialization of threads started")  
 
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
             vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, 
-                imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
+                imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results, minicloud_dict[EdgeMinicloud]))
             thread_id+=1
             
-        current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
+        # current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
   
         thread_id=0
         for tid in vim_sender_workers_list:
@@ -204,20 +215,17 @@ def deploy(body):
             tid.start()
             thread_id+=1
 
-        current_app.config.get('LOGGER').info(" Threads launched correctly!")  
-
         for tid in vim_sender_workers_list:
             tid.join()
             
-        current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
+        # current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
            
         # -- Process the results from the VIM gateways and contact ASR -- #
         for vim_result in vim_results:
             for component_result in vim_result:
                 for component_instance_name, date_or_error in component_result.items():
                     if isinstance(date_or_error,int):
-                        # send component instance id and creation date time to ASR
-                        current_app.config.get('LOGGER').info("Request to ASR started")      
+                        # send component instance id and creation date time to ASR   
                         request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
                         current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
 
@@ -225,8 +233,8 @@ def deploy(body):
 
                         # ASR_response = requests.put('http://continuum.accordion-project.eu:40150/status/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         # ASR_response.raise_for_status()
-                        current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
-                        # current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
+                        # current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
+                        current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500               

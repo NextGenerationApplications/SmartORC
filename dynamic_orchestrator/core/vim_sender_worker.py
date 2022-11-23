@@ -15,7 +15,7 @@ class vim_sender_worker(threading.Thread):
     '''
     classdocs
     '''
-    def __init__(self, logger, thread_id, app_instance, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results):
+    def __init__(self, logger, thread_id, app_instance, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results, minicloud_ip):
         threading.Thread.__init__(self)
         self.app_instance = app_instance
         self.nodelist = nodelist
@@ -27,6 +27,7 @@ class vim_sender_worker(threading.Thread):
         self.thread_id = thread_id
         self.vim_results = vim_results
         self.logger = logger
+        self.minicloud_ip = minicloud_ip
         
     def calculate_pers_files_list(self,deployment_file):
         pers_f_list = []  
@@ -58,9 +59,20 @@ class vim_sender_worker(threading.Thread):
             
             
             self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
-            deployment_files, persistent_files, service_files = tosca_to_k8s(self.nodelist, self.imagelist, self.app_instance, self.EdgeMinicloud, '146.48.86.248')
-            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function terminated" % self.app_instance)
+            deployment_files, persistent_files, service_files = tosca_to_k8s(
+                self.nodelist, 
+                self.imagelist, 
+                self.app_instance, 
+                self.EdgeMinicloud, 
+                self.minicloud_ip,
+                []# list of dict {"comp_name":gpu model} GPUs required by the application,. empty list if not required
+            )
 
+            print ("Converter response: \n")
+            print ("\tDeployment files:", deployment_files)
+            print ("\tPersistent files:", persistent_files)
+            print ("\tService files", service_files)
+            
             for component in self.components:
                 componentEMC = component + '-' + self.EdgeMinicloud
                 for deployment_component in deployment_files:
@@ -83,14 +95,11 @@ class vim_sender_worker(threading.Thread):
             self.logger.debug("Thread " + str(self.thread_id) + ": K3S configuration file content")
             self.logger.debug("Thread " + str(self.thread_id) + ": %s" % yaml_file)
                           
-            vim_request = MultipartEncoder(fields={'operation': 'deploy', 'file': (component, yaml_file, 'text/plain')})  
-            
-            
-            self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw started")
-            vim_response = requests.post("http://localhost:5000/VIM/request", timeout=10, data=vim_request,
+            vim_request = MultipartEncoder(fields={'operation': 'deploy', 'minicloud_id': self.EdgeMinicloud, 'file': (component, yaml_file, 'text/plain')})  
+        
+            vim_response = requests.post("http://continuum.accordion-project.eu:5000/VIM/request", timeout=10, data=vim_request,
                               headers={'Content-Type': vim_request.content_type})
             vim_response.raise_for_status()
-            self.logger.info("Thread " + str(self.thread_id) + ": Request to VimGw finished succesfully!")
             self.logger.debug("Thread " + str(self.thread_id) + ": Request to VimGw returned with response: %s" % vim_response.text)
 
             vim_result = vim_response.json()
