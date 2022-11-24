@@ -4,24 +4,29 @@ Created on 5 lug 2021
 @author: Ferrucci
 '''
 import threading
-from converter_package.Converter import tosca_to_k8s  
 import yaml
-from requests_toolbelt import MultipartEncoder
 import requests
-from datetime import datetime
 import json
+import traceback
+
+from requests_toolbelt import MultipartEncoder
+from datetime import datetime
+
+from converter_package.Converter import tosca_to_k8s, ID
+
+
 
 class vim_sender_worker(threading.Thread):
     '''
     classdocs
     '''
-    def __init__(self, logger, thread_id, app_instance, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results, minicloud_ip):
+    def __init__(self, logger, thread_id, ns, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results, minicloud_ip):
         threading.Thread.__init__(self)
-        self.app_instance = app_instance
+        self.ns = ns # ACCORDION namespace (for a component, so only application data would be ok if having multiple components. be aware.)
         self.nodelist = nodelist
         self.imagelist = imagelist
-        self.namespace_yaml = namespace_yaml[app_instance]
-        self.secret_yaml = secret_yaml[app_instance]
+        self.namespace_yaml = namespace_yaml
+        self.secret_yaml = secret_yaml
         self.EdgeMinicloud = EdgeMinicloud
         self.components = components
         self.thread_id = thread_id
@@ -56,13 +61,11 @@ class vim_sender_worker(threading.Thread):
 
         try:
             yaml_files_list = [self.namespace_yaml, self.secret_yaml]
-            
-            
-            self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
+            #self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
             deployment_files, persistent_files, service_files = tosca_to_k8s(
                 self.nodelist, 
                 self.imagelist, 
-                self.app_instance, 
+                ID.generate_k3s_namespace(self.ns['appName'], self.ns['appVersion'], self.ns['appInstanceId']),
                 self.EdgeMinicloud, 
                 self.minicloud_ip,
                 []# list of dict {"comp_name":gpu model} GPUs required by the application,. empty list if not required
@@ -74,21 +77,23 @@ class vim_sender_worker(threading.Thread):
             print ("\tService files", service_files)
             
             for component in self.components:
-                componentEMC = component + '-' + self.EdgeMinicloud
-                for deployment_component in deployment_files:
-                    deployment_file = deployment_component.get(componentEMC)
-                    if deployment_file:
-                        persistent_files_list = self.calculate_pers_files_list(deployment_file)
+                # manage deployment files
+                for deployment_item in deployment_files:
+                    if component in list(deployment_item.keys())[0].lower():
+                        # we found a matching between component and deployment file
+                        deployment_file = list(deployment_item.values())[0]
                         yaml_files_list.append(deployment_file) 
+                        # manage the persistent files
+                        persistent_files_list = self.calculate_pers_files_list(deployment_file)
                         for pers_file_name in persistent_files_list:
                             for pers_file_record in persistent_files:
                                 pers_file = pers_file_record.get(pers_file_name)  
                                 if pers_file:
                                     yaml_files_list.append(pers_file)  
-                for service in service_files:
-                    for service_name, service_desc in service.items():
-                        if componentEMC in service_name:
-                            yaml_files_list.append(service_desc)
+                # manage service files                    
+                for service_item in service_files:
+                        if component in list(service_item.keys())[0].lower():
+                            yaml_files_list.append(list(service_item.values())[0])
     
             yaml_file = yaml.dump_all(yaml_files_list)  
                
@@ -110,38 +115,15 @@ class vim_sender_worker(threading.Thread):
                 result.append({component_name: int(datetime.today().timestamp())}) 
             self.vim_results[self.thread_id] = result
 
-            
-        except requests.exceptions.Timeout as err:
-            error = 'Deploy operation not executed successfully due to a timeout in the communication with the Vim of the EdgeMinicloud with id:  ' + self.EdgeMinicloud
-            result = []
-            for component in self.components:
-                component_name = component + '-' + self.EdgeMinicloud
-                result.append({component_name: error}) 
-            self.vim_results[self.thread_id] = result
-            
-        except requests.exceptions.RequestException as err:
-            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the Vim of the EdgeMinicloud with id:  ' + self.EdgeMinicloud + ": " + str(err)
-            result = []
-            for component in self.components:
-                component_name = component + '-' + self.EdgeMinicloud
-                result.append({component_name: error}) 
-            self.vim_results[self.thread_id] = result    
-            
-        except OSError as err:
-            if err:
-                error = '1 Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
-            else:
-                error = '2 Deploy operation not executed successfully due to an unknown internal server error! ' + err
-            result = []
-            for component in self.components:
-                component_name = component + '-' + self.EdgeMinicloud
-                result.append({component_name: error}) 
-            self.vim_results[self.thread_id] = result        
-            
         except Exception as e:
-            error = '3 Deploy operation not executed successfully due to an unknown internal server error!' + e
-            result = []
-            for component in self.components:
-                component_name = component + '-' + self.EdgeMinicloud
-                result.append({component_name: error}) 
-            self.vim_results[self.thread_id] = result        
+            self.logger.info(f"Exception in thread {self.thread_id}: {e}")
+            traceback.print_exc()
+
+            # result = []
+            # for component in self.components:
+            #     component_name = component + '-' + self.EdgeMinicloud
+            #     result.append({component_name: error}) 
+            # self.vim_results[self.thread_id] = result    
+        
+            
+    

@@ -3,20 +3,16 @@ import traceback
 
 from converter_package.Parser import ReadFile
 from converter_package.MatchingModel import generate
-from converter_package.Converter import namespace,secret_generation  
+from converter_package.Converter import namespace, secret_generation, ID  
 
 import time
 import random
 from accordion_project import utils
 from accordion_project import accordion_operations as ops
 
-
-#from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
 from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
 from flask import current_app
-#from dynamic_orchestrator import util
-#from  urllib.error import HTTPError
 import base64
 import json
 import requests
@@ -58,7 +54,10 @@ def dep_plan_status(status):
         return 'infeasible deploy solution found!'
     if status == OptimizationStatus.UNBOUNDED:
         return 'unbounded deploy solution found!'  
-  
+
+'''
+Manage the deploy operations
+'''
 def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
@@ -112,23 +111,13 @@ def deploy(body):
             RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes', timeout=5)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()      
-            current_app.config.get('LOGGER').info(" Request to RID completed")                   
-            
-        except requests.exceptions.Timeout as err:
-            error = 'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
-            current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the RID. Returning code 500')  
-            return {'reason': error}, 500 
-        
-        except requests.exceptions.RequestException as err:
-            error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the RID: ' + str(err)
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+ 
+        except Exception as e:
+            error = 'Error in contacting the RID.'
+            traceback.print_exc()
+            current_app.config.get('LOGGER').error(error)
             return {'reason': error}, 500
-        
-        except json.JSONDecodeError as err:
-            error = 'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500
-        
+
         current_app.config.get('LOGGER').info(" Request to RID returned with response: "+ str(RID_response.status_code) +" "+ RID_response.reason)
         
         
@@ -152,7 +141,6 @@ def deploy(body):
 
         # -- Call the MMM to get the list of miniclouds
         mmm_resp = requests.get('http://continuum.accordion-project.eu:40110/echoserverlist').json()
-        print (mmm_resp)
         minicloud_dict = {} # It is needed later to get the IP
         print("\tAvailable mincilouds:")
         for item in mmm_resp:
@@ -192,8 +180,9 @@ def deploy(body):
             print("\t",component,"->",minicloud,":",qoe_response['result'])
 
         # -- Generate yamls parts to send to k3s -- #
-        namespace_yaml = namespace(app_instance)           
-        secret_yaml = secret_generation(secret_string, app_instance)
+        k3s_namespace = ID.generate_k3s_namespace(ns['appName'], ns['appVersion'], ns['appInstanceId'])
+        namespace_yaml = namespace(k3s_namespace)[k3s_namespace]          
+        secret_yaml = secret_generation(secret_string, k3s_namespace)[k3s_namespace]
                     
 
         # -- Generate threads for VIMs -- #
@@ -203,18 +192,28 @@ def deploy(body):
 
         thread_id=0
         for EdgeMinicloud, component_list in dep_plan.items():
-            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, 
-                imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results, minicloud_dict[EdgeMinicloud]))
+
+            vim_worker = vim_sender_worker(
+                current_app.config.get('LOGGER'), 
+                thread_id, 
+                ns, 
+                nodelist, 
+                imagelist,
+                namespace_yaml, 
+                secret_yaml, 
+                EdgeMinicloud, 
+                component_list, 
+                vim_results, 
+                minicloud_dict[EdgeMinicloud])
+
+            vim_sender_workers_list.append(vim_worker)
             thread_id+=1
             
-        # current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
-  
-        thread_id=0
+        # start the threads
         for tid in vim_sender_workers_list:
-            current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
             tid.start()
-            thread_id+=1
-
+  
+        # wait for them to be completed
         for tid in vim_sender_workers_list:
             tid.join()
             
@@ -238,32 +237,14 @@ def deploy(body):
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500               
-             
-    except requests.exceptions.Timeout as err:
-        error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'
-        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the ASR. Returning code 500')  
-        return {'reason': error}, 500 
-        
-    except requests.exceptions.RequestException as err:
-        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the ASR: ' + str(err)
-        current_app.config.get('LOGGER').error(error + ". Returning code 500")
-        return {'reason': error}, 500
-    
-    except OSError as err:
-        if err:
-            error = 'A Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
-        else:
-            error = 'B Deploy operation not executed successfully due to an unknown internal server error! '
-        current_app.config.get('LOGGER').error(error + ". Returning code 500")
-        return {'reason': error}, 500
-    
+
     except Exception as e:
-        error = 'C Deploy operation not executed successfully due to an unknown internal server error!'
+        error = 'Deploy operation FAILED due to an internal server error!'
         traceback.print_exc()
         current_app.config.get('LOGGER').error(error + ". Returning code 500")
         return {'reason': error}, 500
     
-    current_app.config.get('LOGGER').info("------------------ Deploy request finished succesfully ---------------------")
+    current_app.config.get('LOGGER').info("------------------ Deploy request SUCCESS ---------------------")
     return 200
 
 def undeploy(body):
@@ -282,8 +263,7 @@ def orchestrator_LM_request(body):  # noqa: E501
 
     :rtype: None
     """
-    current_app.config.get('LOGGER').debug('----------------------------------------------------------------')
-    current_app.config.get('LOGGER').debug('Received a request for the Orchestrator to be served')
+    current_app.config.get('LOGGER').debug('\n-------------Received a new request ------------')
 
     if connexion.request.is_json:  
         body = RequestBody.from_dict(connexion.request.get_json())  # noqa: E501         
