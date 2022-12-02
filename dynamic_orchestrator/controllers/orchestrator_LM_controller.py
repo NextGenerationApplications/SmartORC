@@ -29,7 +29,7 @@ def supported_operation (operation):
     
 
 def secret ():  
-    token_name, token_pass = ("deploy-token", "EbLzW2-fNHJyi9UsFDrk")
+    token_name, token_pass = ("gkorod_token", "r-qEyXZx8Z5RqZ5MQrGN")
     if not token_name:
         return None 
     sample_string = token_name + ":" + token_pass
@@ -38,7 +38,7 @@ def secret ():
     base64_string = base64_bytes.decode("ascii")
     json_file = {
         "auths": {
-            "https://registry.gitlab.com": {
+            "https://app.accordion-project.eu:31723": {
                 "auth": base64_string
             }
         }
@@ -105,10 +105,10 @@ def deploy(body):
         
         # ---- Call the RID ---- #
         try:
-            Debug_response = requests.get('http://continuum.accordion-project.eu:9001/debug', timeout=5)
-            Debug_response.raise_for_status()
+            #Debug_response = requests.get('http://continuum.accordion-project.eu:9001/debug', timeout=15)
+            #Debug_response.raise_for_status()
             
-            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes', timeout=5)                  
+            RID_response = requests.get('http://continuum.accordion-project.eu:9001/miniclouds/nodes', timeout=15)                  
             RID_response.raise_for_status()
             RID_response_json = RID_response.json()      
  
