@@ -7,7 +7,7 @@ Created on 11 feb 2021
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
 #from numbers import Number
 from mip import Model, xsum, BINARY, maximize, OptimizationStatus
-import json
+#import json
 #import math
 
 class ConcreteOrchestrator(AbstractOrchestrator):
