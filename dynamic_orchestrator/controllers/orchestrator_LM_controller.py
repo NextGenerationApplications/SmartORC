@@ -72,24 +72,22 @@ def check_application_parameters(operation, components, application_parameters):
                                     found_components.add(parameter._component_name)
                         if (find == False):
                             return 'Deploy operation not executed successfully: an application parameter component is not a component of the request'
-                if(parameter._external_ip):
-                    try:
-                        ipaddress.ip_address(parameter._external_ip)
-                    except:
-                        return 'Deploy operation not executed successfully: the application parameter external_ip' + parameter._external_ip +  ' is not a valid ip address'
-            if(parameter._latency_qoe_level_threshold):
-                if(parameter._device_ip):     
-                    try:
-                        ipaddress.ip_address(parameter._device_ip)
-                    except:
-                        return 'Deploy operation not executed successfully: the application parameter device_ip' + parameter._device_ip +  ' is not a valid ip address'                       
-                else:
-                    return 'Deploy operation not executed successfully: the application parameter device_ip is missing but a latency_threshold parameter has been specified: both are needed'
-
-            else:
-                if(parameter._device_ip):
-                    return 'Deploy operation not executed successfully: the application parameter latency_threshold is missing but a device_ip parameter has been specified: both are needed'
-     
+                    if(parameter._external_ip):
+                        try:
+                            ipaddress.ip_address(parameter._external_ip)
+                        except:
+                            return 'Deploy operation not executed successfully: the application parameter external_ip' + parameter._external_ip +  ' is not a valid ip address'
+                    if(parameter._latency_qoe_level_threshold):
+                        if(parameter._device_ip):     
+                            try:
+                                ipaddress.ip_address(parameter._device_ip)
+                            except:
+                                return 'Deploy operation not executed successfully: the application parameter device_ip' + parameter._device_ip +  ' is not a valid ip address'                       
+                        else:
+                            return 'Deploy operation not executed successfully: the application parameter device_ip is missing but a latency_threshold parameter has been specified: both are needed'
+                    else:
+                        if(parameter._device_ip):
+                            return 'Deploy operation not executed successfully: the application parameter latency_threshold is missing but a device_ip parameter has been specified: both are needed'
     return None
 
 def test_MMM(MMM_response):
