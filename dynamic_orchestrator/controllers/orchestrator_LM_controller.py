@@ -26,7 +26,6 @@ def supported_operation (operation):
     if operation == 'undeploy':
         return undeploy
     return None
-    
 
 def secret ():  
     token_name, token_pass = ("gkorod_token", "r-qEyXZx8Z5RqZ5MQrGN")
@@ -54,6 +53,30 @@ def dep_plan_status(status):
         return 'infeasible deploy solution found!'
     if status == OptimizationStatus.UNBOUNDED:
         return 'unbounded deploy solution found!'  
+
+
+def minicloud_qoe(qoe_resp, minicloud_list, client_list=[]):
+
+    mini_qoe_temp = {}
+
+    for item in qoe_resp['qoeMetrics']:
+        if len(client_list) <= 0 or item['clientId'] in client_list:
+            for mc in item['echoserversQoe']:
+                if mc['minicloudId'] in mini_qoe_temp:
+                    mini_qoe_temp[mc['minicloudId']].append(mc['qoe'])
+                else:
+                    mini_qoe_temp[mc['minicloudId']] = [mc['qoe']]
+
+    mini_qoe = {}
+
+    for mc in minicloud_list:
+        if mc in mini_qoe_temp:
+            lizt = mini_qoe_temp[mc]
+            mini_qoe[mc] = sum(lizt) / len(lizt)
+        else:
+            mini_qoe[mc] = -1
+
+    return mini_qoe
 
 '''
 Manage the deploy operations
@@ -137,7 +160,6 @@ def deploy(body):
         matchmaking_model = generate(nodelist, app_instance) # list the feature needed by the application
         # current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
 
-    
 
         # -- Call the MMM to get the list of miniclouds
         mmm_resp = requests.get('http://continuum.accordion-project.eu:40110/echoserverlist').json()
@@ -147,6 +169,7 @@ def deploy(body):
             minicloud_dict[item['minicloudId']] = item['echoserverIp']
             print("\t", item['minicloudId'], item['echoserverIp'])
 
+        
         # -- Call the solver to provide the plan -- #
         if body.application_parameters['selection_strategy'] == ops.DEPLOY:
             dep_plan, status = ({body.application_parameters['minicloud_id']:[app_component_name]}, 'ok')
@@ -156,11 +179,19 @@ def deploy(body):
             dep_plan, status = ({minicloud:[app_component_name]}, 'ok')
 
         elif body.application_parameters['selection_strategy'] == ops.SMART_DEPLOY:
-            current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan")
+
+            # -- Call the MMM again to get a qoe value for each minicloud
+            qoe_resp = requests.get('http://continuum.accordion-project.eu:40110/qoelevel/app/'+ns['appInfo']).json()
+            mini_qoe = minicloud_qoe(qoe_resp, list(minicloud_dict.keys()))
+            print("========= QOE ===========")
+            print(mini_qoe)
+            print()
+
+            current_app.config.get('LOGGER').info("Request to solver started to calculate deployment plan")
             solver = ConcreteOrchestrator()         
             # dep_plan, status = solver.calculate_dep_plan(components, RID_response_json, matchmaking_model)
-            dep_plan, status = ({"Minicloud1":[app_component_name]}, 'optimal')
-            #current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
+            minicloud = max(mini_qoe, key=mini_qoe.get)
+            dep_plan, status = ({minicloud:[app_component_name]}, 'optimal')  
 
         if not dep_plan:
             error = 'Deploy operation not executed successfully, unable to provide a deployment plan: '
@@ -172,12 +203,12 @@ def deploy(body):
 
         
         # -- Check the plan against the QoE -- #
-        current_app.config.get('LOGGER').info("Contacting QoE for validation of the plan")
-        for minicloud, component in dep_plan.items():
-            # qoe_request = {"minicloud":minicloud, "application":app_component_name , "criteria":body.application_parameters['criteria']}
-            qoe_response = {"minicloud":minicloud,"application":app_component_name , "result":"pass"}
+        # current_app.config.get('LOGGER').info("Contacting QoE for validation of the plan")
+        # for minicloud, component in dep_plan.items():
+        #     # qoe_request = {"minicloud":minicloud, "application":app_component_name , "criteria":body.application_parameters['criteria']}
+        #     qoe_response = {"minicloud":minicloud,"application":app_component_name , "result":"pass"}
 
-            print("\t",component,"->",minicloud,":",qoe_response['result'])
+        #     print("\t",component,"->",minicloud,":",qoe_response['result'])
 
         # -- Generate yamls parts to send to k3s -- #
         k3s_namespace = ID.generate_k3s_namespace(ns['appName'], ns['appVersion'], ns['appInstanceId'])
@@ -225,15 +256,15 @@ def deploy(body):
                 for component_instance_name, date_or_error in component_result.items():
                     if isinstance(date_or_error,int):
                         # send component instance id and creation date time to ASR   
-                        request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
-                        current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
+                        # request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
+                        # current_app.config.get('LOGGER').debug("Request sent to ASR for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR))      
 
                         # TEMPORARY: Skip communication with ASR
 
                         # ASR_response = requests.put('http://continuum.accordion-project.eu:40150/status/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
                         # ASR_response.raise_for_status()
-                        # current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
-                        current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
+                        current_app.config.get('LOGGER').info("Request to ASR finished successfully!")   
+                        # current_app.config.get('LOGGER').debug("Request to ASR returned with response: %s" % ASR_response.text)                    
                     else:   
                         current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
                         return {'reason': date_or_error}, 500               

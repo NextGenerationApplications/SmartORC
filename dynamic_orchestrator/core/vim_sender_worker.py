@@ -102,7 +102,10 @@ class vim_sender_worker(threading.Thread):
                           
             vim_request = MultipartEncoder(fields={'operation': 'deploy', 'minicloud_id': self.EdgeMinicloud, 'file': (component, yaml_file, 'text/plain')})  
         
-            vim_response = requests.post("http://continuum.accordion-project.eu:5000/VIM/request", timeout=10, data=vim_request,
+            # url = "http://continuum.accordion-project.eu:5000/VIM/request"
+            url = "http://vimgw:5000/VIM/request"
+
+            vim_response = requests.post(url, timeout=10, data=vim_request,
                               headers={'Content-Type': vim_request.content_type})
             vim_response.raise_for_status()
             self.logger.debug("Thread " + str(self.thread_id) + ": Request to VimGw returned with response: %s" % vim_response.text)
