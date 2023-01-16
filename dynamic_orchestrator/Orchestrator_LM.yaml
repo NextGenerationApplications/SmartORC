@@ -88,11 +88,9 @@ components:
             properties:
               component_name:
                 type: string
-              external_ip: 
-                type: string
               latency_qoe_level_threshold:
                 type: number
-              device_ip:
+              client_id:
                 type: string            
     inline_response_500:
       properties:

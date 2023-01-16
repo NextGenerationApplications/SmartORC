@@ -250,9 +250,13 @@
           },
           "deployment_unit": "VM",
           "flavor": "win2k12-iso",
-          "port": [
-            5055,
-            5056
+          "ports": [
+            {
+              "port": 5055
+            },
+            {
+              "port": 5056
+            }
           ],
           "dependency": [
             {
@@ -279,8 +283,10 @@
           },
           "deployment_unit": "VM",
           "flavor": "win2k12-iso",
-          "port": [
-            9090
+          "ports": [
+            {
+              "port": 9090
+            }
           ],
           "dependency": [
             {

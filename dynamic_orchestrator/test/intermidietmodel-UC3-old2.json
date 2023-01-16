@@ -27,7 +27,6 @@
       {
          "environment":"PRODUCTION",
          "toscaDescription":{
-  {
   "tosca_definitions_version": "tosca_simple_yaml_1_2",
   "description": "Application model of PLEXUS Use Case",
   "imports": [
@@ -394,8 +393,10 @@
             "get_input": "ip"
           },
           "deployment_unit": "Container",
-          "port": [
-            9080
+          "ports": [
+            {
+              "port": 9080
+            }
           ]
         },
         "requirements": [
@@ -415,8 +416,10 @@
             "get_input": "ip"
           },
           "deployment_unit": "Container",
-          "port": [
-            9081
+          "ports": [
+            {
+              "port": 9081
+            }
           ]
         },
         "requirements": [
@@ -435,10 +438,7 @@
           "ip": {
             "get_input": "ip"
           },
-          "deployment_unit": "Container",
-          "port": [
-            1883
-          ]
+          "deployment_unit": "Container"
         },
         "requirements": [
           {
@@ -457,12 +457,17 @@
             "get_input": "ip"
           },
           "deployment_unit": "Container",
-          "port": [
-            1883,
-            5556,
-            7777,
-            8000,
-            9090
+          "ports": [
+            {
+              "port": 1883
+            },
+            {
+              "port": 5556
+            },
+            {
+              "protocol": "UDP",
+              "port": 7777
+            }
           ]
         },
         "requirements": [
@@ -473,7 +478,7 @@
       }
     }
   }
-}
+}}
    ],
    "metadata":{
       "createdAt":"2021-03-25T13:41:55.042",

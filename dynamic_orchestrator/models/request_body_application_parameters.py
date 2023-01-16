@@ -14,35 +14,30 @@ class RequestBodyApplicationParameters(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, component_name: str=None, external_ip: str=None, latency_qoe_level_threshold: float=None, device_ip: str=None):  # noqa: E501
+    def __init__(self, component_name: str=None,  latency_qoe_level_threshold: float=None, client_id: str=None):  # noqa: E501
         """RequestBodyApplicationParameters - a model defined in Swagger
 
         :param component_name: The component_name of this RequestBodyApplicationParameters.  # noqa: E501
         :type component_name: str
-        :param external_ip: The external_ip of this RequestBodyApplicationParameters.  # noqa: E501
-        :type external_ip: str
         :param latency_qoe_level_threshold: The latency_threshold of this RequestBodyApplicationParameters.  # noqa: E501
         :type latency_qoe_level_threshold: float
-        :param device_ip: The device_ip of this RequestBodyApplicationParameters.  # noqa: E501
-        :type device_ip: str
+        :param client_id: The client_id of this RequestBodyApplicationParameters.  # noqa: E501
+        :type client_id: str
         """
         self.swagger_types = {
             'component_name': str,
-            'external_ip': str,
             'latency_qoe_level_threshold': float,
-            'device_ip': str
+            'client_id': str
         }
 
         self.attribute_map = {
             'component_name': 'component_name',
-            'external_ip': 'external_ip',
             'latency_qoe_level_threshold': 'latency_qoe_level_threshold',
-            'device_ip': 'device_ip'
+            'client_id': 'client_id'
         }
         self._component_name = component_name
-        self._external_ip = external_ip
         self._latency_qoe_level_threshold = latency_qoe_level_threshold
-        self._device_ip = device_ip
+        self._client_id = client_id
 
     @classmethod
     def from_dict(cls, dikt) -> 'RequestBodyApplicationParameters':
@@ -77,27 +72,6 @@ class RequestBodyApplicationParameters(Model):
         self._component_name = component_name
 
     @property
-    def external_ip(self) -> str:
-        """Gets the external_ip of this RequestBodyApplicationParameters.
-
-
-        :return: The external_ip of this RequestBodyApplicationParameters.
-        :rtype: str
-        """
-        return self._external_ip
-
-    @external_ip.setter
-    def external_ip(self, external_ip: str):
-        """Sets the external_ip of this RequestBodyApplicationParameters.
-
-
-        :param external_ip: The external_ip of this RequestBodyApplicationParameters.
-        :type external_ip: str
-        """
-
-        self._external_ip = external_ip
-
-    @property
     def latency_qoe_level_threshold(self) -> float:
         """Gets the latency_qoe_level_threshold of this RequestBodyApplicationParameters.
 
@@ -119,22 +93,22 @@ class RequestBodyApplicationParameters(Model):
         self._latency_qoe_level_threshold = latency_qoe_level_threshold
 
     @property
-    def device_ip(self) -> str:
-        """Gets the device_ip of this RequestBodyApplicationParameters.
+    def client_id(self) -> str:
+        """Gets the client_id of this RequestBodyApplicationParameters.
 
 
-        :return: The device_ip of this RequestBodyApplicationParameters.
+        :return: The client_id of this RequestBodyApplicationParameters.
         :rtype: str
         """
-        return self._device_ip
+        return self._client_id
 
-    @device_ip.setter
-    def device_ip(self, device_ip: str):
+    @client_id.setter
+    def client_id(self, client_id: str):
         """Sets the device_ip of this RequestBodyApplicationParameters.
 
 
-        :param device_ip: The device_ip of this RequestBodyApplicationParameters.
-        :type device_ip: str
+        :param client_id: The device_ip of this RequestBodyApplicationParameters.
+        :type client_id: str
         """
 
-        self._device_ip = device_ip
+        self._client_id = client_id

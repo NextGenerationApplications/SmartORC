@@ -2,6 +2,16 @@ import requests
 #from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
 
+def select_url(name):
+    if name == 'plexus':
+        return 'http://app.accordion-project.eu:31724/application?name=plexustest&isLatest=true'
+        
+    if name == 'orbk':
+        return 'http://app.accordion-project.eu:31724/application?name=orbk-2023&isLatest=true'
+        
+    if name == 'ovr':
+        return 'http://app.accordion-project.eu:31724/application?name=testovrhgzt&isLatest=true'    
+
 def pretty_print(req):
     """
     At this point it is completely built and ready
@@ -93,24 +103,33 @@ def pretty_print(req):
 #except Exception as e:
 #    print('Connection Error')    
 
-try:     
-    json_file1 = open('intermidietmodel-UC1.json')
-    AB_response = json.load(json_file1)
+try:
+    TOKEN_NAME="gui_backend"
+    TOKEN_PASSWORD="3Q/0^:hej89ss8,oY^Y:sLmg+^e/cL0,KkmlMX"
+    url = select_url('orbk')
+    
+    AB_resp = requests.get(url, auth=(TOKEN_NAME, TOKEN_PASSWORD))
+    AB_resp.raise_for_status()    
+    AB_response = AB_resp.json()
+
+    #json_file1 = open('intermidietmodel-UC2.json')
+    #AB_response = json.load(json_file1)
     #AB_response = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
     #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
     #AB_response = AB_response.json()
     #print(json.dumps(AB_response))
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
-    #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
+    #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'latency_qoe_level_threshold':20,'client_id':'94.66.223.207'}]}
 
-    body1 = {'app_component_names':[{'component_name':'accordion-orbk-0-0-1-148-gameserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
+    body1 = {'app_component_names':[{'component_name':'acc-orbkhdrw-0-0-2-q123e-gameserver'}], 'operation':'smart_deploy', 'app_model' : AB_response, 'application_parameters': []}     
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)
     print(r1.status_code)
     print(r1.text)
 except Exception as e:
+    print(e)
     print('Connection Error with the Orchestrator for the Orbk Use Case')  
     
 #try:     
