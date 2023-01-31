@@ -5,9 +5,6 @@ from dynamic_orchestrator import encoder
 import logging
 #from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 
-import sys
-sys.path.insert(0,'/home/accordion/dynamic-orchestrator/dynamic_orchestrator/converter')
-
 VERSION = "v1.0" 
 
 def main(argv):

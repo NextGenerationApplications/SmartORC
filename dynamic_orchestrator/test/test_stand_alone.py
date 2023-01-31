@@ -122,7 +122,7 @@ try:
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-123-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 
     #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'latency_qoe_level_threshold':20,'client_id':'94.66.223.207'}]}
 
-    body1 = {'app_component_names':[{'component_name':'acc-orbkhdrw-0-0-2-q123e-gameserver'}], 'operation':'smart_deploy', 'app_model' : AB_response, 'application_parameters': []}     
+    body1 = {'app_component_names':[{'component_name':'acc-uc2orbk-0-0-2-00015-gameserver'}], 'operation':'smart_deploy', 'app_model' : AB_response, 'application_parameters': []}     
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)

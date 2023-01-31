@@ -159,8 +159,8 @@ def send_MMM_request_qoelevel(component_name, client_id):
 
 def test_RID(RID_response):
     RID_response[0]['minicloud_id'] = 'mc1'
-    #RID_response[1]['minicloud_id'] = 'mc1'
-    #RID_response[2]['minicloud_id'] = 'mc2'    
+    RID_response[1]['minicloud_id'] = 'mc1'
+    RID_response[2]['minicloud_id'] = 'mc2'    
     return RID_response
 
 def send_RID_request():
@@ -190,7 +190,7 @@ def send_RID_request():
             return None,'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)                    
 
         current_app.config.get('LOGGER').debug(" Request to Resource Indexing & Discovery service successfully returned with response: #%s " % RID_response_json)
-        RID_response_json = test_RID(RID_response_json)
+        #RID_response_json = test_RID(RID_response_json)
         return RID_response_json, None
 
 def dep_plan_status(status):

@@ -66,18 +66,18 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         
         current_app.config.get('LOGGER').info('[') 
         current_app.config.get('LOGGER').info('   ... ')
-        current_app.config.get('LOGGER').info('   Node name: %s' % node['device.device_name'])
+        current_app.config.get('LOGGER').info('   Node name: %s' % node['node_name'])
         
-        if 'arm' in node['device.CPU.Arch']:                    
+        if 'arm' in node['node_CPU_Arch']:                    
             node_res_translation['QEarch'] = 2
             current_app.config.get('LOGGER').info('   Architecture: Armv7')
-        elif node['device.CPU.Arch'] == 'x86_64':
+        elif node['node_CPU_Arch'] == 'x86_64':
             node_res_translation['QEarch'] = 1
             current_app.config.get('LOGGER').info('   Architecture: Intel x86_64')
         else:
             node_res_translation['QEarch'] = 0
             
-        if node['device.OS.OS_name'] == 'Linux':
+        if node['node_os_name'] == 'Linux':
             current_app.config.get('LOGGER').info('   OS: Linux')
             node_res_translation['QEos'] = 1
         else:
@@ -100,15 +100,18 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                 current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': NA ')
                 
 
-        node_res_translation['hardware_requirements_cpu'] = node['device.CPU.cores'] - (node['device.CPU.cores'] * float(node['cpu_usage(percentage)'])/100)
-        current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['device.CPU.cores'])
+        node_res_translation['hardware_requirements_cpu'] = node['node_cpu_cores'] - (node['node_cpu_cores'] * float(node['cpu_usage(percentage)'])/100)
+        current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['node_cpu_cores'])
         
         node_res_translation['hardware_requirements_ram'] = int(node['available_memory(bytes)'])
-        current_app.config.get('LOGGER').info('   Memory: %s ' % node['device.RAM(bytes)'])
+        current_app.config.get('LOGGER').info('   Memory: %s ' % node['node_ram_total_bytes'])
+        current_app.config.get('LOGGER').info('   Available memory: %s ' % node['available_memory(bytes)'])
+
 
         
         node_res_translation['hardware_requirements_disk'] = int(node ['disk_free_space(bytes)'])
-        current_app.config.get('LOGGER').info('   Disk size: %s ' % node['device.DISK.size'])
+        current_app.config.get('LOGGER').info('   Disk size: %s ' % node['node_disk_total_size'])
+        current_app.config.get('LOGGER').info('   Available disk size: %s ' % node['disk_free_space(bytes)'])
         current_app.config.get('LOGGER').info('   ...')
         current_app.config.get('LOGGER').info(']')
         
