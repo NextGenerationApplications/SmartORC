@@ -58,6 +58,16 @@
                   "type": "VM"
                 }
               ]
+            },
+            {
+              "name": "prova",
+              "order": 3,
+              "components": [
+                {
+                  "component": "ProvaServer",
+                  "type": "VM"
+                }
+              ]
             }
           ],
           "workflows": [
@@ -264,6 +274,35 @@
         "requirements": [
           {
             "host": "PublicCloud"
+          }
+        ]
+      },
+      "ProvaServer": {
+        "type": "Component",
+        "properties": {
+          "name": "provaserver",
+          "application": "ovr",
+          "external_ip": true,
+          "daemon_set": false,
+          "ip": {
+            "get_input": "ip"
+          },
+          "deployment_unit": "VM",
+          "flavor": "win2k12-iso",
+          "port": [
+            5053,
+            5054
+          ],
+          "dependency": [
+            {
+              "component": "RelayServer",
+              "property": "ip"
+            }
+          ]
+        },
+        "requirements": [
+          {
+            "host": "EdgeNode1"
           }
         ]
       },

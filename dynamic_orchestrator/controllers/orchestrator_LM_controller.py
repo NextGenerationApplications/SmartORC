@@ -1,11 +1,11 @@
 import connexion
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
-from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
-from dynamic_orchestrator.converter.Kafka_Producer import Producer  
+#from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
+#from dynamic_orchestrator.converter.Kafka_Producer import Producer  
 #from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
-from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
+#from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
 from flask import current_app
 #from dynamic_orchestrator import util
 #from  urllib.error import HTTPError
@@ -16,8 +16,13 @@ from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
 #from pickle import NONE
 import ipaddress
+from timeit import default_timer as timer
+
 #from symbol import except_clause
 #from Configuration import Constants
+
+start_time = 0
+end_time = 0
 
 def choose_application (name):   
     if name == 'accordion-plexus-0-0-1':
@@ -144,7 +149,7 @@ def send_RID_request():
         RID_PORT = "9001"
         try:
             
-            Request_URL_miniclouds = "http://" + RID_IP + ":" + RID_PORT + "/miniclouds"
+            Request_URL_miniclouds = "http://" + RID_IP + ":" + RID_PORT + "/miniclouds/nodes"
             Request_URL_debug = "http://" + RID_IP + ":" + RID_PORT + "/debug"
             current_app.config.get('LOGGER').info(" Request to Resource Indexing & Discovery service started")
             current_app.config.get('LOGGER').info(" Request sent: HTTP GET" + Request_URL_miniclouds)
@@ -167,7 +172,7 @@ def send_RID_request():
             return None,'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)                    
 
         current_app.config.get('LOGGER').debug(" Request to Resource Indexing & Discovery service returned with response: #%s " % RID_response_json)
-        RID_response_json = test_RID(RID_response_json)
+        #RID_response_json = test_RID(RID_response_json)
         return RID_response_json, None
 
 def dep_plan_status(status):
@@ -224,6 +229,7 @@ def check_components (body):
 #TODO: remove external IP from the request and from the openapi3.0 interface file  
   
 def deploy(body):
+    start_time = timer()
     current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
     try:
        
@@ -260,9 +266,9 @@ def deploy(body):
         
         matchmaking_model = generate(nodelist, app_instance)
         
-        json_string = json.dumps(matchmaking_model)
-        Kafka_Producer = Producer()
-        Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
+        #json_string = json.dumps(matchmaking_model)
+        #Kafka_Producer = Producer()
+        #Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
         
         
         current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
@@ -286,6 +292,8 @@ def deploy(body):
                 
                     
         dep_plan, status = solver.calculate_dep_plan(current_app, body._app_component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
+        end_time = timer()
+        print("Execution time: %s", end_time - start_time)
         current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
         
         if not dep_plan:
@@ -296,37 +304,37 @@ def deploy(body):
 
         current_app.config.get('LOGGER').debug(" Deployment plan: ")
                  
-        namespace_yaml = namespace(app_instance)        
+        #namespace_yaml = namespace(app_instance)        
                 
-        secret_yaml = secret_generation(secret_string, app_instance)
+        #secret_yaml = secret_generation(secret_string, app_instance)
                     
-        vim_results = [[]] * len(dep_plan);
+        #vim_results = [[]] * len(dep_plan);
         
-        vim_sender_workers_list = []
+        #vim_sender_workers_list = []
  
-        current_app.config.get('LOGGER').info(" Initialization of threads started")  
+        #current_app.config.get('LOGGER').info(" Initialization of threads started")  
 
-        thread_id=0
-        for EdgeMinicloud, component_list in dep_plan.items():
-            current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
-            current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
-            vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
-            thread_id+=1
+        #thread_id=0
+        #for EdgeMinicloud, component_list in dep_plan.items():
+         #   current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
+          #  current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
+           # vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
+            #thread_id+=1
             
-        current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
+        #current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
   
-        thread_id=0
-        for tid in vim_sender_workers_list:
-            current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
-            tid.start()
-            thread_id+=1
+        #thread_id=0
+        #for tid in vim_sender_workers_list:
+         #   current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
+          #  tid.start()
+           # thread_id+=1
 
-        current_app.config.get('LOGGER').info(" Threads launched correctly!")  
+        #current_app.config.get('LOGGER').info(" Threads launched correctly!")  
 
-        for tid in vim_sender_workers_list:
-            tid.join()
+        #for tid in vim_sender_workers_list:
+           # tid.join()
             
-        current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
+        #current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
            
         #for vim_result in vim_results:
             #for component_result in vim_result:
