@@ -30,12 +30,17 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         for requirement_name, requirement_value in requirements.items():
             if requirement_name == 'os':
                 if requirement_value == 'linux':
-                    component_translation['QEos'] = 1             
+                    component_translation['QEos'] = 1  
+                else:
+                    component_translation['QEos'] = 2   
             if requirement_name == 'arch':
                 if requirement_value == 'x86_64': 
                     component_translation['QEarch'] = 1
                 elif 'ARM' in requirement_value:                  
-                    component_translation['QEarch'] = 2                
+                    component_translation['QEarch'] = 2  
+                else: 
+                    component_translation['QEarch'] = 0
+                        
             if requirement_name == 'hardware_requirements':
                 for hw_requirement_name, hw_requirement_value in requirements['hardware_requirements'].items(): 
                     if hw_requirement_name == 'cpu':
@@ -81,7 +86,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
             current_app.config.get('LOGGER').info('   OS: Linux')
             node_res_translation['QEos'] = 1
         else:
-            node_res_translation['QEos'] = 0        
+            node_res_translation['QEos'] = 2        
           
         for app_component_name, lat_qoe_level_list in lat_qoe_levels.items():
             minicloud_found = False
@@ -100,15 +105,15 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                 current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': NA ')
                 
 
-        node_res_translation['hardware_requirements_cpu'] = node['node_cpu_cores'] - (node['node_cpu_cores'] * float(node['cpu_usage(percentage)'])/100)
+        node_res_translation['hardware_requirements_cpu'] = node['node_cpu_cores'] - (node['node_cpu_cores'] * node['cpu_usage(percentage)']/100)
         current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['node_cpu_cores'])
         
-        node_res_translation['hardware_requirements_ram'] = int(node['available_memory(bytes)'])
+        node_res_translation['hardware_requirements_ram'] = node['available_memory(bytes)']
         current_app.config.get('LOGGER').info('  Memory: %s ' % node['node_ram_total_bytes'])        
         current_app.config.get('LOGGER').info('  Available Memory: %s ' % node['available_memory(bytes)'])
 
         
-        node_res_translation['hardware_requirements_disk'] = int(node ['disk_free_space(bytes)'])
+        node_res_translation['hardware_requirements_disk'] = node ['disk_free_space(bytes)']
         current_app.config.get('LOGGER').info('   Disk size: %s ' % node['node_disk_total_size'])
         current_app.config.get('LOGGER').info('   Available Disk size: %s ' % node['disk_free_space(bytes)'])
         current_app.config.get('LOGGER').info('   ...')
@@ -132,14 +137,14 @@ class ConcreteOrchestrator(AbstractOrchestrator):
         
     def generate_app_components_request_model(self, components, matchmaking_model,application_parameters):      
         app_components_request_model = []    
-        application_component_instance_parts = components[0].component_name.rsplit('-',1)
+        application_component_instance_parts = components[0].rsplit('-',1)
         application_instance = application_component_instance_parts[0]
         for component in matchmaking_model[application_instance]:
             for application_component_instance_req in components:
-                if application_component_instance_req.component_name == component['component']:
+                if application_component_instance_req == component['component']:
                     # Found the requirements of one the component to be deployed
-                    self.add_latency_to_component_requirements(component['host']['requirements'], application_component_instance_req.component_name, application_parameters) 
-                    app_components_request_model.append(self.component_requirements_translation(component['host']['requirements'], application_component_instance_req.component_name))                           
+                    self.add_latency_to_component_requirements(component['host']['requirements'], application_component_instance_req, application_parameters) 
+                    app_components_request_model.append(self.component_requirements_translation(component['host']['requirements'], application_component_instance_req))                           
         return app_components_request_model
     
     def generate_federation_resource_availability_model(self, current_app, node_parts,lat_qoe_levels):
@@ -328,7 +333,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                         #minicloud_id = minicloud_id[:3]
                         if not result_documents.get(minicloud_id):
                             result_documents[minicloud_id] = []
-                        name = components[Appcomponent].component_name
+                        name = components[Appcomponent]
                         result_documents[minicloud_id].append(name)    
                     #print('{} : {}'.format(v.name, v.x))
                     n+=1 

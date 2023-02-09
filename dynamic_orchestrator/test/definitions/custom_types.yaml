@@ -1,0 +1,265 @@
+tosca_definitions_version: tosca_simple_yaml_1_2
+description: ACCORDION node types
+
+
+
+
+data_types:
+
+  ports:
+    properties:
+      protocol:
+        type: string
+        required: false
+        constraint:
+          - valid_values: [http,tcp,udp]
+          - pattern: '^[a-z0-9\-.]*$'
+      port:
+        type: integer
+    #gpu describes the gpu of and edge node.Model property describes the model of a gpu.
+    #Dedicated describes if the gpu is a different part from the cpu or not.
+  gpu:
+    properties:
+      brand:
+        type: string
+        required: false
+        constraints:
+          - valid_values: [nvidia,amd]
+      model:
+        type: string
+        required: false
+        constraints:
+          - pattern: '^[a-zA-Z0-9_/ \-.]*$'
+      dedicated:
+        type: boolean
+        default: true
+  dependent:
+    #dependency between Components of an application
+    properties:
+      #component should be written as string and have the same value as the key of the related component object
+      component:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z_]*$'
+      #property describes which component property is needed in order to make the dependent component run
+      property:
+        type: string
+        constraints:
+          - pattern: '^[a-z0-9_\-.]*$'
+  input:
+    #input is a way to describe the environment values that a Component needs in order to run. This data type is used
+    #in the send action that can be described in workflows section of the CloudFramework object.
+    properties:
+      #from component x
+      component:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z_]*$'
+      #retrieve property y, which most of the time is ip or external_ip
+      property:
+        type: string
+        constraints:
+          - pattern: '^[a-z0-9_\-.]*$'
+      #and send it to component z
+      to:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z0-9\-.]*$'
+        required: false
+  components:
+    properties:
+      #components data type describes the components and the type of the image, it is actually being used in the CloudFramework object in the actions section in order
+      #to bind actions with components
+      component:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z_]*$'
+      type:
+        type: string
+        constraints:
+          - valid_values: [vm, container]
+          - pattern: '^[a-z0-9\-.]*$'
+
+  actionset:
+    #this is the structure to describe actions, actions can be placed either in the deployment_phase or in the workflows section of the CloudFramework object
+    properties:
+      #name is being used to describe the name of the action
+      name:
+        type: string
+        constraints:
+          - valid_values: [deploy,requestSession,send,terminate,requestAnblick]
+          - pattern: '^[a-zA-Z]*$'
+      #components are being used to describe a list of components that are related with an action
+      components:
+        type: list
+        entry_schema:
+          type: components
+        required: false
+      #order is being used to describe the in which step the action will be applied
+      order:
+        type: integer
+      input:
+        type: list
+        entry_schema:
+          type: input
+        required: false
+      component:
+        type: string
+        required: false
+        constraints:
+          - pattern: '^[a-zA-Z_]*$'
+
+  scenario:
+    #scerario is being used at the workflows section of CloudFramework object, workflows is a list of scenarios
+    properties:
+      #with the property scenario you can provide a text of the scenario's case
+      scenario:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z0-9_ /=><]*$'
+      #target property describes which component should be the target of the condition
+      target:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z_]*$'
+      #condition property is being used to describe the scenario as a threshold/limit
+      condition:
+        type: string
+        constraints:
+          - pattern: '^[a-zA-Z0-9_ /=><%]*$'
+      #every scenario has one or more actions to do when the threshold is reached
+      actions:
+        type: list
+        entry_schema:
+          type: actionset
+
+
+node_types:
+  #EdgeNode type is being used to describe nodes that are placed on Edge. Here you will have to describe what edge nodes
+  #should have in order to host your application component. There should be one EdgeNode object for application component
+  #that should placed on Edge.
+  tosca.nodes.Compute.EdgeNode:
+    derived_from: tosca.nodes.Compute
+    properties:
+      building_type:
+        type: string
+        required: false
+        constraints:
+          - valid_values: [mall]
+      #wifi_antenna is a boolean property that describes if a device needs to have an external wifi antenna or not
+      wifi_antenna:
+        type: boolean
+        required: false
+      #geolocation describes where the desired edge should be
+      geolocation:
+        type: map
+        required: false
+        entry_schema:
+          type: geolocation
+      #gpu_model describes if it is present it means that an edge node must have a gpu.
+      gpu_model:
+        type: map
+        required: false
+        entry_schema:
+          type: gpu
+      #there is also a capabilities section supported by TOSCA in which you can describe hardware and OS capabilities
+      #of the host, check the example below
+      #capabilities:
+        #host:
+          #properties:
+            #num_cpus: 1
+            #mem_size: 512 MB
+            #disk_size: 20 GB
+        #os:
+          #properties:
+            #architecture: x86_64
+            #type: linux
+
+  #PublicCloud type for now only supports the capabilities section of TOSCA like the above example. This type describes
+  #a host that is placed on Cloud. There should be one PublicCloud object for application component that should placed on Cloud.
+  tosca.nodes.Compute.PublicCloud:
+    derived_from: tosca.nodes.Compute
+
+  #ACCORDION.Cloud_Framework describes the ACCORDION Platform and how it should orchestrate and adapt an application.
+  ACCORDION.Cloud_Framework:
+    derived_from: tosca.nodes.Container.Application.Docker
+    properties:
+      #application property describes that ACCORDION should perform actions for this specific applications
+      application:
+        type: string
+        constraints:
+          - pattern: '^[a-z0-9\-.]*$'
+      #In workflows property section developers will have to describe the runtime adaptation of their application.
+      #Workflows as we said before is a list of scenarios that will trigger actions when a threshold is being reached
+      workflows:
+        type: list
+        required: false
+        entry_schema:
+          type: scenario
+      #In the deployment_phase section developers will have to describe the actions that ACCORDION has to do in
+      #order to deploy all the components of their application.
+      deployment_phase:
+        type: list
+        entry_schema:
+          type: actionset
+
+
+  #Component type is being used to describe a component of an application. Developers can describe as much components
+  #as they want to.
+  Component:
+    derived_from: tosca.nodes.SoftwareComponent
+    properties:
+      storage_type:
+        type: string
+        constraints:
+          - valid_values: [ ephemeral,persistent,none ]
+      #with name property developers will have to provide how the component should be named inside ACCORDION
+      name:
+        type: string
+        constraints:
+         - pattern: '^[a-z0-9\-.]*$'
+      #with application property developers indicate that a component belongs to a specific application
+      application:
+        type: string
+        constraints:
+         - pattern: '^[a-z0-9\-.]*$'
+      #with external_ip property developers can describe if their component needs an external ip or not
+      external_ip:
+        type: boolean
+        required: false
+      #with the daemon_set property develops can describe if their component must be deployed on every node of a cluster
+      #or not
+      daemon_set:
+        type: boolean
+        required: false
+      #ip is actually a property that takes no value since it is a runtime property. Developers will only need to describe
+      #the ip as a TOSCA input like the example below
+      # ip: { get_input: ip }
+      ip:
+        type: string
+      #with the deployment_unit property developers can describe if their component is a VM or a container
+      deployment_unit:
+        type: string
+        constraints:
+          - valid_values: [vm,container ]
+      #if a component is a VM developers can also indicate if their VM image as a flavor
+      flavor:
+        type: string
+        required: false
+        constraints:
+          - pattern: '^[a-z0-9\-.]*$'
+      #with the port property developers can describe the ports that a component use as a list
+      ports:
+        type: list
+        required: false
+        entry_schema:
+          type: ports
+      #with the dependency property developers can describe that the described component object depends on another one
+      dependency:
+        type: list
+        entry_schema:
+            type: dependent
+        required: false
+
+
+

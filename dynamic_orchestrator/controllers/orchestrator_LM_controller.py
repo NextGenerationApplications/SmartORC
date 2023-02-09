@@ -17,7 +17,7 @@ from mip import OptimizationStatus
 #from pickle import NONE
 import ipaddress
 from timeit import default_timer as timer
-
+from random import randint,uniform
 #from symbol import except_clause
 #from Configuration import Constants
 
@@ -226,158 +226,303 @@ def check_components (body):
         
         return app_name, app_instance, None
   
+def prepare_tests (app_instance, num_nodes, num_comps):
+    
+    #architectures = ['x86_64','ARM']
+    architectures = ['x86_64']
+    #oses = ['linux','windows']
+    oses = ['linux']
+    
+    app_model = {"details":{"id":"1","name":"p","version":"0.0.3","isLatest":"true" },                
+        "registry":[{"repository":"r","version":"latest","id":"2","size":"1MB","imageName":"s","component":"C1"}],
+        "requirements":[{ "environment":"",
+                                  "toscaDescription": { "tosca_definitions_version": "tosca_simple_yaml_1_2","description": "","imports": ["definitions/custom_types.yaml"],
+  "topology_template": 
+    {
+        "inputs": {"ip": {"type": "string","description": "IP","required": False } },
+        "node_templates": 
+        {
+            "Cloud_Framework": 
+            {
+                "type": "ACCORDION.Cloud_Framework",
+                "properties": 
+                {
+                    "application":"p",
+                    "deployment_phase": 
+                    [           
+                        {
+                            "name":"pr",
+                            "components": []
+                        }
+                    ]
+                }
+            }
+        }
+    }
+ }
+}],
+        "metadata":{ "createdAt":"", "createdBy":"", "modifiedAt":"", "modifiedBy":"" }}
+    
+    component_names = []      
+    for num in range(num_comps):  
+        component_names.append(app_instance + "-c" +str(num))
+        app_model["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["Cloud_Framework"]["properties"]["deployment_phase"][0]["components"].append({"component": "C" + str(num),"type": "VM"})
+        app_model["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["C" + str(num)] =  {"type": "Component","properties":{
+          "name": "c" +str(num),
+          "application": "p",
+          "external_ip": True,
+          "daemon_set": False,
+          "ip": {"get_input": "ip"},
+          "deployment_unit": "VM",
+          "flavor": "win2k12-iso",
+          "port": [1]
+        },"requirements":[{"host": "EdgeNode" + str(num)}]}
+        
+        
+        app_model["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["EdgeNode" + str(num)] =  {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "capabilities": 
+        {
+          "host": 
+          {
+            "properties": 
+            {
+              "num_cpus": randint(1,8),
+              "mem_size": str(randint(128,1024)) + "MB",
+              "disk_size": str(randint(10,128)) + "GB"
+            }
+          },
+          "os": 
+          {
+            "properties": 
+            {
+              "architecture": architectures[randint(0,len(architectures)-1)],
+              "type": oses[randint(0,len(oses)-1)]
+            }
+          }
+        }
+      }
+        
+    #node_architectures = ['x86_64','ARM']
+    node_architectures = ['x86_64']
+
+    #node_oses = ['Linux','windows']
+    node_oses = ['Linux']
+            
+    cores = randint(20,100)
+    
+    ram  =  randint(2048000000000,4096000000000)
+     
+    disk =  randint(200000000000, 1000000000000)
+     
+    cpu_usage = round(uniform(0.00, 100.00), 2)
+    
+    av_ram =  randint(2048000000000,ram)
+    
+    av_disk = randint(200000000000,disk)
+    
+    nodes_description = [ 
+    {'node_name': 'giannis0', 
+      'node_cpu_arch': node_architectures[randint(0,len(node_architectures)-1)], 
+      'node_cpu_cores': cores, 
+      'node_ram_total_bytes': ram,
+      'node_disk_total_size': disk,
+      'node_os_name':  node_oses[randint(0,len(node_oses)-1)], 
+      'cpu_usage(percentage)': cpu_usage, 
+      'available_memory(bytes)': av_ram, 
+      'disk_free_space(bytes)': av_disk, 
+      'minicloud_id': 'mc1'}
+    ]
+        
+    for num in range(num_nodes-1):
+        nodes_description.append({'node_name': 'giannis'+str(num+1), 
+        'node_cpu_arch': node_architectures[randint(0,len(node_architectures)-1)], 
+        'node_cpu_cores': cores, 
+        'node_ram_total_bytes': ram, 
+        'node_disk_total_size': disk, 
+        'node_os_name': node_oses[randint(0,len(node_oses)-1)], 
+        'cpu_usage(percentage)': cpu_usage, 
+        'available_memory(bytes)': av_ram,  
+        'disk_free_space(bytes)':  av_disk, 
+        'minicloud_id': 'selfhvw4fyjf'})
+        
+    return component_names,nodes_description, app_model 
+
+def save_time (time):
+    return None
+  
 #TODO: remove external IP from the request and from the openapi3.0 interface file  
   
 def deploy(body):
-    start_time = timer()
-    current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
-    try:
-       
-        app_name, app_instance, error = check_components(body)
-        if(error):
-            current_app.config.get('LOGGER').error(error + ". Returning code 400")
-            return {'reason': error}, 400 
-          
-        error = check_application_parameters('deploy', body.app_component_names, body.application_parameters)
-        if(error):
-            current_app.config.get('LOGGER').error(error + ". Returning code 400")
-            return {'reason': error}, 400                     
-                        
-        secret_string = secret(app_name)
-               
-        if not secret_string:
-            error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500      
-        
-        # Error handling to be finished
-        current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
-        try:
-            nodelist, imagelist, app_version = ReadFile(body.app_model)
-        except:
-            error = 'Deploy operation not executed successfully: Application Model is not parsable'
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500 
-        
-        current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
-        #for image in imagelist:
-        #    print(str(image))
-        current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
-        
-        matchmaking_model = generate(nodelist, app_instance)
-        
-        #json_string = json.dumps(matchmaking_model)
-        #Kafka_Producer = Producer()
-        #Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
-        
-        
-        current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)  
-
-        solver = ConcreteOrchestrator() 
-        
-        RID_response_json, error = send_RID_request()
-        if(error):
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-            return {'reason': error}, 500    
-        
-        
-        lat_qoe_levels = {}
-        for parameter in body.application_parameters:
-            if (parameter._device_ip):
-                MMM_response_json, error = send_MMM_request(parameter._component_name, parameter._device_ip)
-                if(error):
-                    current_app.config.get('LOGGER').error(error + ". Returning code 500")
-                    return {'reason': error}, 500
-                lat_qoe_levels[parameter._component_name] = MMM_response_json
-                
-                    
-        dep_plan, status = solver.calculate_dep_plan(current_app, body._app_component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
-        end_time = timer()
-        print("Execution time: %s", end_time - start_time)
-        current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
-        
-        if not dep_plan:
-            error = 'Deploy operation not executed successfully: '
-            error += dep_plan_status(status)
-            current_app.config.get('LOGGER').error(error + ". Returning code 500")  
-            return {'reason': error}, 500 
-
-        current_app.config.get('LOGGER').debug(" Deployment plan: ")
-                 
-        #namespace_yaml = namespace(app_instance)        
-                
-        #secret_yaml = secret_generation(secret_string, app_instance)
-                    
-        #vim_results = [[]] * len(dep_plan);
-        
-        #vim_sender_workers_list = []
- 
-        #current_app.config.get('LOGGER').info(" Initialization of threads started")  
-
-        #thread_id=0
-        #for EdgeMinicloud, component_list in dep_plan.items():
-         #   current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
-          #  current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
-           # vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
-            #thread_id+=1
-            
-        #current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
-  
-        #thread_id=0
-        #for tid in vim_sender_workers_list:
-         #   current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
-          #  tid.start()
-           # thread_id+=1
-
-        #current_app.config.get('LOGGER').info(" Threads launched correctly!")  
-
-        #for tid in vim_sender_workers_list:
-           # tid.join()
-            
-        #current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
-           
-        #for vim_result in vim_results:
-            #for component_result in vim_result:
-                #for component_instance_name, date_or_error in component_result.items():
-                    #if isinstance(date_or_error,int):
-                        # send component instance id and creation date time to ASR
-                        #current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
-                        #request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
-                        #current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
-                        #current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
-     
-                        #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
-                        #ASR_response.raise_for_status()
-                        #current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
-                        #current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
-                    #else:   
-                       # current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
-                        #return {'reason': date_or_error}, 500               
+    app_instance = 'accordion-p-0-0-3-165'
+    filename = "results.csv"
+    # tests  = [{NUM_REPETITIONS, NUM_NODES, NUM_COMPS}, ... ]
+    tests = [[5,500,300],[5,300,100],[5,300,200]]
+    
+    f = open(filename, "w")
+    
+    for test in tests:
+        for i in range(test[0]):
+            component_names, RID_response_json, app_model = prepare_tests (app_instance, test[1], test[2]) 
              
-    except requests.exceptions.Timeout as err:
-        error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'
-        current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the ASR. Returning code 500')  
-        return {'reason': error}, 500 
+            current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
+            try:
+               
+                #app_name, app_instance, error = check_components(body)
+                #if(error):
+                #    current_app.config.get('LOGGER').error(error + ". Returning code 400")
+                #    return {'reason': error}, 400 
+                  
+                #error = check_application_parameters('deploy', body.app_component_names, body.application_parameters)
+                #if(error):
+                #    current_app.config.get('LOGGER').error(error + ". Returning code 400")
+                #    return {'reason': error}, 400                     
+                                
+                #secret_string = secret(app_name)
+                       
+                #if not secret_string:
+                #    error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
+                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                #    return {'reason': error}, 500      
+                
+                # Error handling to be finished
+                #current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
+                try:
+                    #nodelist, imagelist, app_version = ReadFile(body.app_model)
+                    nodelist, imagelist, app_version = ReadFile(app_model)
+                except:
+                    error = 'Deploy operation not executed successfully: Application Model is not parsable'
+                    current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                    return {'reason': error}, 500 
+                
+                current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
+                #for image in imagelist:
+                #    print(str(image))
+                current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
+                
+                matchmaking_model = generate(nodelist, app_instance)
+                
+                #json_string = json.dumps(matchmaking_model)
+                #Kafka_Producer = Producer()
+                #Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
+                
+                
+                current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)
+                  
+                start_time = timer()
+                solver = ConcreteOrchestrator() 
+                
+                #RID_response_json, error = send_RID_request()
+                #print(RID_response_json)
+                #if(error):
+                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                #    return {'reason': error}, 500    
+                
+                
+                lat_qoe_levels = {}
+                for parameter in body.application_parameters:
+                    if (parameter._device_ip):
+                        MMM_response_json, error = send_MMM_request(parameter._component_name, parameter._device_ip)
+                        if(error):
+                            current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                            return {'reason': error}, 500
+                        lat_qoe_levels[parameter._component_name] = MMM_response_json
+                        
+                            
+                #dep_plan, status = solver.calculate_dep_plan(current_app, body._app_component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
+                dep_plan, status = solver.calculate_dep_plan(current_app, component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
+                
+                end_time = timer()
+                line = str(test[1]) + "," + str(test[2]) +","+str(end_time - start_time)+","+status.name+"\n"
+                f.write(line)
+                
+                print(status)
+                print(end_time - start_time)
+                
+                current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
+                
+                #if not dep_plan:
+                #    error = 'Deploy operation not executed successfully: '
+                #    error += dep_plan_status(status)
+                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")  
+                #    return {'reason': error}, 500 
         
-    except requests.exceptions.RequestException as err:
-        error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the ASR: ' + str(err)
-        current_app.config.get('LOGGER').error(error + ". Returning code 500")
-        return {'reason': error}, 500
-    
-    except OSError as err:
-        if err:
-            error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
-        else:
-            error = 'Deploy operation not executed successfully due to an unknown internal server error! '
-        current_app.config.get('LOGGER').error(error + ". Returning code 500")
-        return {'reason': error}, 500
-    
-    except:
-        error = 'Deploy operation not executed successfully due to an unknown internal server error!'
-        current_app.config.get('LOGGER').error(error + ". Returning code 500")
-        return {'reason': error}, 500
-    
-    current_app.config.get('LOGGER').info("------------------ Deploy request finished succesfully ---------------------")
+                #current_app.config.get('LOGGER').debug(" Deployment plan: ")
+                         
+                #namespace_yaml = namespace(app_instance)        
+                        
+                #secret_yaml = secret_generation(secret_string, app_instance)
+                            
+                #vim_results = [[]] * len(dep_plan);
+                
+                #vim_sender_workers_list = []
+         
+                #current_app.config.get('LOGGER').info(" Initialization of threads started")  
+        
+                #thread_id=0
+                #for EdgeMinicloud, component_list in dep_plan.items():
+                 #   current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
+                  #  current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
+                   # vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
+                    #thread_id+=1
+                    
+                #current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
+          
+                #thread_id=0
+                #for tid in vim_sender_workers_list:
+                 #   current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
+                  #  tid.start()
+                   # thread_id+=1
+        
+                #current_app.config.get('LOGGER').info(" Threads launched correctly!")  
+        
+                #for tid in vim_sender_workers_list:
+                   # tid.join()
+                    
+                #current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
+                   
+                #for vim_result in vim_results:
+                    #for component_result in vim_result:
+                        #for component_instance_name, date_or_error in component_result.items():
+                            #if isinstance(date_or_error,int):
+                                # send component instance id and creation date time to ASR
+                                #current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
+                                #request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
+                                #current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
+                                #current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
+             
+                                #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
+                                #ASR_response.raise_for_status()
+                                #current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
+                                #current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
+                            #else:   
+                               # current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
+                                #return {'reason': date_or_error}, 500               
+                     
+            except requests.exceptions.Timeout as err:
+                error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'
+                current_app.config.get('LOGGER').error('Deploy operation not executed successfully due to a timeout in the communication with the ASR. Returning code 500')  
+                return {'reason': error}, 500 
+                
+            except requests.exceptions.RequestException as err:
+                error = 'Deploy operation not executed successfully due to the following internal server error in the communication with the ASR: ' + str(err)
+                current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                return {'reason': error}, 500
+            
+            except OSError as err:
+                if err:
+                    error = 'Deploy operation not executed successfully due to the following internal server error: ' + err.strerror
+                else:
+                    error = 'Deploy operation not executed successfully due to an unknown internal server error! '
+                current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                return {'reason': error}, 500
+            
+            except:
+                error = 'Deploy operation not executed successfully due to an unknown internal server error!'
+                current_app.config.get('LOGGER').error(error + ". Returning code 500")
+                return {'reason': error}, 500
+    f.close()
+    current_app.config.get('LOGGER').info("------------------ Test finished successfully ---------------------")
     return 200
 
 def terminate(body):

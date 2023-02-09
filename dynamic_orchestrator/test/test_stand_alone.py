@@ -105,7 +105,8 @@ try:
     #         'application_parameters': [{'component_name':'accordion-ovr-0-0-3-123-localservice', 'external_ip':'1.2.3.4','latency_qoe_level_threshold':20,'device_ip':'94.66.223.207'}]}
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'},{'component_name':'accordion-ovr-0-0-3-165-provaserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
-    body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'},{'component_name':'accordion-ovr-0-0-3-165-relayserver'},{'component_name':'accordion-ovr-0-0-3-165-provaserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
+    #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'},{'component_name':'accordion-ovr-0-0-3-165-relayserver'},{'component_name':'accordion-ovr-0-0-3-165-provaserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
+    body1 = {'app_component_names':[], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)
