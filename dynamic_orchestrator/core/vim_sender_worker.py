@@ -12,7 +12,7 @@ import traceback
 from requests_toolbelt import MultipartEncoder
 from datetime import datetime
 
-from converter_package.Converter import tosca_to_k8s, ID
+from converter_package.Converter import tosca_to_k8s, ID, scale_out_to_k8s
 
 
 
@@ -20,9 +20,12 @@ class vim_sender_worker(threading.Thread):
     '''
     classdocs
     '''
-    def __init__(self, logger, thread_id, ns, nodelist, imagelist, namespace_yaml, secret_yaml, EdgeMinicloud, components, vim_results, minicloud_ip):
+    def __init__(self, logger, thread_id, ns, componentInfo, inter_app_model, nodelist, imagelist, namespace_yaml, 
+    secret_yaml, EdgeMinicloud, components, vim_results, minicloud_ip, local_scaleout):
         threading.Thread.__init__(self)
         self.ns = ns # ACCORDION namespace (for a component, so only application data would be ok if having multiple components. be aware.)
+        self.componentInfo = componentInfo
+        self.inter_app_model = inter_app_model
         self.nodelist = nodelist
         self.imagelist = imagelist
         self.namespace_yaml = namespace_yaml
@@ -33,6 +36,7 @@ class vim_sender_worker(threading.Thread):
         self.vim_results = vim_results
         self.logger = logger
         self.minicloud_ip = minicloud_ip
+        self.local_scaleout = local_scaleout
         
     def calculate_pers_files_list(self,deployment_file):
         pers_f_list = []  
@@ -60,18 +64,27 @@ class vim_sender_worker(threading.Thread):
             self.logger.info("--- Component:  %s " % self.components[i])
 
         try:
-            yaml_files_list = [self.namespace_yaml, self.secret_yaml]
-            #self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
-            deployment_files, persistent_files, service_files = tosca_to_k8s(
-                self.nodelist, 
-                self.imagelist, 
-                ID.generate_k3s_namespace(self.ns['appName'], self.ns['appVersion'], self.ns['appInstanceId']),
-                self.EdgeMinicloud, 
-                self.minicloud_ip,
-                []# list of dict {"comp_name":gpu model} GPUs required by the application,. empty list if not required
-            )
 
-            print ("Converter response: \n")
+            yaml_files_list = []
+            persistent_files = []
+            service_files = []
+
+            if (self.local_scaleout):
+                deployment_files = [scale_out_to_k8s(self.componentInfo, self.inter_app_model)]
+            else:
+
+                yaml_files_list = [self.namespace_yaml, self.secret_yaml]
+                #self.logger.info("Thread " + str(self.thread_id) + ": Request to Converter for App instance %s: K3S configuration files generation function invoked" % self.app_instance)        
+                deployment_files, persistent_files, service_files = tosca_to_k8s(
+                    self.nodelist, 
+                    self.imagelist, 
+                    ID.generate_k3s_namespace(self.ns['appName'], self.ns['appVersion'], self.ns['appInstanceId']),
+                    self.EdgeMinicloud, 
+                    self.minicloud_ip,
+                    []# list of dict {"comp_name":gpu model} GPUs required by the application,. empty list if not required
+                )
+
+            print ("Files sento to VIMGW: \n")
             print ("\tDeployment files:", deployment_files)
             print ("\tPersistent files:", persistent_files)
             print ("\tService files", service_files)

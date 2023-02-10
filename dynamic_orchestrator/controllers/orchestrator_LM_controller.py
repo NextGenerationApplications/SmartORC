@@ -3,7 +3,9 @@ import traceback
 
 from converter_package.Parser import ReadFile
 from converter_package.MatchingModel import generate
-from converter_package.Converter import namespace, secret_generation, ID  
+from converter_package.Converter import namespace, secret_generation, ID 
+
+import converter_package.Converter as converter
 
 import time
 import random
@@ -16,8 +18,11 @@ from flask import current_app
 import base64
 import json
 import requests
+import yaml
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
+
+from requests_toolbelt import MultipartEncoder
 
 
 def supported_operation (operation):
@@ -100,7 +105,7 @@ def deploy(body):
         current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
         for i in range(len(components)):
             current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
-            current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+            # current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
             current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
             current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
      
@@ -171,7 +176,7 @@ def deploy(body):
 
         
         # -- Call the solver to provide the plan -- #
-        if body.application_parameters['selection_strategy'] == ops.DEPLOY:
+        if body.application_parameters['selection_strategy'] in [ops.DEPLOY, ops.LOCAL_SCALEOUT]:
             dep_plan, status = ({body.application_parameters['minicloud_id']:[app_component_name]}, 'ok')
         elif body.application_parameters['selection_strategy'] == ops.RANDOM_DEPLOY:
             # contact the MMM to get the list of the miniclouds         
@@ -228,6 +233,8 @@ def deploy(body):
                 current_app.config.get('LOGGER'), 
                 thread_id, 
                 ns, 
+                components[0].component_name,
+                body.app_model,
                 nodelist, 
                 imagelist,
                 namespace_yaml, 
@@ -235,7 +242,9 @@ def deploy(body):
                 EdgeMinicloud, 
                 component_list, 
                 vim_results, 
-                minicloud_dict[EdgeMinicloud])
+                minicloud_dict[EdgeMinicloud],
+                body.application_parameters['selection_strategy'] == ops.LOCAL_SCALEOUT
+                )
 
             vim_sender_workers_list.append(vim_worker)
             thread_id+=1
@@ -279,10 +288,37 @@ def deploy(body):
     return 200
 
 def undeploy(body):
-    current_app.config.get('LOGGER').info("------------------ Undeploy request started ---------------------")
-    error = 'Undeploy operation not implemented yet!'
-    current_app.config.get('LOGGER').error(error + ". Returning code 500")
-    return {'reason': error}, 500
+
+    # -- checking and logging of the received message --- #
+    components = body.app_component_names
+    current_app.config.get('LOGGER').debug("Undeploy request started with parameters: ")
+    for i in range(len(components)):
+        current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
+        # current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+        current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
+        current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
+
+    # -- Parsing of the namespace --- #
+    try:
+        ns = utils.parse(components[0].component_name)
+    except:
+        error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+        current_app.config.get('LOGGER').error(error + ". Returning code 400")
+        return {'reason': error}, 400   
+
+    # -- generate the deployment file (which is used also for the undeplouyment)
+    deployment_files =  converter.undeploy(components[0].component_name, body.app_model)
+    yaml_file = yaml.dump_all([deployment_files.get(components[0].component_name)])
+
+    # -- contact the vimgateway directly
+    url = "http://vimgw:5000/VIM/request"
+    
+    vim_request = MultipartEncoder(fields={'operation': 'undeploy', 'minicloud_id':ns['minicloudId'], 'file': (ns['componentName'], yaml_file, 'text/plain')})  
+    vim_response = requests.post(url, timeout=10, data=vim_request, headers={'Content-Type': vim_request.content_type})
+    vim_response.raise_for_status()
+    current_app.config.get('LOGGER').debug("Undeploy request to VimGw returned with response: %s" % vim_response.text)
+
+
 
 def orchestrator_LM_request(body):  # noqa: E501
     """orchestrator_lm_request
