@@ -5,10 +5,7 @@ Created on 11 feb 2021
 '''
 
 from dynamic_orchestrator.core.abstract_orchestrator import AbstractOrchestrator
-#from numbers import Number
 from mip import Model, xsum, BINARY, maximize, OptimizationStatus
-#import json
-#import math
 
 class ConcreteOrchestrator(AbstractOrchestrator):
     '''
@@ -18,13 +15,7 @@ class ConcreteOrchestrator(AbstractOrchestrator):
     def __init__(self):
         '''
         Constructor
-        '''               
-    def add_latency_to_component_requirements(self,component_reqs,application_component_instance_name, application_parameters): 
-        for component in application_parameters:
-            if component._component_name == application_component_instance_name:
-                if component._latency_qoe_level_threshold:
-                    component_reqs['hardware_requirements']['latency_qoe_level_threshold_' + application_component_instance_name] = component._latency_qoe_level_threshold
-                                        
+        '''                                                     
     def component_requirements_translation(self, requirements, application_component_instance_name):
         component_translation = {}
         for requirement_name, requirement_value in requirements.items():
@@ -51,110 +42,65 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                         component_translation['hardware_requirements_disk'] = int(hw_requirement_value)
                     if 'latency_qoe_level_threshold' in hw_requirement_name:
                         component_translation['QLlatency_qoe_level_threshold_' + application_component_instance_name] = hw_requirement_value
-                    #if hw_requirement_name == 'gpu':
-                    #    for gpu_requirement_name, gpu_requirement_value in requirements['hardware_requirements']['gpu'].items():
-                    #        if gpu_requirement_name == 'model':
-                    #            if 'INTEL' in gpu_requirement_value:
-                    #                component_translation['QEhardware_requirements_gpu_model'] = 3
-                    #            if 'NVIDIA' in gpu_requirement_value:
-                    #                component_translation['QEhardware_requirements_gpu_model'] = 1
-                    #            elif 'AMD' in gpu_requirement_value:
-                    #                component_translation['QEhardware_requirements_gpu_model'] = 2
-                    #        if gpu_requirement_name == 'dedicated':
-                    #            if gpu_requirement_value == 'True':
-                    #                component_translation['Qhardware_requirements_gpu_dedicated'] = 1
                                                                     
         return component_translation
 
-    def node_resources_translation(self, current_app, node, lat_qoe_levels): 
+    def node_resources_translation(self, current_app, node): 
         node_res_translation = {}
         
-        current_app.config.get('LOGGER').info('[') 
-        current_app.config.get('LOGGER').info('   ... ')
-        current_app.config.get('LOGGER').info('   Node name: %s' % node['node_name'])
+        #current_app.config.get('LOGGER').info('[') 
+        #current_app.config.get('LOGGER').info('   ... ')
+        #current_app.config.get('LOGGER').info('   Node name: %s' % node['node_name'])
         
         if 'arm' in node['node_cpu_arch']:                    
             node_res_translation['QEarch'] = 2
-            current_app.config.get('LOGGER').info('   Architecture: Armv7')
+            #current_app.config.get('LOGGER').info('   Architecture: Armv7')
         elif node['node_cpu_arch'] == 'x86_64':
             node_res_translation['QEarch'] = 1
-            current_app.config.get('LOGGER').info('   Architecture: Intel x86_64')
+            #current_app.config.get('LOGGER').info('   Architecture: Intel x86_64')
         else:
             node_res_translation['QEarch'] = 0
             
         if node['node_os_name'] == 'Linux':
-            current_app.config.get('LOGGER').info('   OS: Linux')
+            #current_app.config.get('LOGGER').info('   OS: Linux')
             node_res_translation['QEos'] = 1
         else:
             node_res_translation['QEos'] = 2        
           
-        for app_component_name, lat_qoe_level_list in lat_qoe_levels.items():
-            minicloud_found = False
-            for lat_qoe_level in lat_qoe_level_list:                  
-                if lat_qoe_level:
-                    if lat_qoe_level['minicloudId'] == node['minicloud_id']:
-                        node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] =  lat_qoe_level['qoe']
-                        current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': %s ' % (node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name]))
-                        minicloud_found = True
-                else:
-                    node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] = -1
-                    current_app.config.get('LOGGER').info('   Latency QoE Threshold for component' + app_component_name + ': NA ')
-
-            if minicloud_found == False:
-                node_res_translation['QLlatency_qoe_level_threshold_' + app_component_name] = -1
-                current_app.config.get('LOGGER').info('   Latency QoE Threshold  for component' + app_component_name + ': NA ')
-                
-
         node_res_translation['hardware_requirements_cpu'] = node['node_cpu_cores'] - (node['node_cpu_cores'] * node['cpu_usage(percentage)']/100)
-        current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['node_cpu_cores'])
+        #current_app.config.get('LOGGER').info('   Number of CPU cores: %s ' % node['node_cpu_cores'])
         
         node_res_translation['hardware_requirements_ram'] = node['available_memory(bytes)']
-        current_app.config.get('LOGGER').info('  Memory: %s ' % node['node_ram_total_bytes'])        
-        current_app.config.get('LOGGER').info('  Available Memory: %s ' % node['available_memory(bytes)'])
+        #current_app.config.get('LOGGER').info('  Memory: %s ' % node['node_ram_total_bytes'])        
+        #current_app.config.get('LOGGER').info('  Available Memory: %s ' % node['available_memory(bytes)'])
 
         
         node_res_translation['hardware_requirements_disk'] = node ['disk_free_space(bytes)']
-        current_app.config.get('LOGGER').info('   Disk size: %s ' % node['node_disk_total_size'])
-        current_app.config.get('LOGGER').info('   Available Disk size: %s ' % node['disk_free_space(bytes)'])
-        current_app.config.get('LOGGER').info('   ...')
-        current_app.config.get('LOGGER').info(']')
+        #current_app.config.get('LOGGER').info('   Disk size: %s ' % node['node_disk_total_size'])
+        #current_app.config.get('LOGGER').info('   Available Disk size: %s ' % node['disk_free_space(bytes)'])
+        #current_app.config.get('LOGGER').info('   ...')
+        #current_app.config.get('LOGGER').info(']')
         
-        #if 'Intel' in node['device.GPU.GPU_name']:
-        #    node_res_translation['QEhardware_requirements_gpu_model'] = 3
-        #if 'AMD' in node['device.GPU.GPU_name']:
-        #    node_res_translation['QEhardware_requirements_gpu_model'] = 2
-        #elif 'Nvidia' in node['device.GPU.GPU_name']:
-        #    node_res_translation['QEhardware_requirements_gpu_model'] = 1
-        #else:
-        #    node_res_translation['QEhardware_requirements_gpu_model'] = 0
-           
-        #if 'Integrated' in node['device.GPU.GPU_type']:
-        #    node_res_translation['Qhardware_requirements_gpu_dedicated'] = 0
-        #else:
-        #    node_res_translation['Qhardware_requirements_gpu_dedicated'] = 1
-            
         return node_res_translation
         
-    def generate_app_components_request_model(self, components, matchmaking_model,application_parameters):      
+    def generate_app_components_request_model(self, components, matchmaking_model):      
         app_components_request_model = []    
         application_component_instance_parts = components[0].rsplit('-',1)
         application_instance = application_component_instance_parts[0]
         for component in matchmaking_model[application_instance]:
             for application_component_instance_req in components:
                 if application_component_instance_req == component['component']:
-                    # Found the requirements of one the component to be deployed
-                    self.add_latency_to_component_requirements(component['host']['requirements'], application_component_instance_req, application_parameters) 
+                    # Found the requirements of one the component to be deployed                 
                     app_components_request_model.append(self.component_requirements_translation(component['host']['requirements'], application_component_instance_req))                           
         return app_components_request_model
     
-    def generate_federation_resource_availability_model(self, current_app, node_parts,lat_qoe_levels):
+    def generate_federation_resource_availability_model(self, current_app, node_parts):
         federation_resource_availability_model = []
         for node in node_parts:          
-            #node = json.loads(node_parts[i])
-            federation_resource_availability_model.append(self.node_resources_translation(current_app,node,lat_qoe_levels))       
+            federation_resource_availability_model.append(self.node_resources_translation(current_app,node))       
         return federation_resource_availability_model
     
-    def calculate_dep_plan(self, current_app, components, node_parts, matchmaking_model, application_parameters,lat_qoe_levels):
+    def calculate_dep_plan(self, current_app, components, node_parts, matchmaking_model):
         """calculate_dep_plan
            matchmaking of components and ACCORDION federation resources will be done in this method
         :param components: 
@@ -171,10 +117,9 @@ class ConcreteOrchestrator(AbstractOrchestrator):
                                               
         """            
         
-        App_Components_req = self.generate_app_components_request_model(components,matchmaking_model,application_parameters)
+        App_Components_req = self.generate_app_components_request_model(components,matchmaking_model)
         
-        #node_parts = RID_response.split('\n')
-        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, node_parts,lat_qoe_levels)
+        Fed_res_availability = self.generate_federation_resource_availability_model(current_app, node_parts)
                 
         # Construction of Python-MIP MILP problem
         current_app.config.get('LOGGER').info(" Request to solver started to calculate deployment plan ")  

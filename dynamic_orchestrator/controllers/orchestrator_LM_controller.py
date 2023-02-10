@@ -1,37 +1,18 @@
 import connexion
 from dynamic_orchestrator.converter.Parser import ReadFile
 from dynamic_orchestrator.converter.MatchingModel import generate
-#from dynamic_orchestrator.converter.Converter import namespace,secret_generation  
-#from dynamic_orchestrator.converter.Kafka_Producer import Producer  
-#from dynamic_orchestrator.models.inline_response500 import InlineResponse500  # noqa: E501
 from dynamic_orchestrator.models.request_body import RequestBody
-#from dynamic_orchestrator.core.vim_sender_worker import vim_sender_worker
 from flask import current_app
-#from dynamic_orchestrator import util
-#from  urllib.error import HTTPError
-import base64
-import json
 import requests
 from dynamic_orchestrator.core.concrete_orchestrator import ConcreteOrchestrator
 from mip import OptimizationStatus
-#from pickle import NONE
-import ipaddress
 from timeit import default_timer as timer
-from random import randint,uniform
-#from symbol import except_clause
-#from Configuration import Constants
+from random import randint
 
 start_time = 0
 end_time = 0
-
-def choose_application (name):   
-    if name == 'accordion-plexus-0-0-1':
-        return 'gitlab+deploy-token-420906', 'jwCSDnkoZDeZqwf2i9-m'
-    if name == 'accordion-orbk-0-0-1':
-        return 'gitlab+deploy-token-420904', 'gzP9s2bkJV-yeh1a6fn3'
-    if name == 'accordion-ovr-0-0-3':
-        return 'gitlab+deploy-token-430087', 'NDxnnzt9WvuR7zyAHchX'
-    return None, None
+start_time_regrouped = 0
+end_time_regrouped = 0
 
 def supported_operation (operation):
     if operation == 'deploy':
@@ -39,141 +20,6 @@ def supported_operation (operation):
     if operation == 'terminate':
         return terminate
     return None
-    
-
-def secret (name):  
-    token_name, token_pass = choose_application(name)
-    if not token_name:
-        return None 
-    sample_string = token_name + ":" + token_pass
-    sample_string_bytes = sample_string.encode("ascii")
-    base64_bytes = base64.b64encode(sample_string_bytes)
-    base64_string = base64_bytes.decode("ascii")
-    json_file = {
-        "auths": {
-            "https://registry.gitlab.com": {
-                "auth": base64_string
-            }
-        }
-    }
-    json_string = json.dumps(json_file)
-    json_base64_string = base64.b64encode(json_string.encode('utf-8')).decode("utf-8")
-    return json_base64_string
-
-def check_application_parameters(operation, components, application_parameters):
-    if (application_parameters):
-        found_components = set();
-        if (len(application_parameters)!=0):       
-            if( operation == 'deploy'):
-                for parameter in application_parameters:
-                    if(parameter._component_name):
-                        find = False
-                        for component in components:
-                            if (component._component_name == parameter._component_name):
-                                find = True
-                                if( parameter._component_name in found_components):
-                                    return 'Deploy operation not executed successfully: an application parameter component ' + parameter._component_name + ' appears at least twice in the request application parameters'
-                                else:
-                                    found_components.add(parameter._component_name)
-                        if (find == False):
-                            return 'Deploy operation not executed successfully: an application parameter component is not a component of the request'
-                    if(parameter._external_ip):
-                        try:
-                            ipaddress.ip_address(parameter._external_ip)
-                        except:
-                            return 'Deploy operation not executed successfully: the application parameter external_ip' + parameter._external_ip +  ' is not a valid ip address'
-                    if(parameter._latency_qoe_level_threshold):
-                        if(parameter._device_ip):     
-                            try:
-                                ipaddress.ip_address(parameter._device_ip)
-                            except:
-                                return 'Deploy operation not executed successfully: the application parameter device_ip' + parameter._device_ip +  ' is not a valid ip address'                       
-                        else:
-                            return 'Deploy operation not executed successfully: the application parameter device_ip is missing but a latency_threshold parameter has been specified: both are needed'
-                    else:
-                        if(parameter._device_ip):
-                            return 'Deploy operation not executed successfully: the application parameter latency_threshold is missing but a device_ip parameter has been specified: both are needed'
-    return None
-
-def test_MMM(MMM_response):
-    MMM_response[0]['minicloudId'] = 'mc1' 
-    MMM_response[0]['qoe'] = 30   
-  
-    MMM_response[1]['minicloudId'] = 'mc2'
-    MMM_response[1]['qoe'] = 10   
-    return MMM_response
-
-def send_MMM_request(component_name,device_ip):
-    MMM_IP = "83.212.125.74"
-    MMM_PORT  = "40110"
-    try:        
-        Request_URL = "http://" + MMM_IP + ":" + MMM_PORT + "/qoelevel/" + device_ip
-
-        current_app.config.get('LOGGER').info(" Request to Minicloud Membership Management service for component " + component_name + " started")
-        current_app.config.get('LOGGER').info(" Request sent: HTTP GET + " + Request_URL)
-    
-        MMM_response = requests.get(Request_URL)
-        
-        MMM_response.raise_for_status()
-        
-        MMM_response_json = MMM_response.json()
-        
-        if(MMM_response_json == None):
-            return MMM_response_json,  None
-        
-        MMM_response_final = json.loads(MMM_response.json())
-        
-        current_app.config.get('LOGGER').info(" Request to MMM for component " + component_name + " successfully completed!")
-
-    except requests.exceptions.Timeout as err:
-        return None,'Deploy operation not executed successfully due to a timeout in the communication with the MMM!'
-        
-    except requests.exceptions.RequestException as err:
-        return None,'Deploy operation not executed successfully due to the following internal server error in the communication with the MMM: ' + str(err)
-        
-    except json.JSONDecodeError as err:
-        return None,'Deploy operation not executed successfully due to an internal server error. Response from MMM not Json parsable due to error ' + str(err)
-    
-    MMM_response_final = test_MMM(MMM_response_final)
-                                 
-    return MMM_response_final, None
-
-def test_RID(RID_response):
-    RID_response[0]['minicloud_id'] = 'mc1'
-    RID_response[1]['minicloud_id'] = 'mc1'
-    RID_response[2]['minicloud_id'] = 'mc2'    
-    return RID_response
-
-def send_RID_request():
-        RID_IP = "localhost"
-        RID_PORT = "9001"
-        try:
-            
-            Request_URL_miniclouds = "http://" + RID_IP + ":" + RID_PORT + "/miniclouds/nodes"
-            Request_URL_debug = "http://" + RID_IP + ":" + RID_PORT + "/debug"
-            current_app.config.get('LOGGER').info(" Request to Resource Indexing & Discovery service started")
-            current_app.config.get('LOGGER').info(" Request sent: HTTP GET" + Request_URL_miniclouds)
-
-            Debug_response = requests.get(Request_URL_debug) #, timeout=5)
-            Debug_response.raise_for_status()
-     
-            RID_response = requests.get(Request_URL_miniclouds)          
-            RID_response.raise_for_status()
-            RID_response_json = RID_response.json()                         
-            current_app.config.get('LOGGER').info(" Request to RID successfully completed!")
-            
-        except requests.exceptions.Timeout as err:
-            return None,'Deploy operation not executed successfully due to a timeout in the communication with the RID!'
-        
-        except requests.exceptions.RequestException as err:
-            return None,'Deploy operation not executed successfully due to the following internal server error in the communication with the RID: ' + str(err)
-        
-        except json.JSONDecodeError as err:
-            return None,'Deploy operation not executed successfully due to an internal server error. Response from RID not Json parsable due to error ' + str(err)                    
-
-        current_app.config.get('LOGGER').debug(" Request to Resource Indexing & Discovery service returned with response: #%s " % RID_response_json)
-        #RID_response_json = test_RID(RID_response_json)
-        return RID_response_json, None
 
 def dep_plan_status(status):
     if status == OptimizationStatus.NO_SOLUTION_FOUND:
@@ -183,50 +29,7 @@ def dep_plan_status(status):
     if status == OptimizationStatus.UNBOUNDED:
         return 'unbounded deploy solution found!'  
   
-def check_components (body):  
-        components_number = len(body.app_component_names)
-
-        if(body.app_component_names == None):
-            return None, None, 'Deploy operation not executed successfully due to the following error: no application components to be deployed' 
-        
-        if(components_number == 0):
-            return None, None, 'Deploy operation not executed successfully due to the following error: no application components to be deployed'   
-
-        found_components = set();
-        
-        current_app.config.get('LOGGER').debug("Deploy request started with parameters: ")
-             
-        for i in range(components_number):
-            current_app.config.get('LOGGER').debug("----- Component name: %s" % body.app_component_names[i].component_name)
-            #current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
-            json_pp = json.dumps(body.app_model.get('requirements')[0].get('toscaDescription'), indent=4)
-            current_app.config.get('LOGGER').debug("----- App model: %s " % json_pp)
-            #current_app.config.get('LOGGER').debug("----- Application model: [ ... ] ")
-            if(body.app_component_names[i].component_name in found_components):
-                return None, None, 'Deploy operation not executed successfully: application component ' + body.app_component_names[i].component_name + ' appears at least twice in the request'
-            else:
-                found_components.add(body.app_component_names[i].component_name)
-
-            current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
-            current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
-     
-            app_component_name = body.app_component_names[i].component_name
-            app_component_name_parts = app_component_name.split('-')
-              
-            try:
-                app_version = app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
-                app_name =   app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
-                if(i==0):
-                    app_instance = app_name + '-' + app_component_name_parts[5]
-                else:
-                    if((app_name + '-' + app_component_name_parts[5]) != app_instance):
-                        return None, None, 'Deploy operation not executed successfully: application components must be all of the same application'   
-            except:
-                return None, None, 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing'     
-        
-        return app_name, app_instance, None
-  
-def prepare_tests (app_instance, num_nodes, num_comps):
+def prepare_tests (app_instance, num_nodes, num_comps, regrouping_factor):
     
     #architectures = ['x86_64','ARM']
     architectures = ['x86_64']
@@ -263,7 +66,8 @@ def prepare_tests (app_instance, num_nodes, num_comps):
 }],
         "metadata":{ "createdAt":"", "createdBy":"", "modifiedAt":"", "modifiedBy":"" }}
     
-    component_names = []      
+    component_names = []  
+    component_reqs = []    
     for num in range(num_comps):  
         component_names.append(app_instance + "-c" +str(num))
         app_model["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["Cloud_Framework"]["properties"]["deployment_phase"][0]["components"].append({"component": "C" + str(num),"type": "VM"})
@@ -278,6 +82,13 @@ def prepare_tests (app_instance, num_nodes, num_comps):
           "port": [1]
         },"requirements":[{"host": "EdgeNode" + str(num)}]}
         
+        num_cpus = randint(1,8)
+        mem_size = randint(128, 1024)
+        disk_size = randint(10,128)
+        architecture = randint(0,len(architectures)-1)
+        os = randint(0,len(oses)-1)
+        
+        component_reqs.append([num_cpus,mem_size,disk_size,architecture,os])
         
         app_model["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["EdgeNode" + str(num)] =  {
         "type": "tosca.nodes.Compute.EdgeNode",
@@ -287,69 +98,170 @@ def prepare_tests (app_instance, num_nodes, num_comps):
           {
             "properties": 
             {
-              "num_cpus": randint(1,8),
-              "mem_size": str(randint(128,1024)) + "MB",
-              "disk_size": str(randint(10,128)) + "GB"
+              "num_cpus": num_cpus,
+              "mem_size": str(mem_size) + "MB",
+              "disk_size": str(disk_size) + "GB"
             }
           },
           "os": 
           {
             "properties": 
             {
-              "architecture": architectures[randint(0,len(architectures)-1)],
-              "type": oses[randint(0,len(oses)-1)]
+              "architecture": architectures[architecture],
+              "type": oses[os]
             }
           }
         }
       }
+     
+     
+    if regrouping_factor > 0:
+        component_names_regrouped = []
+        app_model_regrouped = {"details":{"id":"1","name":"p","version":"0.0.3","isLatest":"true" },                
+        "registry":[{"repository":"r","version":"latest","id":"2","size":"1MB","imageName":"s","component":"C1"}],
+        "requirements":[{ "environment":"",
+                                  "toscaDescription": { "tosca_definitions_version": "tosca_simple_yaml_1_2","description": "","imports": ["definitions/custom_types.yaml"],
+  "topology_template": 
+    {
+        "inputs": {"ip": {"type": "string","description": "IP","required": False } },
+        "node_templates": 
+        {
+            "Cloud_Framework": 
+            {
+                "type": "ACCORDION.Cloud_Framework",
+                "properties": 
+                {
+                    "application":"p",
+                    "deployment_phase": 
+                    [           
+                        {
+                            "name":"pr",
+                            "components": []
+                        }
+                    ]
+                }
+            }
+        }
+    }
+ }
+}],
+        "metadata":{ "createdAt":"", "createdBy":"", "modifiedAt":"", "modifiedBy":"" }}
+        
+        for num in range((num_comps//regrouping_factor)):
+            component_reqs_regrouped = [0,0,0,'x86_64','linux']
+            component_names_regrouped.append(app_instance + "-c" +str(num))
+            for i in range(regrouping_factor):
+                j = (regrouping_factor * num) + i
+                component_reqs_regrouped[0] += component_reqs[j][0]
+                component_reqs_regrouped[1] += component_reqs[j][1]
+                component_reqs_regrouped[2] += component_reqs[j][2]
+                
+            app_model_regrouped["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["Cloud_Framework"]["properties"]["deployment_phase"][0]["components"].append({"component": "C" + str(num),"type": "VM"})
+            app_model_regrouped["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["C" + str(num)] =  {"type": "Component","properties":{
+                "name": "c" +str(num),
+                "application": "p",
+                "external_ip": True,
+                "daemon_set": False,
+                "ip": {"get_input": "ip"},
+                "deployment_unit": "VM",
+                "flavor": "win2k12-iso",
+                "port": [1]
+                },"requirements":[{"host": "EdgeNode" + str(num)}]}
+            
+            app_model_regrouped["requirements"][0]["toscaDescription"]["topology_template"]["node_templates"]["EdgeNode" + str(num)] =  {
+        "type": "tosca.nodes.Compute.EdgeNode",
+        "capabilities": 
+        {
+          "host": 
+          {
+            "properties": 
+            {
+              "num_cpus": component_reqs_regrouped[0],
+              "mem_size": str(component_reqs_regrouped[1]) + "MB",
+              "disk_size": str(component_reqs_regrouped[2]) + "GB"
+            }
+          },
+          "os": 
+          {
+            "properties": 
+            {
+              "architecture": component_reqs_regrouped[3],
+              "type": component_reqs_regrouped[4]
+            }
+          }
+        }
+      }       
         
     #node_architectures = ['x86_64','ARM']
     node_architectures = ['x86_64']
-
+    
     #node_oses = ['Linux','windows']
     node_oses = ['Linux']
-            
+        
+    node_architecture = randint(0,len(node_architectures)-1)
+        
+    node_os= randint(0,len(node_oses)-1)
+         
     cores = randint(20,100)
     
     ram  =  randint(2048000000000,4096000000000)
      
     disk =  randint(200000000000, 1000000000000)
      
-    cpu_usage = round(uniform(0.00, 100.00), 2)
-    
-    av_ram =  randint(2048000000000,ram)
-    
-    av_disk = randint(200000000000,disk)
+    cpu_usage = 0.00
     
     nodes_description = [ 
     {'node_name': 'giannis0', 
-      'node_cpu_arch': node_architectures[randint(0,len(node_architectures)-1)], 
+      'node_cpu_arch': node_architectures[node_architecture], 
       'node_cpu_cores': cores, 
       'node_ram_total_bytes': ram,
       'node_disk_total_size': disk,
-      'node_os_name':  node_oses[randint(0,len(node_oses)-1)], 
+      'node_os_name':  node_oses[node_os], 
       'cpu_usage(percentage)': cpu_usage, 
-      'available_memory(bytes)': av_ram, 
-      'disk_free_space(bytes)': av_disk, 
+      'available_memory(bytes)': ram, 
+      'disk_free_space(bytes)': disk, 
       'minicloud_id': 'mc1'}
     ]
         
-    for num in range(num_nodes-1):
-        nodes_description.append({'node_name': 'giannis'+str(num+1), 
-        'node_cpu_arch': node_architectures[randint(0,len(node_architectures)-1)], 
+    for num in range(num_nodes):
+        nodes_description.append({'node_name': 'giannis'+str(num), 
+        'node_cpu_arch': node_architectures[node_architecture], 
         'node_cpu_cores': cores, 
         'node_ram_total_bytes': ram, 
         'node_disk_total_size': disk, 
-        'node_os_name': node_oses[randint(0,len(node_oses)-1)], 
+        'node_os_name': node_oses[node_os], 
         'cpu_usage(percentage)': cpu_usage, 
-        'available_memory(bytes)': av_ram,  
-        'disk_free_space(bytes)':  av_disk, 
-        'minicloud_id': 'selfhvw4fyjf'})
+        'available_memory(bytes)': ram,  
+        'disk_free_space(bytes)':  disk, 
+        'minicloud_id': 'mc1'})
+    
+    if regrouping_factor > 0:
+        nodes_description_regrouped = [ 
+    {'node_name': 'giannis0', 
+      'node_cpu_arch': node_architectures[node_architecture], 
+      'node_cpu_cores': cores*regrouping_factor, 
+      'node_ram_total_bytes': ram*regrouping_factor,
+      'node_disk_total_size': disk*regrouping_factor,
+      'node_os_name':  node_oses[node_os], 
+      'cpu_usage(percentage)': cpu_usage*regrouping_factor, 
+      'available_memory(bytes)': ram*regrouping_factor, 
+      'disk_free_space(bytes)': disk*regrouping_factor, 
+      'minicloud_id': 'mc1'}
+    ]
+        for num in range((num_nodes//regrouping_factor)-1):
+            nodes_description_regrouped.append({'node_name': 'giannis'+str(num), 
+        'node_cpu_arch': node_architectures[node_architecture], 
+        'node_cpu_cores': cores*regrouping_factor, 
+        'node_ram_total_bytes': ram*regrouping_factor, 
+        'node_disk_total_size': disk*regrouping_factor, 
+        'node_os_name': node_oses[node_os], 
+        'cpu_usage(percentage)': cpu_usage*regrouping_factor, 
+        'available_memory(bytes)': ram*regrouping_factor,  
+        'disk_free_space(bytes)':  disk*regrouping_factor, 
+        'minicloud_id': 'mc1'})
+            
         
-    return component_names,nodes_description, app_model 
-
-def save_time (time):
-    return None
+    return component_names,nodes_description, app_model, component_names_regrouped, nodes_description_regrouped, app_model_regrouped,  
   
 #TODO: remove external IP from the request and from the openapi3.0 interface file  
   
@@ -357,147 +269,50 @@ def deploy(body):
     app_instance = 'accordion-p-0-0-3-165'
     filename = "results.csv"
     # tests  = [{NUM_REPETITIONS, NUM_NODES, NUM_COMPS}, ... ]
-    tests = [[5,500,300],[5,300,100],[5,300,200]]
+    tests = [[5,30,10,5],[5,20,5,0]]
     
     f = open(filename, "w")
     
     for test in tests:
         for i in range(test[0]):
-            component_names, RID_response_json, app_model = prepare_tests (app_instance, test[1], test[2]) 
+            
+            component_names, resources, app_model, component_names_regrouped, resources_regrouped, app_model_regrouped = prepare_tests (app_instance, test[1], test[2], test[3]) 
              
             current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
             try:
-               
-                #app_name, app_instance, error = check_components(body)
-                #if(error):
-                #    current_app.config.get('LOGGER').error(error + ". Returning code 400")
-                #    return {'reason': error}, 400 
-                  
-                #error = check_application_parameters('deploy', body.app_component_names, body.application_parameters)
-                #if(error):
-                #    current_app.config.get('LOGGER').error(error + ". Returning code 400")
-                #    return {'reason': error}, 400                     
-                                
-                #secret_string = secret(app_name)
-                       
-                #if not secret_string:
-                #    error = 'Deploy operation not executed successfully: application ' + app_name + ' has not been uploaded on the ACCORDION platform '
-                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")
-                #    return {'reason': error}, 500      
-                
-                # Error handling to be finished
-                #current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function invoked " % app_instance)  
+                        
                 try:
-                    #nodelist, imagelist, app_version = ReadFile(body.app_model)
                     nodelist, imagelist, app_version = ReadFile(app_model)
+                    if(test[3]>0):
+                        nodelist_regrouped, imagelist_regrouped, app_version_regrouped = ReadFile(app_model_regrouped)
+
                 except:
                     error = 'Deploy operation not executed successfully: Application Model is not parsable'
                     current_app.config.get('LOGGER').error(error + ". Returning code 500")
                     return {'reason': error}, 500 
                 
-                current_app.config.get('LOGGER').info(" Request to Parser for App instance %s: parsing model function terminated " % app_instance)  
-                #for image in imagelist:
-                #    print(str(image))
-                current_app.config.get('LOGGER').info(" Request to Converter for App instance %s: matchmaking model function invoked" % app_instance)  
-                
                 matchmaking_model = generate(nodelist, app_instance)
-                
-                #json_string = json.dumps(matchmaking_model)
-                #Kafka_Producer = Producer()
-                #Kafka_Producer.send_message('accordion.monitoring.reservedResources', json_string)
-                
-                
-                current_app.config.get('LOGGER').info(" Request to Converter started for App instance %s: matchmaking model function terminated" % app_instance)
-                  
+                if(test[3]>0):
+                    matchmaking_model_regrouped = generate(nodelist_regrouped, app_instance)
+ 
+                                            
                 start_time = timer()
-                solver = ConcreteOrchestrator() 
-                
-                #RID_response_json, error = send_RID_request()
-                #print(RID_response_json)
-                #if(error):
-                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")
-                #    return {'reason': error}, 500    
-                
-                
-                lat_qoe_levels = {}
-                for parameter in body.application_parameters:
-                    if (parameter._device_ip):
-                        MMM_response_json, error = send_MMM_request(parameter._component_name, parameter._device_ip)
-                        if(error):
-                            current_app.config.get('LOGGER').error(error + ". Returning code 500")
-                            return {'reason': error}, 500
-                        lat_qoe_levels[parameter._component_name] = MMM_response_json
-                        
-                            
-                #dep_plan, status = solver.calculate_dep_plan(current_app, body._app_component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
-                dep_plan, status = solver.calculate_dep_plan(current_app, component_names, RID_response_json, matchmaking_model, body._application_parameters, lat_qoe_levels)
-                
-                end_time = timer()
-                line = str(test[1]) + "," + str(test[2]) +","+str(end_time - start_time)+","+status.name+"\n"
-                f.write(line)
-                
+                solver = ConcreteOrchestrator()                 
+                dep_plan, status = solver.calculate_dep_plan(current_app, component_names, resources, matchmaking_model)
+                end_time = timer()                
+                line = str(test[1]) + "," + str(test[2]) +"," + str(test[3]) + "," +str(end_time - start_time)+ "," + str(end_time_regrouped - start_time_regrouped) +","+str(status.name)+",NOREGROUPED\n"
                 print(status)
                 print(end_time - start_time)
                 
-                current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")  
-                
-                #if not dep_plan:
-                #    error = 'Deploy operation not executed successfully: '
-                #    error += dep_plan_status(status)
-                #    current_app.config.get('LOGGER').error(error + ". Returning code 500")  
-                #    return {'reason': error}, 500 
-        
-                #current_app.config.get('LOGGER').debug(" Deployment plan: ")
-                         
-                #namespace_yaml = namespace(app_instance)        
-                        
-                #secret_yaml = secret_generation(secret_string, app_instance)
-                            
-                #vim_results = [[]] * len(dep_plan);
-                
-                #vim_sender_workers_list = []
-         
-                #current_app.config.get('LOGGER').info(" Initialization of threads started")  
-        
-                #thread_id=0
-                #for EdgeMinicloud, component_list in dep_plan.items():
-                 #   current_app.config.get('LOGGER').debug(" Minicloud ID: %s" %EdgeMinicloud)
-                  #  current_app.config.get('LOGGER').debug(" Component name: %s " % component_list[0])
-                   # vim_sender_workers_list.append(vim_sender_worker(current_app.config.get('LOGGER'), thread_id, app_instance, nodelist, imagelist,namespace_yaml, secret_yaml, EdgeMinicloud, component_list, vim_results))
-                    #thread_id+=1
+                if(test[3]>0):
+                    start_time_regrouped = timer()
+                    solver = ConcreteOrchestrator()                 
+                    dep_plan_regrouped, status_regrouped = solver.calculate_dep_plan(current_app, component_names_regrouped, resources_regrouped, matchmaking_model_regrouped)           
+                    end_time_regrouped = timer()
+                    line = str(test[1]) + "," + str(test[2]) +"," + str(test[3]) + "," +str(end_time - start_time)+ "," + str(end_time_regrouped - start_time_regrouped) +","+status.name+","+status_regrouped.name+"\n"
                     
-                #current_app.config.get('LOGGER').info(" Initialization of threads finished correctly!")  
-          
-                #thread_id=0
-                #for tid in vim_sender_workers_list:
-                 #   current_app.config.get('LOGGER').debug("Thread " + str(thread_id) + " launched!")  
-                  #  tid.start()
-                   # thread_id+=1
-        
-                #current_app.config.get('LOGGER').info(" Threads launched correctly!")  
-        
-                #for tid in vim_sender_workers_list:
-                   # tid.join()
-                    
-                #current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
-                   
-                #for vim_result in vim_results:
-                    #for component_result in vim_result:
-                        #for component_instance_name, date_or_error in component_result.items():
-                            #if isinstance(date_or_error,int):
-                                # send component instance id and creation date time to ASR
-                                #current_app.config.get('LOGGER').info("Request to Application Status Registry started")      
-                                #request_to_ASR = {"id": component_instance_name, "creationTime": date_or_error, "externalIp": None, "resources": None }    
-                                #current_app.config.get('LOGGER').debug("Request sent to Application Status Registry for component instance " + component_instance_name  + " %s" % json.dumps(request_to_ASR)) 
-                                #current_app.config.get('LOGGER').debug("Request sent: PUT http://62.217.127.19:3000/v1/applicationComponentInstance")      
-             
-                                #ASR_response = requests.put('http://62.217.127.19:3000/v1/applicationComponentInstance',timeout=5, data = json.dumps(request_to_ASR), headers={'Content-type': 'application/json'})
-                                #ASR_response.raise_for_status()
-                                #current_app.config.get('LOGGER').info("Request to Application Status Registry finished successfully!")   
-                                #current_app.config.get('LOGGER').debug("Request to Application Status Registry returned with response: %s" % ASR_response.text)                    
-                            #else:   
-                               # current_app.config.get('LOGGER').error('%s . Returning code 500' % date_or_error)                       
-                                #return {'reason': date_or_error}, 500               
+                f.write(line)                                                                 
+                current_app.config.get('LOGGER').info(" Request to solver terminated to calculate deployment plan ")                 
                      
             except requests.exceptions.Timeout as err:
                 error = 'Deploy operation not executed successfully due to a timeout in the communication with the ASR!'

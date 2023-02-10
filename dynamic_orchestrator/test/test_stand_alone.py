@@ -94,8 +94,8 @@ def pretty_print(req):
 #    print('Connection Error')    
 
 try:     
-    json_file1 = open('intermidietmodel-UC1.json')
-    AB_response = json.load(json_file1)
+    #json_file1 = open('intermidietmodel-UC1.json')
+    #AB_response = json.load(json_file1)
     #AB_response = requests.get('http://app.accordion-project.eu:31724/application?name=ovr&isLatest=true')
     #AB_resp = requests.get('http://app.accordion-project.eu:31724/application?name=orbk&isLatest=true')
     #AB_response = AB_response.json()
@@ -106,7 +106,7 @@ try:
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'},{'component_name':'accordion-ovr-0-0-3-165-provaserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
     #body1 = {'app_component_names':[{'component_name':'accordion-ovr-0-0-3-165-localservice'},{'component_name':'accordion-ovr-0-0-3-165-relayserver'},{'component_name':'accordion-ovr-0-0-3-165-provaserver'}], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}
-    body1 = {'app_component_names':[], 'operation':'deploy', 'app_model' : AB_response, 'application_parameters': []}     
+    body1 = {'app_component_names':[], 'operation':'deploy', 'app_model' : {}, 'application_parameters': []}     
     data1 = json.dumps(body1)
     r1 = requests.post('http://localhost:7000/orchestrator/request', data = data1, headers={'Content-type': 'application/json'})
     pretty_print(r1)
