@@ -81,10 +81,18 @@ class vim_sender_worker(threading.Thread):
                     ID.generate_k3s_namespace(self.ns['appName'], self.ns['appVersion'], self.ns['appInstanceId']),
                     self.EdgeMinicloud, 
                     self.minicloud_ip,
-                    []# list of dict {"comp_name":gpu model} GPUs required by the application,. empty list if not required
+                    [{'component': self.componentInfo, 'gpu_model': "nvidia.com/TU117_GEFORCE_GTX_1650"}]# list of dict {"comp_name":gpu model} GPUs in the minciloud. empty list if not required
                 )
 
-            print ("Files sento to VIMGW: \n")
+
+            # contacting the ACES to prepare for the remote image if any
+            aces_url = 'http://'+self.minicloud_ip+':2022/yaml'
+            print ("Sending request to ACES at: "+aces_url)
+            # aces_response = requests.post('http://'+self.minicloud_ip+':2022/yaml')
+            # print(aces_response.content)
+
+            # preparing to send to vimgw
+            print ("Files sent to VIMGW: \n")
             print ("\tDeployment files:", deployment_files)
             print ("\tPersistent files:", persistent_files)
             print ("\tService files", service_files)
@@ -109,6 +117,14 @@ class vim_sender_worker(threading.Thread):
                             yaml_files_list.append(list(service_item.values())[0])
     
             yaml_file = yaml.dump_all(yaml_files_list)  
+
+
+            ## DEBUG for OVR use case
+            #replacement = "acc-ovrxnrh-0-0-7-thwfq"
+            #replaced = self.ns['appInstanceInfo']
+            #self.logger.debug("Replacing "+replaced + " with "+replacement)
+            #yaml_file = yaml_file.replace(replaced, replacement)
+            # ----- end debug
                
             self.logger.debug("Thread " + str(self.thread_id) + ": K3S configuration file content")
             self.logger.debug("Thread " + str(self.thread_id) + ": %s" % yaml_file)

@@ -87,7 +87,7 @@ def minicloud_qoe(qoe_resp, minicloud_list, client_list=[]):
 Manage the deploy operations
 '''
 def deploy(body):
-    current_app.config.get('LOGGER').info("------------------ Deploy request started ---------------------")
+    current_app.config.get('LOGGER').info("\n------------------ Deploy request started ---------------------")
     try:
 
         # -- checking and logging of the received message --- #
@@ -114,9 +114,9 @@ def deploy(body):
         try:
             ns = utils.parse(components[0].component_name)
             app_component_name = ns['componentName']
-            app_version = ns['appVersion'] #app_component_name_parts[2]+ '-' + app_component_name_parts[3] + '-'  + app_component_name_parts[4]
-            app_name =   ns['appName'] #app_component_name_parts[0] + '-' + app_component_name_parts[1] + '-' + app_version
-            app_instance = ns['appInstanceId'] # app_name + '-' + app_component_name_parts[5]
+            app_version = ns['appVersion'] 
+            app_name =   ns['appName']
+            app_instance = ns['appInstanceId']
         except:
             error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
             current_app.config.get('LOGGER').error(error + ". Returning code 400")
@@ -259,6 +259,7 @@ def deploy(body):
             
         # current_app.config.get('LOGGER').info(" Threads finished to calculate successfully!")  
            
+           
         # -- Process the results from the VIM gateways and contact ASR -- #
         for vim_result in vim_results:
             for component_result in vim_result:
@@ -287,11 +288,11 @@ def deploy(body):
     current_app.config.get('LOGGER').info("------------------ Deploy request SUCCESS ---------------------")
     return 200
 
-def undeploy(body):
+def scale_in(body):
 
     # -- checking and logging of the received message --- #
     components = body.app_component_names
-    current_app.config.get('LOGGER').debug("Undeploy request started with parameters: ")
+    current_app.config.get('LOGGER').debug("Scale-in request started with parameters: ")
     for i in range(len(components)):
         current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
         # current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
@@ -316,8 +317,41 @@ def undeploy(body):
     vim_request = MultipartEncoder(fields={'operation': 'undeploy', 'minicloud_id':ns['minicloudId'], 'file': (ns['componentName'], yaml_file, 'text/plain')})  
     vim_response = requests.post(url, timeout=10, data=vim_request, headers={'Content-Type': vim_request.content_type})
     vim_response.raise_for_status()
-    current_app.config.get('LOGGER').debug("Undeploy request to VimGw returned with response: %s" % vim_response.text)
+    current_app.config.get('LOGGER').debug("Scalein request to VimGw returned with response: %s" % vim_response.text)
 
+
+
+def undeploy(body):
+
+    # -- checking and logging of the received message --- #
+    components = body.app_component_names
+    current_app.config.get('LOGGER').debug("Undeploy request started with parameters: ")
+    for i in range(len(components)):
+        current_app.config.get('LOGGER').debug("----- Component name: %s" % components[i].component_name)
+        # current_app.config.get('LOGGER').debug("----- App model: %s " % str(body.app_model))
+        current_app.config.get('LOGGER').debug("----- Operation: %s " % body.operation)
+        #current_app.config.get('LOGGER').debug("----- Application parameters: %s " % str(body.application_parameters))
+
+    # -- Parsing of the namespace --- #
+    try:
+        ns = utils.parse(components[0].component_name)
+    except:
+        error = 'Deploy operation not executed successfully: application component name syntax does not follow ACCORDION conventions, or some parts are missing '
+        current_app.config.get('LOGGER').error(error + ". Returning code 400")
+        return {'reason': error}, 400   
+
+    # -- generate the namespace yaml to delete all of it
+    k3s_namespace = ID.generate_k3s_namespace(ns['appName'], ns['appVersion'], ns['appInstanceId'])
+    namespace_yaml = namespace(k3s_namespace)[k3s_namespace]
+    yaml_file = yaml.dump_all([namespace_yaml])  
+
+    # -- contact the vimgateway directly
+    url = "http://vimgw:5000/VIM/request"
+    
+    vim_request = MultipartEncoder(fields={'operation': 'undeploy', 'minicloud_id':ns['minicloudId'], 'file': (ns['componentName'], yaml_file, 'text/plain')})  
+    vim_response = requests.post(url, timeout=10, data=vim_request, headers={'Content-Type': vim_request.content_type})
+    vim_response.raise_for_status()
+    current_app.config.get('LOGGER').debug("Undeploy request to VimGw returned with response: %s" % vim_response.text)
 
 
 def orchestrator_LM_request(body):  # noqa: E501
