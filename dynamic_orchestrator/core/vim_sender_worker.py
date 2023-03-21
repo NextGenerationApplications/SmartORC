@@ -88,8 +88,9 @@ class vim_sender_worker(threading.Thread):
             # contacting the ACES to prepare for the remote image if any
             aces_url = 'http://'+self.minicloud_ip+':2022/yaml'
             print ("Sending request to ACES at: "+aces_url)
-            # aces_response = requests.post('http://'+self.minicloud_ip+':2022/yaml')
-            # print(aces_response.content)
+            aces_response = requests.post('http://'+self.minicloud_ip+':2022/yaml', data=deployment_files[0])
+            deployment_files[0] = aces_response.text
+            print("ACES response: "+aces_response.text)
 
             # preparing to send to vimgw
             print ("Files sent to VIMGW: \n")
@@ -120,10 +121,10 @@ class vim_sender_worker(threading.Thread):
 
 
             ## DEBUG for OVR use case
-            #replacement = "acc-ovrxnrh-0-0-7-thwfq"
-            #replaced = self.ns['appInstanceInfo']
-            #self.logger.debug("Replacing "+replaced + " with "+replacement)
-            #yaml_file = yaml_file.replace(replaced, replacement)
+            replacement = "acc-ovrxnrh-0-0-8-thwfq"
+            replaced = self.ns['appInstanceInfo']
+            self.logger.debug("Replacing "+replaced+" with "+replacement)
+            yaml_file = yaml_file.replace(replaced, replacement)
             # ----- end debug
                
             self.logger.debug("Thread " + str(self.thread_id) + ": K3S configuration file content")
